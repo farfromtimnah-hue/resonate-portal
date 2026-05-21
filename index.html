@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Resonate Business Systems — Sign In</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700&family=Fraunces:wght@400;700&family=Newsreader:opsz,wght@6..72,700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            "primary-container": "#005b96",
+            "primary-fixed-dim": "#9ccaff",
+            "on-primary-fixed":  "#001d35",
+          },
+          fontFamily: {
+            "fraunces": ["Fraunces", "serif"],
+            "jakarta":  ["Plus Jakarta Sans", "sans-serif"],
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    html, body { margin: 0; padding: 0; overflow: hidden; height: 100%; background: #0a1628; }
+
+    #bg-canvas {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      display: block;
+    }
+
+    .glass-card {
+      background: rgba(255, 255, 255, 0.13);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+    }
+
+    .pill-input {
+      width: 100%;
+      background: rgba(255,255,255,0.09);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 9999px;
+      color: #fff;
+      padding: 14px 24px;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .pill-input::placeholder { color: rgba(255,255,255,0.38); }
+    .pill-input:focus {
+      border-color: rgba(156,202,255,0.55);
+      box-shadow: 0 0 0 3px rgba(0,91,150,0.25);
+    }
+
+    /* wordmark sizing — "Business Systems" width = "RESONATE" width */
+    .wordmark-wrapper { display: inline-block; text-align: center; }
+    .wordmark-resonate {
+      font-family: 'Fraunces', serif;
+      font-weight: 700;
+      font-size: clamp(3rem, 9vw, 5.5rem);
+      letter-spacing: 0.18em;
+      color: #fff;
+      line-height: 1;
+      display: block;
+      text-transform: uppercase;
+    }
+    .wordmark-sub-row {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      width: 100%;
+      margin-top: 0.35em;
+    }
+    .wordmark-line { flex: 1; height: 1px; background: rgba(255,255,255,0.28); }
+    .wordmark-sub {
+      font-family: 'Fraunces', serif;
+      font-weight: 400;
+      font-size: clamp(0.7rem, 1.8vw, 0.95rem);
+      letter-spacing: 0.38em;
+      color: rgba(255,255,255,0.82);
+      text-transform: uppercase;
+      white-space: nowrap;
+      padding: 0 1em;
+    }
+
+    /* Login error */
+    .login-error {
+      background: rgba(186,26,26,0.18);
+      border: 1px solid rgba(186,26,26,0.35);
+      color: #fca5a5;
+      padding: 10px 18px;
+      border-radius: 9999px;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 13px;
+      text-align: center;
+      display: none;
+    }
+    .login-error--visible { display: block; }
+  </style>
+</head>
+<body>
+
+<!-- ── Animated canvas background ────────────────────────── -->
+<canvas id="bg-canvas"></canvas>
+
+<!-- ── Login UI ───────────────────────────────────────────── -->
+<div style="position:relative; z-index:10; display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; padding:24px;">
+
+  <!-- Wordmark above card -->
+  <div class="wordmark-wrapper" style="margin-bottom: 2rem;">
+    <span class="wordmark-resonate">Resonate</span>
+    <div class="wordmark-sub-row">
+      <div class="wordmark-line"></div>
+      <span class="wordmark-sub">Business Systems</span>
+      <div class="wordmark-line"></div>
+    </div>
+  </div>
+
+  <!-- Glassmorphism card -->
+  <div class="glass-card" style="width:100%; max-width:400px; padding:2.5rem; border-radius:1.5rem; box-shadow:0 24px 64px rgba(0,0,0,0.4);">
+
+    <div id="login-error" class="login-error" style="margin-bottom:1.25rem;"></div>
+
+    <form id="login-form">
+      <div style="margin-bottom:1rem;">
+        <label style="display:block; font-family:'Plus Jakarta Sans',sans-serif; font-size:11px; font-weight:600; letter-spacing:0.06em; color:rgba(255,255,255,0.55); text-transform:uppercase; margin-bottom:8px; padding-left:4px;">
+          Email
+        </label>
+        <input id="email" type="email" class="pill-input" placeholder="you@example.com" required autocomplete="email">
+      </div>
+
+      <div style="margin-bottom:1.5rem;">
+        <label style="display:block; font-family:'Plus Jakarta Sans',sans-serif; font-size:11px; font-weight:600; letter-spacing:0.06em; color:rgba(255,255,255,0.55); text-transform:uppercase; margin-bottom:8px; padding-left:4px;">
+          Password
+        </label>
+        <input id="password" type="password" class="pill-input" placeholder="••••••••" required autocomplete="current-password">
+      </div>
+
+      <button
+        id="login-btn"
+        type="submit"
+        style="width:100%; background:#005b96; color:#fff; border:none; border-radius:9999px; padding:15px 24px; font-family:'Plus Jakarta Sans',sans-serif; font-size:14px; font-weight:600; letter-spacing:0.04em; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; transition:background 0.15s, transform 0.1s;"
+        onmouseover="this.style.background='#004370'"
+        onmouseout="this.style.background='#005b96'"
+        onmousedown="this.style.transform='scale(0.97)'"
+        onmouseup="this.style.transform='scale(1)'"
+      >
+        Sign In
+        <span class="material-symbols-outlined" style="font-size:18px; font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24;">arrow_forward</span>
+      </button>
+    </form>
+
+  </div>
+
+  <!-- Subtle footer -->
+  <p style="margin-top:2rem; font-family:'Plus Jakarta Sans',sans-serif; font-size:11px; letter-spacing:0.08em; color:rgba(255,255,255,0.28); text-transform:uppercase;">
+    Resonate Business Systems © 2025
+  </p>
+</div>
+
+<!-- ── Canvas ripple animation ────────────────────────────── -->
+<script>
+(function() {
+  const canvas = document.getElementById('bg-canvas');
+  const ctx    = canvas.getContext('2d');
+  const BG     = '#0a1628';
+
+  function resize() {
+    canvas.width  = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+
+  function makeRing(stagger) {
+    const cx = canvas.width  / 2;
+    const cy = canvas.height / 2;
+    const jitter = Math.min(canvas.width, canvas.height) * 0.06;
+    const maxR   = Math.hypot(canvas.width, canvas.height) * 0.58;
+    return {
+      x:     cx + (Math.random() - 0.5) * jitter * 2,
+      y:     cy + (Math.random() - 0.5) * jitter * 2,
+      r:     stagger != null ? maxR * stagger : 0,
+      maxR:  maxR,
+      speed: 0.5 + Math.random() * 0.35,
+    };
+  }
+
+  let rings     = [];
+  let lastSpawn = -9999;
+
+  function seed() {
+    resize();
+    rings = [];
+    for (let i = 0; i < 7; i++) {
+      rings.push(makeRing(i / 7));
+    }
+  }
+
+  seed();
+  window.addEventListener('resize', seed);
+
+  function draw(ts) {
+    ctx.fillStyle = BG;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    for (let i = rings.length - 1; i >= 0; i--) {
+      const r     = rings[i];
+      const alpha = 0.32 * Math.max(0, 1 - r.r / r.maxR);
+
+      ctx.beginPath();
+      ctx.arc(r.x, r.y, r.r, 0, Math.PI * 2);
+      ctx.strokeStyle = `rgba(108, 172, 230, ${alpha})`;
+      ctx.lineWidth   = 1.2;
+      ctx.stroke();
+
+      r.r += r.speed;
+      if (r.r >= r.maxR) rings.splice(i, 1);
+    }
+
+    // Spawn a new ring every ~900ms, keep max 8 alive
+    if (ts - lastSpawn > 900 && rings.length < 8) {
+      rings.push(makeRing(null));
+      lastSpawn = ts;
+    }
+
+    requestAnimationFrame(draw);
+  }
+
+  requestAnimationFrame(draw);
+})();
+</script>
+
+<!-- ── Firebase auth logic (unchanged) ───────────────────── -->
+<script type="module">
+  import { signIn }    from './js/auth.js';
+  import { getProfile } from './js/auth.js';
+
+  getProfile().then(profile => {
+    if (!profile) return;
+    if (profile.role === 'admin')  window.location.href = '/dashboard.html';
+    if (profile.role === 'client') window.location.href = '/portal.html';
+  }).catch(() => {});
+
+  const form  = document.getElementById('login-form');
+  const btn   = document.getElementById('login-btn');
+  const errEl = document.getElementById('login-error');
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email    = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+
+    btn.disabled    = true;
+    btn.innerHTML   = 'Signing in… <span class="material-symbols-outlined" style="font-size:18px;">sync</span>';
+    errEl.classList.remove('login-error--visible');
+
+    try {
+      const profile = await signIn(email, password);
+      if (profile.role === 'admin')  window.location.href = '/dashboard.html';
+      if (profile.role === 'client') window.location.href = '/portal.html';
+    } catch (err) {
+      let msg = 'Incorrect email or password. Please try again.';
+      if (err.message?.includes('not registered')) msg = err.message;
+      errEl.textContent = msg;
+      errEl.classList.add('login-error--visible');
+      btn.disabled  = false;
+      btn.innerHTML = 'Sign In <span class="material-symbols-outlined" style="font-size:18px;">arrow_forward</span>';
+    }
+  });
+</script>
+</body>
+</html>

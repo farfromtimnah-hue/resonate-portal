@@ -1,0 +1,256 @@
+// ============================================================
+// Client portal page — simplified, bilingual, read + comment only
+// ============================================================
+
+import { requireAuth, signOut } from './auth.js';
+import { api }                   from './api.js';
+import { t, setLang, getLang, statusLabel, statusClass } from './t.js';
+import { esc, nl2br, formatDate, formatDateTime, toast, telLink, waLink, projectCounts } from './utils.js';
+
+let _data    = null;
+let _lang    = 'en';
+let _profile = null;
+
+async function init() {
+  _profile = await requireAuth('client');
+  if (!_profile) return;
+
+  // Set language from user preference
+  _lang = _profile.language_preference || 'en';
+  setLang(_lang);
+  updateLangButtons();
+
+  document.getElementById('signout-btn').addEventListener('click', async () => {
+    await signOut(); window.location.href = '/index.html';
+  });
+
+  document.getElementById('lang-en').addEventListener('click', () => switchLang('en'));
+  document.getElementById('lang-pt').addEventListener('click', () => switchLang('pt'));
+  document.getElementById('portal-send-btn').addEventListener('click', sendComment);
+
+  await loadData();
+}
+
+async function loadData() {
+  document.getElementById('loading').classList.remove('hidden');
+  document.getElementById('content').classList.add('hidden');
+
+  try {
+    _data = await api.getClient(_profile.client_id);
+    render();
+    document.getElementById('loading').classList.add('hidden');
+    document.getElementById('content').classList.remove('hidden');
+  } catch (err) {
+    document.getElementById('loading').textContent = `Error: ${err.message}`;
+  }
+}
+
+// ---- Language ----
+
+function switchLang(lang) {
+  _lang = lang;
+  setLang(lang);
+  updateLangButtons();
+  if (_data) renderContent();    // re-render bilingual content
+  // Persist preference (best-effort)
+  api.me().catch(() => {});
+}
+
+function updateLangButtons() {
+  document.getElementById('lang-en').classList.toggle('lang-btn--active', _lang === 'en');
+  document.getElementById('lang-pt').classList.toggle('lang-btn--active', _lang === 'pt');
+}
+
+// ---- Main render ----
+
+function render() {
+  const { client } = _data;
+  document.title = `${client.name} — Resonate Portal`;
+
+  // Header
+  document.getElementById('portal-client-name').textContent = client.name;
+
+  const biz = document.getElementById('portal-client-business');
+  if (client.business_name) {
+    biz.textContent = client.business_name;
+    biz.classList.remove('hidden');
+  }
+
+  // Status badge in header
+  const statusEl = document.getElementById('portal-status-badge');
+  statusEl.innerHTML = `<span class="badge" style="background:rgba(255,255,255,0.2); color:#fff; border:1px solid rgba(255,255,255,0.4);">${esc(client.overall_status)}</span>`;
+
+  renderContent();
+}
+
+function renderContent() {
+  const { client, projects, comments, links } = _data;
+
+  // Progress
+  renderProgress(projects);
+
+  // Projects
+  renderProjects(projects);
+
+  // Client-visible links
+  renderPortalLinks(links);
+
+  // Comments
+  renderComments(comments);
+
+  // Contact actions
+  renderContact(client);
+}
+
+// ---- Progress ----
+
+function renderProgress(projects) {
+  const counts = projectCounts(projects);
+  const pct    = counts.total > 0 ? Math.round((counts.completed / counts.total) * 100) : 0;
+
+  document.getElementById('portal-progress-counts').innerHTML = `
+    <div class="progress-count">
+      <div class="progress-count__number">${counts.total}</div>
+      <div class="progress-count__label">${_lang === 'pt' ? 'Total' : 'Total'}</div>
+    </div>
+    <div class="progress-count">
+      <div class="progress-count__number" style="color:var(--s-blue)">${counts.in_progress}</div>
+      <div class="progress-count__label">${_lang === 'pt' ? 'Em andamento' : 'In Progress'}</div>
+    </div>
+    <div class="progress-count">
+      <div class="progress-count__number" style="color:var(--s-green)">${counts.completed}</div>
+      <div class="progress-count__label">${_lang === 'pt' ? 'Concluídos' : 'Complete'}</div>
+    </div>`;
+
+  document.getElementById('portal-progress-fill').style.width = `${pct}%`;
+}
+
+// ---- Projects ----
+
+function renderProjects(projects) {
+  const el = document.getElementById('portal-projects');
+
+  const visible = projects.filter(p => p.is_client_visible !== 0);
+  if (!visible.length) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-state__text">${t('portal_no_projects')}</div></div>`;
+    return;
+  }
+
+  el.innerHTML = visible.map(p => portalProjectCardHTML(p)).join('');
+}
+
+function portalProjectCardHTML(p) {
+  const desc    = _lang === 'pt' ? (p.description_pt     || p.description_en)     : (p.description_en     || p.description_pt);
+  const future  = _lang === 'pt' ? (p.future_features_pt || p.future_features_en) : (p.future_features_en || p.future_features_pt);
+  const urlsArr = Array.isArray(p.urls) ? p.urls : [];
+
+  const urlLinks = urlsArr.map(u =>
+    `<a href="${esc(u)}" target="_blank" class="project-link">${esc(p.link_type || 'link')} ↗</a>`
+  ).join('');
+
+  return `
+    <div class="project-card">
+      <div class="project-card__head">
+        <span class="project-card__title">${esc(p.title)}</span>
+        <span class="badge ${statusClass(p.status)}">${statusLabel(p.status)}</span>
+      </div>
+
+      ${desc ? `<div class="project-card__body">${nl2br(desc)}</div>` : ''}
+
+      ${urlLinks ? `<div class="project-card__links">${urlLinks}</div>` : ''}
+
+      ${future ? `
+        <div style="margin-top:10px; padding-top:10px; border-top:1px solid var(--border);">
+          <div style="font-size:11px; font-weight:600; color:var(--text-3); text-transform:uppercase; letter-spacing:.05em; margin-bottom:6px;">
+            ${_lang === 'pt' ? 'Em Breve' : 'Coming Up'}
+          </div>
+          <div class="future-block">${nl2br(future)}</div>
+        </div>` : ''}
+
+      <div class="project-card__footer">
+        <span class="text-muted">${_lang === 'pt' ? 'Atualizado' : 'Updated'} ${formatDate(p.updated_at)}</span>
+        ${p.due_date ? `<span class="text-muted">${_lang === 'pt' ? 'Prazo' : 'Due'} ${formatDate(p.due_date)}</span>` : ''}
+      </div>
+    </div>`;
+}
+
+// ---- Portal links ----
+
+function renderPortalLinks(links) {
+  const section = document.getElementById('portal-links-section');
+  const el      = document.getElementById('portal-links-list');
+  const visible = (links || []).filter(l => l.is_client_visible !== 0);
+
+  if (!visible.length) {
+    section.classList.add('hidden');
+    return;
+  }
+
+  section.classList.remove('hidden');
+  el.innerHTML = visible.map(l => `
+    <div class="resource-link">
+      <span class="resource-link__label">${esc(l.label)}</span>
+      <a href="${esc(l.url)}" target="_blank" class="resource-link__url">Open ↗</a>
+    </div>`).join('');
+}
+
+// ---- Comments ----
+
+function renderComments(comments) {
+  const el = document.getElementById('portal-comments');
+  if (!comments.length) {
+    el.innerHTML = `<div class="text-muted text-sm">${t('portal_no_comments')}</div>`;
+    return;
+  }
+
+  el.innerHTML = comments.map(c => `
+    <div class="comment comment--${c.author_role}">
+      <div class="comment__avatar">${c.author_role === 'admin' ? 'R' : (_profile.email?.[0] || 'C').toUpperCase()}</div>
+      <div class="comment__content">
+        <div class="comment__bubble">${nl2br(c.content)}</div>
+        <div class="comment__meta">
+          <strong>${esc(c.author_role === 'admin' ? t('admin_sender') : (_data.client.name || 'You'))}</strong>
+          <span>·</span>
+          <span>${formatDateTime(c.created_at)}</span>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+async function sendComment() {
+  const input = document.getElementById('portal-comment-input');
+  const text  = input.value.trim();
+  if (!text) return;
+
+  const btn = document.getElementById('portal-send-btn');
+  btn.disabled = true;
+
+  try {
+    const comment = await api.addComment(_profile.client_id, {
+      content:     text,
+      author_name: _data.client.name || 'Client',
+    });
+    _data.comments.push(comment);
+    renderComments(_data.comments);
+    input.value = '';
+    toast(_lang === 'pt' ? 'Mensagem enviada.' : 'Message sent.');
+  } catch (err) {
+    toast(err.message, 'error');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// ---- Contact ----
+
+function renderContact(client) {
+  const el = document.getElementById('portal-contact-actions');
+  el.innerHTML = '';
+
+  if (client.phone)    el.innerHTML += `<a href="${telLink(client.phone)}"    class="btn btn-call">${t('portal_call')}</a>`;
+  if (client.whatsapp) el.innerHTML += `<a href="${waLink(client.whatsapp)}"  class="btn btn-wa" target="_blank">${t('portal_whatsapp')}</a>`;
+  if (client.email)    el.innerHTML += `<a href="mailto:${esc(client.email)}" class="btn btn-email">${t('portal_email')}</a>`;
+  if (client.website)  el.innerHTML += `<a href="${esc(client.website)}"      class="btn btn--secondary" target="_blank">${t('portal_website')}</a>`;
+}
+
+init();

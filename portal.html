@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your Project Portal — Resonate</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700&family=Newsreader:opsz,wght@6..72,700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+
+  <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          borderRadius: { "full": "9999px", "DEFAULT": "1rem", "lg": "2rem" },
+          fontFamily: { "jakarta": ["Plus Jakarta Sans","sans-serif"], "newsreader": ["Newsreader","serif"] },
+        }
+      }
+    }
+  </script>
+
+  <link rel="stylesheet" href="css/app.css">
+
+  <style>
+    body { font-family: 'Plus Jakarta Sans', sans-serif; background: #F8F7F4; color: #414750; }
+  </style>
+</head>
+<body class="min-h-screen antialiased">
+
+<!-- ── Portal Header ────────────────────────────────────────── -->
+<header class="sticky top-0 z-50 bg-white/90 backdrop-blur-sm border-b border-black/5">
+  <div class="max-w-[860px] mx-auto px-6 h-16 flex items-center justify-between">
+
+    <!-- Brand -->
+    <span class="font-newsreader font-bold text-[20px] text-[#001d35]"
+          style="font-family:'Newsreader',serif; letter-spacing:-0.02em;">
+      Resonate
+    </span>
+
+    <!-- Language toggle -->
+    <div class="flex items-center gap-2">
+      <button id="lang-en" class="lang-btn lang-btn--active">EN</button>
+      <button id="lang-pt" class="lang-btn">PT</button>
+    </div>
+
+  </div>
+</header>
+
+<!-- ── Main Content ─────────────────────────────────────────── -->
+<main class="max-w-[860px] mx-auto px-6 py-8">
+
+  <!-- Loading -->
+  <div id="loading" class="loading">Loading your projects…</div>
+
+  <!-- Content (hidden until loaded) -->
+  <div id="content" class="hidden">
+
+    <!-- Client identity band -->
+    <div class="pb-6 mb-6 border-b border-black/5">
+      <h1 id="portal-client-name"
+          class="text-[26px] font-bold text-[#001d35] tracking-tight"
+          style="letter-spacing:-0.02em;">Loading…</h1>
+      <div id="portal-client-business" class="hidden text-[#717781] text-[14px] mt-1"></div>
+      <div class="mt-2" id="portal-status-badge"></div>
+    </div>
+
+    <!-- Progress -->
+    <div class="bg-white rounded-lg border border-black/5 p-6 shadow-sm mb-5">
+      <p class="text-[#717781] text-[11px] uppercase font-semibold tracking-widest mb-4"
+         data-i18n="portal_status_heading">Project Status</p>
+      <div id="portal-progress-counts" class="progress-counts"></div>
+      <div class="progress-bar mt-4">
+        <div id="portal-progress-fill" class="progress-bar__fill" style="width:0%"></div>
+      </div>
+    </div>
+
+    <!-- Projects -->
+    <div class="bg-white rounded-lg border border-black/5 p-6 shadow-sm mb-5">
+      <p class="text-[#717781] text-[11px] uppercase font-semibold tracking-widest mb-4"
+         data-i18n="section_projects">Projects</p>
+      <div id="portal-projects" class="project-list">
+        <div class="loading">Loading…</div>
+      </div>
+    </div>
+
+    <!-- Client-visible links (hidden until populated) -->
+    <div id="portal-links-section" class="hidden bg-white rounded-lg border border-black/5 p-6 shadow-sm mb-5">
+      <p class="text-[#717781] text-[11px] uppercase font-semibold tracking-widest mb-4"
+         data-i18n="project_links">Links</p>
+      <div id="portal-links-list" class="links-list"></div>
+    </div>
+
+    <!-- Messages -->
+    <div class="bg-white rounded-lg border border-black/5 p-6 shadow-sm mb-5">
+      <p class="text-[#717781] text-[11px] uppercase font-semibold tracking-widest mb-4"
+         data-i18n="section_comments">Messages</p>
+      <div id="portal-comments" class="comment-list" style="margin-bottom:16px;"></div>
+      <div class="comment-form">
+        <label class="form-label" style="display:block; margin-bottom:6px;"
+               data-i18n="portal_message_us">Send a Message</label>
+        <textarea id="portal-comment-input" class="form-control" rows="3"
+                  placeholder="Type your message here…"></textarea>
+        <div style="display:flex; justify-content:flex-end; margin-top:8px;">
+          <button id="portal-send-btn" class="btn btn--primary">
+            <span data-i18n="send_message">Send</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Get in Touch -->
+    <div class="bg-white rounded-lg border border-black/5 p-6 shadow-sm mb-5">
+      <p class="text-[#717781] text-[11px] uppercase font-semibold tracking-widest mb-4"
+         data-i18n="portal_contact_heading">Get in Touch</p>
+      <div id="portal-contact-actions" class="contact-actions"></div>
+    </div>
+
+  </div><!-- /content -->
+
+  <!-- Sign out -->
+  <div class="text-center pt-6 pb-8">
+    <button id="signout-btn"
+            class="text-[#a0a4ae] hover:text-[#414750] text-[11px] uppercase tracking-widest transition-colors px-4 py-2 rounded-full">
+      Sign Out
+    </button>
+  </div>
+
+</main>
+
+<!-- Subtle footer band -->
+<footer class="border-t border-black/5 py-5">
+  <p class="text-center text-[11px] text-[#a0a4ae] uppercase tracking-widest">
+    © 2025 Resonate Business Systems
+  </p>
+</footer>
+
+<script type="module" src="js/portal.js"></script>
+</body>
+</html>

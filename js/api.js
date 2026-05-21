@@ -1,0 +1,73 @@
+// ============================================================
+// API client — wraps all Worker calls with auth headers
+// ============================================================
+
+import { getToken }  from './auth.js';
+import { API_BASE }  from './config.js';
+
+async function req(method, path, body) {
+  const token = await getToken();
+  const opts  = {
+    method,
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    }
+  };
+  if (body !== undefined) opts.body = JSON.stringify(body);
+
+  const res  = await fetch(`${API_BASE}${path}`, opts);
+  const data = await res.json().catch(() => ({}));
+
+  if (!res.ok) throw new ApiError(data.error || `HTTP ${res.status}`, res.status);
+  return data;
+}
+
+export class ApiError extends Error {
+  constructor(message, status) {
+    super(message);
+    this.status = status;
+  }
+}
+
+// ---- User / auth ----
+export const api = {
+  me: () => req('GET', '/api/me'),
+
+  // Users (admin)
+  users:        ()               => req('GET',    '/api/users'),
+  upsertUser:   (data)           => req('POST',   '/api/users', data),
+  deleteUser:   (uid)            => req('DELETE', `/api/users/${uid}`),
+
+  // Clients (admin)
+  clients:      (params = '')    => req('GET',    `/api/clients${params}`),
+  createClient: (data)           => req('POST',   '/api/clients', data),
+  getClient:    (id)             => req('GET',    `/api/clients/${id}`),
+  updateClient: (id, data)       => req('PUT',    `/api/clients/${id}`, data),
+  archiveClient: (id)            => req('POST',   `/api/clients/${id}/archive`),
+  restoreClient: (id)            => req('POST',   `/api/clients/${id}/restore`),
+  archive:      ()               => req('GET',    '/api/archive'),
+
+  // Projects
+  projects:      (clientId)      => req('GET',    `/api/clients/${clientId}/projects`),
+  createProject: (clientId, d)   => req('POST',   `/api/clients/${clientId}/projects`, d),
+  updateProject: (clientId, id, d) => req('PUT',  `/api/clients/${clientId}/projects/${id}`, d),
+  deleteProject: (clientId, id)  => req('DELETE', `/api/clients/${clientId}/projects/${id}`),
+
+  // Comments
+  comments:      (clientId)      => req('GET',    `/api/clients/${clientId}/comments`),
+  addComment:    (clientId, d)   => req('POST',   `/api/clients/${clientId}/comments`, d),
+  deleteComment: (clientId, id)  => req('DELETE', `/api/clients/${clientId}/comments/${id}`),
+
+  // Private notes (admin)
+  notes:         (clientId)      => req('GET',    `/api/clients/${clientId}/notes`),
+  addNote:       (clientId, d)   => req('POST',   `/api/clients/${clientId}/notes`, d),
+  updateNote:    (clientId, id, d) => req('PUT',  `/api/clients/${clientId}/notes/${id}`, d),
+  deleteNote:    (clientId, id)  => req('DELETE', `/api/clients/${clientId}/notes/${id}`),
+
+  // Resource links
+  links:         (clientId)      => req('GET',    `/api/clients/${clientId}/links`),
+  addLink:       (clientId, d)   => req('POST',   `/api/clients/${clientId}/links`, d),
+  updateLink:    (clientId, id, d) => req('PUT',  `/api/clients/${clientId}/links/${id}`, d),
+  deleteLink:    (clientId, id)  => req('DELETE', `/api/clients/${clientId}/links/${id}`),
+};

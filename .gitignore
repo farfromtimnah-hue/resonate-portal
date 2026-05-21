@@ -1,0 +1,24 @@
+# macOS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+
+# Node (if you ever run npm in the worker dir)
+node_modules/
+
+# Wrangler local state
+.wrangler/
+worker/.wrangler/
+
+# Environment / secrets
+.env
+.env.*
+*.env
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo

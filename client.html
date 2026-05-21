@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Client — Resonate</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700&family=Newsreader:opsz,wght@6..72,700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+
+  <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "primary-container":    "#005b96",
+            "primary-fixed-dim":    "#9ccaff",
+            "on-primary-fixed":     "#001d35",
+            "inverse-surface":      "#2e3135",
+            "outline-variant":      "#c1c7d1",
+            "on-primary":           "#ffffff",
+            "tertiary-fixed-dim":   "#ffb781",
+            "secondary-fixed-dim":  "#c5c6d1",
+          },
+          borderRadius: { "full": "9999px", "DEFAULT": "1rem", "lg": "2rem" },
+          fontFamily: { "jakarta": ["Plus Jakarta Sans","sans-serif"], "newsreader": ["Newsreader","serif"] },
+        }
+      }
+    }
+  </script>
+
+  <link rel="stylesheet" href="css/app.css">
+
+  <style>
+    body { font-family: 'Plus Jakarta Sans', sans-serif; background: #0f1115; color: #c1c7d1; }
+    .bg-glow-1 { position:fixed; top:-10%; right:-10%; width:500px; height:500px; background:#004370; border-radius:9999px; filter:blur(120px); opacity:0.18; pointer-events:none; z-index:0; }
+    .bg-glow-2 { position:fixed; bottom:-10%; left:-10%; width:400px; height:400px; background:#663300; border-radius:9999px; filter:blur(100px); opacity:0.12; pointer-events:none; z-index:0; }
+  </style>
+</head>
+<body class="min-h-screen antialiased">
+
+<div class="bg-glow-1"></div>
+<div class="bg-glow-2"></div>
+
+<!-- ── Left Sidebar ─────────────────────────────────────────── -->
+<aside class="fixed left-0 top-0 h-full w-72 flex flex-col bg-inverse-surface border-r border-white/5 z-50">
+  <div class="flex flex-col h-full px-6 py-8">
+
+    <!-- Brand -->
+    <a href="/dashboard.html"
+       class="font-newsreader font-bold text-[22px] tracking-tight text-primary-fixed-dim no-underline mb-8"
+       style="font-family:'Newsreader',serif; letter-spacing:-0.02em;">
+      Resonate
+    </a>
+
+    <!-- Back link -->
+    <a id="back-link" href="/dashboard.html"
+       class="flex items-center gap-2 text-outline-variant hover:text-primary-fixed-dim text-[13px] transition-colors group no-underline -mt-2 mb-6">
+      <span class="material-symbols-outlined text-[16px] transition-transform group-hover:-translate-x-1">arrow_back</span>
+      Back to Dashboard
+    </a>
+
+    <!-- Nav -->
+    <nav class="flex flex-col gap-1">
+      <p class="text-outline-variant text-[10px] uppercase font-semibold tracking-widest px-4 mb-2">Navigation</p>
+      <a href="/dashboard.html"
+         class="px-4 py-2.5 rounded-full text-outline-variant hover:text-primary-fixed-dim text-[13px] transition-colors flex items-center gap-3 no-underline">
+        <span class="material-symbols-outlined text-[17px]">grid_view</span>
+        Dashboard
+      </a>
+      <a href="/archive.html"
+         class="px-4 py-2.5 rounded-full text-outline-variant hover:text-primary-fixed-dim text-[13px] transition-colors flex items-center gap-3 no-underline">
+        <span class="material-symbols-outlined text-[17px]">archive</span>
+        Archive
+      </a>
+    </nav>
+
+    <!-- Sign out (pinned to bottom) -->
+    <div class="mt-auto border-t border-white/5 pt-6">
+      <button id="signout-btn"
+              class="w-full text-left flex items-center gap-2 text-outline-variant hover:text-primary-fixed-dim text-[12px] uppercase tracking-widest transition-colors px-4 py-2 rounded-full">
+        <span class="material-symbols-outlined text-[16px]">logout</span>
+        Sign Out
+      </button>
+    </div>
+
+  </div>
+</aside>
+
+<!-- ── Main Content ─────────────────────────────────────────── -->
+<main class="ml-72 min-h-screen relative z-10 px-8 xl:px-12 py-10">
+
+  <!-- Loading -->
+  <div id="loading" class="loading">Loading…</div>
+
+  <!-- Content (hidden until loaded) -->
+  <div id="content" class="hidden">
+
+    <!-- All-complete banner -->
+    <div id="all-complete-banner" class="banner banner--success hidden" style="margin-bottom:20px;">
+      <span class="material-symbols-outlined" style="font-size:18px; flex-shrink:0;">check_circle</span>
+      All projects are marked complete. Ready to archive this client?
+      <button id="archive-now-btn" class="btn btn--sm btn--secondary" style="margin-left:auto; flex-shrink:0;">Archive Now</button>
+    </div>
+
+    <!-- Client header -->
+    <div class="mb-8">
+      <div class="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 id="client-name"
+              class="text-[30px] font-bold text-primary-fixed-dim tracking-tight"
+              style="letter-spacing:-0.02em;"></h1>
+          <div id="client-business" class="text-outline-variant text-[15px] mt-1"></div>
+        </div>
+        <div class="flex items-center gap-2 flex-wrap pt-1">
+          <button id="edit-client-btn"
+                  class="bg-inverse-surface border border-white/10 text-outline-variant hover:text-primary-fixed-dim text-[12px] uppercase tracking-widest px-5 py-2 rounded-full transition-colors">
+            Edit Client
+          </button>
+          <button id="archive-btn"
+                  class="bg-inverse-surface border border-white/10 text-outline-variant hover:text-primary-fixed-dim text-[12px] uppercase tracking-widest px-5 py-2 rounded-full transition-colors">
+            Archive
+          </button>
+        </div>
+      </div>
+      <div class="flex items-center gap-3 mt-3 flex-wrap">
+        <span id="client-status-badge" class="badge"></span>
+        <span id="client-lang-badge"   class="lang-badge"></span>
+        <span id="client-updated"      class="text-outline-variant text-[12px]"></span>
+      </div>
+      <div id="client-quick-actions" class="mt-3"></div>
+    </div>
+
+    <!-- Content grid: main (2/3) + right sidebar (1/3) -->
+    <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+
+      <!-- ── Main column ── -->
+      <div class="xl:col-span-2 flex flex-col gap-6">
+
+        <!-- Progress -->
+        <div class="bg-inverse-surface rounded-lg border border-white/5 p-6">
+          <p class="text-outline-variant text-[11px] uppercase font-semibold tracking-widest mb-4">Progress Overview</p>
+          <div id="progress-counts" class="progress-counts"></div>
+          <div class="progress-bar mt-4">
+            <div id="progress-fill" class="progress-bar__fill" style="width:0%"></div>
+          </div>
+        </div>
+
+        <!-- Projects -->
+        <div class="bg-inverse-surface rounded-lg border border-white/5 p-6">
+          <div class="flex items-center justify-between mb-4">
+            <p class="text-outline-variant text-[11px] uppercase font-semibold tracking-widest">Projects</p>
+            <button id="add-project-btn"
+                    class="flex items-center gap-1.5 bg-primary-container text-white text-[11px] uppercase tracking-widest px-4 py-2 rounded-full hover:opacity-90 transition-opacity">
+              <span class="material-symbols-outlined text-[14px]">add</span>
+              Add Project
+            </button>
+          </div>
+          <div id="projects-list" class="project-list">
+            <div class="loading">Loading…</div>
+          </div>
+        </div>
+
+        <!-- Messages -->
+        <div class="bg-inverse-surface rounded-lg border border-white/5 p-6">
+          <p class="text-outline-variant text-[11px] uppercase font-semibold tracking-widest mb-4">Messages</p>
+          <div id="comments-list" class="comment-list" style="margin-bottom:16px;"></div>
+          <div class="comment-form">
+            <textarea id="comment-input" class="form-control" placeholder="Reply to client…" rows="3"></textarea>
+            <div class="flex justify-end" style="margin-top:8px;">
+              <button id="send-comment-btn" class="btn btn--primary btn--sm">Send</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ── Right column ── -->
+      <div class="xl:col-span-1 flex flex-col gap-6">
+
+        <!-- Contact -->
+        <div class="bg-inverse-surface rounded-lg border border-white/5 p-6">
+          <p class="text-outline-variant text-[11px] uppercase font-semibold tracking-widest mb-4">Contact</p>
+          <div id="contact-block" class="contact-block"></div>
+        </div>
+
+        <!-- Private Notes -->
+        <div class="bg-inverse-surface rounded-lg border border-white/5 p-6">
+          <div class="flex items-center justify-between mb-4">
+            <p class="text-outline-variant text-[11px] uppercase font-semibold tracking-widest">Private Notes</p>
+            <button id="add-note-btn"
+                    class="flex items-center gap-1 text-outline-variant hover:text-primary-fixed-dim text-[11px] uppercase tracking-widest transition-colors px-3 py-1.5 rounded-full border border-white/10">
+              <span class="material-symbols-outlined text-[13px]">add</span>
+              Add
+            </button>
+          </div>
+          <div id="notes-list" class="note-list"></div>
+          <div id="notes-empty" class="text-outline-variant text-[12px] hidden">No notes yet.</div>
+        </div>
+
+        <!-- Internal Links -->
+        <div class="bg-inverse-surface rounded-lg border border-white/5 p-6">
+          <div class="flex items-center justify-between mb-4">
+            <p class="text-outline-variant text-[11px] uppercase font-semibold tracking-widest">Internal Links</p>
+            <button id="add-link-btn"
+                    class="flex items-center gap-1 text-outline-variant hover:text-primary-fixed-dim text-[11px] uppercase tracking-widest transition-colors px-3 py-1.5 rounded-full border border-white/10">
+              <span class="material-symbols-outlined text-[13px]">add</span>
+              Add
+            </button>
+          </div>
+          <div id="links-list" class="links-list"></div>
+          <div id="links-empty" class="text-outline-variant text-[12px] hidden">No links yet.</div>
+        </div>
+
+        <!-- Portal Access -->
+        <div class="bg-inverse-surface rounded-lg border border-white/5 p-6">
+          <p class="text-outline-variant text-[11px] uppercase font-semibold tracking-widest mb-4">Portal Access</p>
+          <div id="portal-access-block"></div>
+        </div>
+
+        <!-- Status History -->
+        <div class="bg-inverse-surface rounded-lg border border-white/5 p-6">
+          <p class="text-outline-variant text-[11px] uppercase font-semibold tracking-widest mb-4">Status History</p>
+          <div id="history-list" class="flex flex-col gap-1.5 text-[12px] text-outline-variant"></div>
+        </div>
+
+      </div>
+    </div><!-- /content grid -->
+
+  </div><!-- /content -->
+</main>
+
+<!-- ====== MODALS ====== -->
+
+<!-- Edit Client Modal -->
+<div id="modal-edit-client" class="modal">
+  <div class="modal__box">
+    <div class="modal__head">
+      <span class="modal__title">Edit Client</span>
+      <button class="modal__close" data-close="modal-edit-client">✕</button>
+    </div>
+    <div class="modal__body">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Contact Name *</label>
+          <input id="ec-name" type="text" class="form-control">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Business Name</label>
+          <input id="ec-business" type="text" class="form-control">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Overall Status</label>
+          <input id="ec-status" type="text" class="form-control">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Language</label>
+          <select id="ec-lang" class="form-control">
+            <option value="en">English</option>
+            <option value="pt">Portuguese</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Phone</label>
+          <input id="ec-phone" type="tel" class="form-control">
+        </div>
+        <div class="form-group">
+          <label class="form-label">WhatsApp</label>
+          <input id="ec-whatsapp" type="tel" class="form-control">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input id="ec-email" type="email" class="form-control">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Website</label>
+          <input id="ec-website" type="url" class="form-control">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Address</label>
+        <input id="ec-address" type="text" class="form-control">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Other Contact Notes</label>
+        <textarea id="ec-contact-notes" class="form-control" rows="2"></textarea>
+      </div>
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn--secondary" data-close="modal-edit-client">Cancel</button>
+      <button id="ec-save-btn" class="btn btn--primary">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add/Edit Project Modal -->
+<div id="modal-project" class="modal">
+  <div class="modal__box" style="max-width:640px;">
+    <div class="modal__head">
+      <span class="modal__title" id="modal-project-title">Add Project</span>
+      <button class="modal__close" data-close="modal-project">✕</button>
+    </div>
+    <div class="modal__body">
+      <div class="form-group">
+        <label class="form-label">Project Title *</label>
+        <input id="proj-title" type="text" class="form-control" placeholder="e.g. Live Website, Automation Flow, Dashboard">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Status</label>
+          <select id="proj-status" class="form-control">
+            <option value="not_started">Not Started</option>
+            <option value="in_progress">In Progress</option>
+            <option value="waiting_on_client">Waiting on Client</option>
+            <option value="v1_done">Version 1 Done</option>
+            <option value="updates_in_progress">Updates in Progress</option>
+            <option value="completed">Completed</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Link Label</label>
+          <select id="proj-link-type" class="form-control">
+            <option value="live_site">Live Site</option>
+            <option value="staging">Staging</option>
+            <option value="test">Test Link</option>
+            <option value="dashboard">Dashboard</option>
+            <option value="automation">Automation Flow</option>
+            <option value="github_repo">GitHub Repo</option>
+            <option value="github_project">GitHub Project</option>
+            <option value="cloudflare">Cloudflare</option>
+            <option value="admin">Admin Page</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">URLs (one per line)</label>
+        <textarea id="proj-urls" class="form-control" rows="3" placeholder="https://...&#10;https://..."></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description (English)</label>
+        <textarea id="proj-desc-en" class="form-control" rows="3" placeholder="Plain-English description of this project…"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description (Portuguese)</label>
+        <textarea id="proj-desc-pt" class="form-control" rows="3" placeholder="Descrição em português…"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Coming Up (English)</label>
+        <textarea id="proj-future-en" class="form-control" rows="3" placeholder="Planned improvements and next features…"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Coming Up (Portuguese)</label>
+        <textarea id="proj-future-pt" class="form-control" rows="3" placeholder="Melhorias e próximas funcionalidades…"></textarea>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Due Date</label>
+          <input id="proj-due" type="date" class="form-control">
+        </div>
+        <div class="form-group" style="justify-content:flex-end; padding-top:20px;">
+          <label class="form-check">
+            <input id="proj-visible" type="checkbox" checked>
+            <span>Visible to client</span>
+          </label>
+        </div>
+      </div>
+    </div>
+    <div class="modal__footer">
+      <button id="proj-delete-btn" class="btn btn--danger btn--sm hidden">Delete Project</button>
+      <button class="btn btn--secondary" data-close="modal-project">Cancel</button>
+      <button id="proj-save-btn" class="btn btn--primary">Save Project</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Note Modal -->
+<div id="modal-note" class="modal">
+  <div class="modal__box" style="max-width:480px;">
+    <div class="modal__head">
+      <span class="modal__title" id="modal-note-title">Add Private Note</span>
+      <button class="modal__close" data-close="modal-note">✕</button>
+    </div>
+    <div class="modal__body">
+      <div class="form-group">
+        <label class="form-label">Note</label>
+        <textarea id="note-content" class="form-control" rows="6" placeholder="Internal note — not visible to client…"></textarea>
+      </div>
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn--secondary" data-close="modal-note">Cancel</button>
+      <button id="note-save-btn" class="btn btn--primary">Save Note</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add/Edit Link Modal -->
+<div id="modal-link" class="modal">
+  <div class="modal__box" style="max-width:480px;">
+    <div class="modal__head">
+      <span class="modal__title" id="modal-link-title">Add Link</span>
+      <button class="modal__close" data-close="modal-link">✕</button>
+    </div>
+    <div class="modal__body">
+      <div class="form-group">
+        <label class="form-label">Label *</label>
+        <input id="link-label" type="text" class="form-control" placeholder="e.g. GitHub Repo, Cloudflare Worker, Live Site">
+      </div>
+      <div class="form-group">
+        <label class="form-label">URL *</label>
+        <input id="link-url" type="url" class="form-control" placeholder="https://…">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Type</label>
+        <select id="link-type" class="form-control">
+          <option value="live_site">Live Site</option>
+          <option value="staging">Staging</option>
+          <option value="test">Test Link</option>
+          <option value="github_repo">GitHub Repo</option>
+          <option value="github_project">GitHub Project</option>
+          <option value="cloudflare">Cloudflare</option>
+          <option value="admin">Admin Page</option>
+          <option value="dashboard">Dashboard</option>
+          <option value="automation">Automation Flow</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <label class="form-check" style="margin-top:4px;">
+        <input id="link-visible" type="checkbox">
+        <span>Show this link to the client</span>
+      </label>
+    </div>
+    <div class="modal__footer">
+      <button id="link-delete-btn" class="btn btn--danger btn--sm hidden">Delete</button>
+      <button class="btn btn--secondary" data-close="modal-link">Cancel</button>
+      <button id="link-save-btn" class="btn btn--primary">Save Link</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Portal Access Modal -->
+<div id="modal-portal-access" class="modal">
+  <div class="modal__box" style="max-width:440px;">
+    <div class="modal__head">
+      <span class="modal__title">Add Portal Access</span>
+      <button class="modal__close" data-close="modal-portal-access">✕</button>
+    </div>
+    <div class="modal__body">
+      <p style="font-size:13px; color:var(--text-2); margin-bottom:16px; line-height:1.6;">
+        First, go to <strong>Firebase Console → Authentication → Add user</strong> and create an account for this client with their email and a temporary password. Then copy the UID shown there and paste it below.
+      </p>
+      <div class="form-group">
+        <label class="form-label">Firebase UID</label>
+        <input id="pa-uid" type="text" class="form-control" placeholder="e.g. abc123xyz…">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input id="pa-email" type="email" class="form-control" placeholder="client@example.com">
+      </div>
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn--secondary" data-close="modal-portal-access">Cancel</button>
+      <button id="pa-save-btn" class="btn btn--primary">Save Access</button>
+    </div>
+  </div>
+</div>
+
+<script type="module" src="js/client-page.js"></script>
+</body>
+</html>

@@ -1,0 +1,721 @@
+// ============================================================
+// Admin client detail page — full view with all edit controls
+// ============================================================
+
+import { requireAuth, signOut } from './auth.js';
+import { api }                   from './api.js';
+import { statusLabel, statusClass, STATUS_OPTIONS } from './t.js';
+import { esc, nl2br, formatDate, formatDateTime, formatDateFull,
+         toast, openModal, closeModal, qp, telLink, waLink, projectCounts } from './utils.js';
+
+let _clientId = null;
+let _data     = null;          // { client, projects, comments, notes, links, linked_user, history }
+let _editingProjectId = null;
+let _editingNoteId    = null;
+let _editingLinkId    = null;
+
+async function init() {
+  const profile = await requireAuth('admin');
+  if (!profile) return;
+
+  _clientId = qp('id');
+  if (!_clientId) { window.location.href = '/dashboard.html'; return; }
+
+  document.getElementById('signout-btn').addEventListener('click', async () => {
+    await signOut(); window.location.href = '/index.html';
+  });
+
+  // Modal close buttons
+  document.querySelectorAll('[data-close]').forEach(btn => {
+    btn.addEventListener('click', () => closeModal(btn.dataset.close));
+  });
+  document.querySelectorAll('.modal').forEach(m => {
+    m.addEventListener('click', e => { if (e.target === m) closeModal(m.id); });
+  });
+
+  // Buttons
+  document.getElementById('edit-client-btn').addEventListener('click', openEditClient);
+  document.getElementById('archive-btn').addEventListener('click', archiveClient);
+  document.getElementById('archive-now-btn')?.addEventListener('click', archiveClient);
+  document.getElementById('add-project-btn').addEventListener('click', openAddProject);
+  document.getElementById('add-note-btn').addEventListener('click',    openAddNote);
+  document.getElementById('add-link-btn').addEventListener('click',    openAddLink);
+  document.getElementById('send-comment-btn').addEventListener('click', sendComment);
+
+  // Save handlers
+  document.getElementById('ec-save-btn').addEventListener('click',    saveClient);
+  document.getElementById('proj-save-btn').addEventListener('click',  saveProject);
+  document.getElementById('proj-delete-btn').addEventListener('click',deleteProject);
+  document.getElementById('note-save-btn').addEventListener('click',  saveNote);
+  document.getElementById('link-save-btn').addEventListener('click',  saveLink);
+  document.getElementById('link-delete-btn').addEventListener('click',deleteLink);
+  document.getElementById('pa-save-btn').addEventListener('click',    savePortalAccess);
+
+  await loadData();
+}
+
+// ---- Data loading ----
+
+async function loadData() {
+  document.getElementById('loading').classList.remove('hidden');
+  document.getElementById('content').classList.add('hidden');
+
+  try {
+    _data = await api.getClient(_clientId);
+    render();
+    document.getElementById('loading').classList.add('hidden');
+    document.getElementById('content').classList.remove('hidden');
+  } catch (err) {
+    document.getElementById('loading').textContent = `Error: ${err.message}`;
+  }
+}
+
+// ---- Main render ----
+
+function render() {
+  const { client, projects, comments, notes, links, linked_user, history } = _data;
+
+  document.title = `${client.name} — Resonate`;
+
+  // Header
+  document.getElementById('client-name').textContent     = client.name;
+  document.getElementById('client-business').textContent = client.business_name || '';
+  document.getElementById('client-business').classList.toggle('hidden', !client.business_name);
+
+  const statusBadge = document.getElementById('client-status-badge');
+  statusBadge.textContent  = client.overall_status;
+  statusBadge.className    = `badge ${statusClass(client.overall_status)}`;
+
+  document.getElementById('client-lang-badge').textContent  = client.language_preference === 'pt' ? 'PT' : 'EN';
+  document.getElementById('client-updated').textContent     = client.updated_at ? `Updated ${formatDate(client.updated_at)}` : '';
+
+  // Quick contact actions in header
+  const qa = document.getElementById('client-quick-actions');
+  qa.innerHTML = '';
+  if (client.phone)    qa.innerHTML += `<a href="${telLink(client.phone)}"   class="btn btn--sm btn-call">📞 Call</a>`;
+  if (client.whatsapp) qa.innerHTML += `<a href="${waLink(client.whatsapp)}" class="btn btn--sm btn-wa"   target="_blank">💬 WhatsApp</a>`;
+  if (client.email)    qa.innerHTML += `<a href="mailto:${esc(client.email)}"class="btn btn--sm btn-email">✉ Email</a>`;
+  if (client.website)  qa.innerHTML += `<a href="${esc(client.website)}"     class="btn btn--sm btn--secondary" target="_blank">🌐 Website</a>`;
+
+  // Archive/restore button label
+  const archiveBtn = document.getElementById('archive-btn');
+  archiveBtn.textContent = client.is_archived ? 'Restore Client' : 'Archive';
+
+  // All-complete banner
+  const allComplete = projects.length > 0 && projects.every(p => p.status === 'completed');
+  document.getElementById('all-complete-banner')?.classList.toggle('hidden', !allComplete || client.is_archived);
+
+  // Contact block
+  renderContact(client);
+
+  // Progress
+  renderProgress(projects);
+
+  // Projects
+  renderProjects(projects);
+
+  // Comments
+  renderComments(comments);
+
+  // Notes
+  renderNotes(notes);
+
+  // Links
+  renderLinks(links);
+
+  // Portal access
+  renderPortalAccess(linked_user, client);
+
+  // History
+  renderHistory(history);
+}
+
+// ---- Contact ----
+
+function renderContact(client) {
+  const el = document.getElementById('contact-block');
+  const row = (label, val, link) => val
+    ? `<div class="contact-row">
+         <span class="contact-row__label">${label}</span>
+         <span class="contact-row__value">${link
+           ? `<a href="${link}" class="contact-row__link" ${link.startsWith('http') ? 'target="_blank"' : ''}>${esc(val)}</a>`
+           : esc(val)}</span>
+       </div>`
+    : '';
+
+  el.innerHTML = `
+    ${row('Phone',    client.phone,    telLink(client.phone))}
+    ${row('WhatsApp', client.whatsapp, waLink(client.whatsapp))}
+    ${row('Email',    client.email,    `mailto:${client.email}`)}
+    ${row('Website',  client.website,  client.website)}
+    ${row('Address',  client.address,  null)}
+    ${row('Notes',    client.contact_notes, null)}
+    <div class="contact-actions" style="margin-top:12px;">
+      ${client.phone    ? `<a href="${telLink(client.phone)}"    class="btn btn--sm btn-call">📞 Call</a>` : ''}
+      ${client.whatsapp ? `<a href="${waLink(client.whatsapp)}"  class="btn btn--sm btn-wa" target="_blank">💬 WhatsApp</a>` : ''}
+      ${client.email    ? `<a href="mailto:${esc(client.email)}" class="btn btn--sm btn-email">✉ Email</a>` : ''}
+    </div>`;
+}
+
+// ---- Progress ----
+
+function renderProgress(projects) {
+  const counts = projectCounts(projects);
+  const pct    = counts.total > 0 ? Math.round((counts.completed / counts.total) * 100) : 0;
+
+  document.getElementById('progress-counts').innerHTML = `
+    <div class="progress-count">
+      <div class="progress-count__number">${counts.total}</div>
+      <div class="progress-count__label">Total</div>
+    </div>
+    <div class="progress-count">
+      <div class="progress-count__number" style="color:var(--s-blue)">${counts.in_progress}</div>
+      <div class="progress-count__label">In Progress</div>
+    </div>
+    <div class="progress-count">
+      <div class="progress-count__number" style="color:var(--s-amber)">${counts.waiting}</div>
+      <div class="progress-count__label">Waiting</div>
+    </div>
+    <div class="progress-count">
+      <div class="progress-count__number" style="color:var(--s-green)">${counts.completed}</div>
+      <div class="progress-count__label">Complete</div>
+    </div>`;
+
+  document.getElementById('progress-fill').style.width = `${pct}%`;
+}
+
+// ---- Projects ----
+
+function renderProjects(projects) {
+  const el = document.getElementById('projects-list');
+
+  if (!projects.length) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-state__text">No projects yet. Add the first one.</div></div>`;
+    return;
+  }
+
+  el.innerHTML = projects.map(p => projectCardHTML(p)).join('');
+
+  // Status dropdowns (inline)
+  el.querySelectorAll('.status-select').forEach(sel => {
+    sel.addEventListener('change', async (e) => {
+      const pid = e.target.dataset.pid;
+      try {
+        const res = await api.updateProject(_clientId, pid, { status: e.target.value });
+        if (res.all_projects_complete) {
+          document.getElementById('all-complete-banner')?.classList.remove('hidden');
+        } else {
+          document.getElementById('all-complete-banner')?.classList.add('hidden');
+        }
+        // Update local data
+        const p = _data.projects.find(p => p.id == pid);
+        if (p) p.status = e.target.value;
+        renderProgress(_data.projects);
+        toast('Status updated.');
+      } catch (err) { toast(err.message, 'error'); }
+    });
+  });
+
+  // Edit buttons
+  el.querySelectorAll('.proj-edit-btn').forEach(btn => {
+    btn.addEventListener('click', () => openEditProject(parseInt(btn.dataset.pid)));
+  });
+}
+
+function projectCardHTML(p) {
+  const urlsArr  = Array.isArray(p.urls) ? p.urls : [];
+  const linkType = p.link_type || 'link';
+  const hidden   = !p.is_client_visible;
+
+  const urlLinks = urlsArr.map(u =>
+    `<a href="${esc(u)}" target="_blank" class="project-link">${esc(linkType)} ↗</a>`
+  ).join('');
+
+  const dueLine = p.due_date
+    ? `<span>Due ${formatDateFull(p.due_date)}</span>`
+    : '';
+
+  const visibilityBadge = hidden
+    ? `<span class="badge status--gray" style="font-size:10px;">Admin only</span>`
+    : `<span class="badge status--green" style="font-size:10px;">Client visible</span>`;
+
+  return `
+    <div class="project-card ${hidden ? 'project-card--hidden' : ''}">
+      <div class="project-card__head">
+        <span class="project-card__title">${esc(p.title)}</span>
+        <div class="project-card__actions">
+          <select class="status-select" data-pid="${p.id}" title="Change status">
+            ${STATUS_OPTIONS.map(s =>
+              `<option value="${s.value}" ${p.status === s.value ? 'selected' : ''}>${statusLabel(s.value)}</option>`
+            ).join('')}
+          </select>
+          <button class="btn btn--ghost btn--sm btn--icon proj-edit-btn" data-pid="${p.id}" title="Edit">✎</button>
+        </div>
+      </div>
+
+      ${p.description_en ? `<div class="project-card__body">${nl2br(p.description_en)}</div>` : ''}
+
+      ${urlLinks ? `<div class="project-card__links">${urlLinks}</div>` : ''}
+
+      ${p.future_features_en ? `
+        <div style="margin-top:10px; padding-top:10px; border-top:1px solid var(--border);">
+          <div style="font-size:11px; font-weight:600; color:var(--text-3); text-transform:uppercase; letter-spacing:.05em; margin-bottom:6px;">Coming Up</div>
+          <div class="future-block">${nl2br(p.future_features_en)}</div>
+        </div>` : ''}
+
+      <div class="project-card__footer">
+        ${visibilityBadge}
+        ${dueLine}
+        <span style="margin-left:auto; color:var(--text-3);">Updated ${formatDate(p.updated_at)}</span>
+      </div>
+    </div>`;
+}
+
+// ---- Comments ----
+
+function renderComments(comments) {
+  const el = document.getElementById('comments-list');
+  if (!comments.length) {
+    el.innerHTML = `<div class="text-muted text-sm">No messages yet.</div>`;
+    return;
+  }
+
+  el.innerHTML = comments.map(c => `
+    <div class="comment comment--${c.author_role}">
+      <div class="comment__avatar">${c.author_role === 'admin' ? 'R' : (c.author_name?.[0] || 'C').toUpperCase()}</div>
+      <div class="comment__content">
+        <div class="comment__bubble">${nl2br(c.content)}</div>
+        <div class="comment__meta">
+          <strong>${esc(c.author_role === 'admin' ? 'Resonate' : (c.author_name || 'Client'))}</strong>
+          <span>·</span>
+          <span>${formatDateTime(c.created_at)}</span>
+          <button class="btn btn--ghost btn--sm" style="font-size:11px; padding:2px 6px;"
+            data-comment-id="${c.id}" onclick="window.__deleteComment(${c.id})">Delete</button>
+        </div>
+      </div>
+    </div>`).join('');
+
+  // Expose delete function
+  window.__deleteComment = async (id) => {
+    if (!confirm('Delete this message?')) return;
+    try {
+      await api.deleteComment(_clientId, id);
+      _data.comments = _data.comments.filter(c => c.id !== id);
+      renderComments(_data.comments);
+      toast('Message deleted.');
+    } catch (err) { toast(err.message, 'error'); }
+  };
+}
+
+async function sendComment() {
+  const input = document.getElementById('comment-input');
+  const text  = input.value.trim();
+  if (!text) return;
+
+  const btn = document.getElementById('send-comment-btn');
+  btn.disabled = true;
+
+  try {
+    const comment = await api.addComment(_clientId, { content: text });
+    _data.comments.push(comment);
+    renderComments(_data.comments);
+    input.value = '';
+    toast('Message sent.');
+  } catch (err) { toast(err.message, 'error'); }
+  finally { btn.disabled = false; }
+}
+
+// ---- Notes ----
+
+function renderNotes(notes) {
+  const el    = document.getElementById('notes-list');
+  const empty = document.getElementById('notes-empty');
+  if (!notes.length) {
+    el.innerHTML = '';
+    empty.classList.remove('hidden');
+    return;
+  }
+  empty.classList.add('hidden');
+
+  el.innerHTML = notes.map(n => `
+    <div class="note" data-note-id="${n.id}">
+      <div class="note__content">${nl2br(n.content)}</div>
+      <div class="note__meta">
+        ${formatDateTime(n.created_at)}
+        <button class="btn btn--ghost btn--sm" style="font-size:11px; padding:2px 6px;"
+          onclick="window.__editNote(${n.id})">Edit</button>
+        <button class="btn btn--ghost btn--sm" style="font-size:11px; padding:2px 6px; color:var(--s-amber);"
+          onclick="window.__deleteNote(${n.id})">Delete</button>
+      </div>
+    </div>`).join('');
+
+  window.__editNote = (id) => {
+    const note = _data.notes.find(n => n.id === id);
+    if (!note) return;
+    _editingNoteId = id;
+    document.getElementById('note-content').value = note.content;
+    document.getElementById('modal-note-title').textContent = 'Edit Note';
+    openModal('modal-note');
+  };
+
+  window.__deleteNote = async (id) => {
+    if (!confirm('Delete this note?')) return;
+    try {
+      await api.deleteNote(_clientId, id);
+      _data.notes = _data.notes.filter(n => n.id !== id);
+      renderNotes(_data.notes);
+      toast('Note deleted.');
+    } catch (err) { toast(err.message, 'error'); }
+  };
+}
+
+function openAddNote() {
+  _editingNoteId = null;
+  document.getElementById('note-content').value = '';
+  document.getElementById('modal-note-title').textContent = 'Add Private Note';
+  openModal('modal-note');
+}
+
+async function saveNote() {
+  const content = document.getElementById('note-content').value.trim();
+  if (!content) { toast('Note cannot be empty.', 'error'); return; }
+
+  const btn = document.getElementById('note-save-btn');
+  btn.disabled = true;
+  btn.textContent = 'Saving…';
+
+  try {
+    if (_editingNoteId) {
+      const note = await api.updateNote(_clientId, _editingNoteId, { content });
+      const idx  = _data.notes.findIndex(n => n.id === _editingNoteId);
+      if (idx >= 0) _data.notes[idx] = note;
+    } else {
+      const note = await api.addNote(_clientId, { content });
+      _data.notes.unshift(note);
+    }
+    renderNotes(_data.notes);
+    closeModal('modal-note');
+    toast('Note saved.');
+  } catch (err) { toast(err.message, 'error'); }
+  finally { btn.disabled = false; btn.textContent = 'Save Note'; }
+}
+
+// ---- Links ----
+
+function renderLinks(links) {
+  const el    = document.getElementById('links-list');
+  const empty = document.getElementById('links-empty');
+  if (!links.length) {
+    el.innerHTML = '';
+    empty.classList.remove('hidden');
+    return;
+  }
+  empty.classList.add('hidden');
+
+  el.innerHTML = links.map(l => `
+    <div class="resource-link">
+      <span class="resource-link__label">${esc(l.label)}</span>
+      <a href="${esc(l.url)}" target="_blank" class="resource-link__url" title="${esc(l.url)}">Open ↗</a>
+      ${l.is_client_visible ? `<span class="resource-link__badge">Client visible</span>` : ''}
+      <button class="btn btn--ghost btn--sm btn--icon" style="margin-left:4px;"
+        onclick="window.__editLink(${l.id})" title="Edit">✎</button>
+    </div>`).join('');
+
+  window.__editLink = (id) => {
+    const link = _data.links.find(l => l.id === id);
+    if (!link) return;
+    _editingLinkId = id;
+    document.getElementById('link-label').value   = link.label;
+    document.getElementById('link-url').value     = link.url;
+    document.getElementById('link-type').value    = link.link_type;
+    document.getElementById('link-visible').checked = !!link.is_client_visible;
+    document.getElementById('link-delete-btn').classList.remove('hidden');
+    document.getElementById('modal-link-title').textContent = 'Edit Link';
+    openModal('modal-link');
+  };
+}
+
+function openAddLink() {
+  _editingLinkId = null;
+  document.getElementById('link-label').value    = '';
+  document.getElementById('link-url').value      = '';
+  document.getElementById('link-type').value     = 'other';
+  document.getElementById('link-visible').checked = false;
+  document.getElementById('link-delete-btn').classList.add('hidden');
+  document.getElementById('modal-link-title').textContent = 'Add Link';
+  openModal('modal-link');
+}
+
+async function saveLink() {
+  const label   = document.getElementById('link-label').value.trim();
+  const url     = document.getElementById('link-url').value.trim();
+  const type    = document.getElementById('link-type').value;
+  const visible = document.getElementById('link-visible').checked;
+  if (!label || !url) { toast('Label and URL are required.', 'error'); return; }
+
+  const btn = document.getElementById('link-save-btn');
+  btn.disabled = true; btn.textContent = 'Saving…';
+
+  try {
+    if (_editingLinkId) {
+      const link = await api.updateLink(_clientId, _editingLinkId, { label, url, link_type: type, is_client_visible: visible });
+      const idx  = _data.links.findIndex(l => l.id === _editingLinkId);
+      if (idx >= 0) _data.links[idx] = link;
+    } else {
+      const link = await api.addLink(_clientId, { label, url, link_type: type, is_client_visible: visible });
+      _data.links.push(link);
+    }
+    renderLinks(_data.links);
+    closeModal('modal-link');
+    toast('Link saved.');
+  } catch (err) { toast(err.message, 'error'); }
+  finally { btn.disabled = false; btn.textContent = 'Save Link'; }
+}
+
+async function deleteLink() {
+  if (!confirm('Delete this link?')) return;
+  try {
+    await api.deleteLink(_clientId, _editingLinkId);
+    _data.links = _data.links.filter(l => l.id !== _editingLinkId);
+    renderLinks(_data.links);
+    closeModal('modal-link');
+    toast('Link deleted.');
+  } catch (err) { toast(err.message, 'error'); }
+}
+
+// ---- Projects CRUD ----
+
+function openAddProject() {
+  _editingProjectId = null;
+  clearProjectForm();
+  document.getElementById('modal-project-title').textContent = 'Add Project';
+  document.getElementById('proj-delete-btn').classList.add('hidden');
+  openModal('modal-project');
+}
+
+function openEditProject(id) {
+  const p = _data.projects.find(p => p.id === id);
+  if (!p) return;
+  _editingProjectId = id;
+
+  document.getElementById('proj-title').value     = p.title       || '';
+  document.getElementById('proj-status').value    = p.status      || 'not_started';
+  document.getElementById('proj-link-type').value = p.link_type   || 'live_site';
+  document.getElementById('proj-urls').value      = (Array.isArray(p.urls) ? p.urls : []).join('\n');
+  document.getElementById('proj-desc-en').value   = p.description_en     || '';
+  document.getElementById('proj-desc-pt').value   = p.description_pt     || '';
+  document.getElementById('proj-future-en').value = p.future_features_en || '';
+  document.getElementById('proj-future-pt').value = p.future_features_pt || '';
+  document.getElementById('proj-due').value       = p.due_date    || '';
+  document.getElementById('proj-visible').checked = !!p.is_client_visible;
+
+  document.getElementById('modal-project-title').textContent = 'Edit Project';
+  document.getElementById('proj-delete-btn').classList.remove('hidden');
+  openModal('modal-project');
+}
+
+function clearProjectForm() {
+  ['proj-title','proj-urls','proj-desc-en','proj-desc-pt','proj-future-en','proj-future-pt','proj-due']
+    .forEach(id => { document.getElementById(id).value = ''; });
+  document.getElementById('proj-status').value    = 'not_started';
+  document.getElementById('proj-link-type').value = 'live_site';
+  document.getElementById('proj-visible').checked = true;
+}
+
+async function saveProject() {
+  const title = document.getElementById('proj-title').value.trim();
+  if (!title) { toast('Project title is required.', 'error'); return; }
+
+  const rawUrls = document.getElementById('proj-urls').value.trim();
+  const urls    = rawUrls ? rawUrls.split('\n').map(u => u.trim()).filter(Boolean) : [];
+
+  const data = {
+    title,
+    status:               document.getElementById('proj-status').value,
+    link_type:            document.getElementById('proj-link-type').value,
+    urls,
+    description_en:       document.getElementById('proj-desc-en').value.trim()   || null,
+    description_pt:       document.getElementById('proj-desc-pt').value.trim()   || null,
+    future_features_en:   document.getElementById('proj-future-en').value.trim() || null,
+    future_features_pt:   document.getElementById('proj-future-pt').value.trim() || null,
+    due_date:             document.getElementById('proj-due').value               || null,
+    is_client_visible:    document.getElementById('proj-visible').checked,
+  };
+
+  const btn = document.getElementById('proj-save-btn');
+  btn.disabled = true; btn.textContent = 'Saving…';
+
+  try {
+    if (_editingProjectId) {
+      const res = await api.updateProject(_clientId, _editingProjectId, data);
+      const idx = _data.projects.findIndex(p => p.id === _editingProjectId);
+      if (idx >= 0) _data.projects[idx] = res.project;
+      if (res.all_projects_complete) {
+        document.getElementById('all-complete-banner')?.classList.remove('hidden');
+      }
+    } else {
+      const project = await api.createProject(_clientId, data);
+      _data.projects.push(project);
+      document.getElementById('all-complete-banner')?.classList.add('hidden');
+    }
+
+    renderProgress(_data.projects);
+    renderProjects(_data.projects);
+    closeModal('modal-project');
+    toast('Project saved.');
+  } catch (err) { toast(err.message, 'error'); }
+  finally { btn.disabled = false; btn.textContent = 'Save Project'; }
+}
+
+async function deleteProject() {
+  if (!confirm('Delete this project? This cannot be undone.')) return;
+  try {
+    await api.deleteProject(_clientId, _editingProjectId);
+    _data.projects = _data.projects.filter(p => p.id !== _editingProjectId);
+    renderProgress(_data.projects);
+    renderProjects(_data.projects);
+    closeModal('modal-project');
+    toast('Project deleted.');
+  } catch (err) { toast(err.message, 'error'); }
+}
+
+// ---- Edit client ----
+
+function openEditClient() {
+  const c = _data.client;
+  document.getElementById('ec-name').value          = c.name             || '';
+  document.getElementById('ec-business').value      = c.business_name    || '';
+  document.getElementById('ec-status').value        = c.overall_status   || '';
+  document.getElementById('ec-lang').value          = c.language_preference || 'en';
+  document.getElementById('ec-phone').value         = c.phone            || '';
+  document.getElementById('ec-whatsapp').value      = c.whatsapp         || '';
+  document.getElementById('ec-email').value         = c.email            || '';
+  document.getElementById('ec-website').value       = c.website          || '';
+  document.getElementById('ec-address').value       = c.address          || '';
+  document.getElementById('ec-contact-notes').value = c.contact_notes    || '';
+  openModal('modal-edit-client');
+}
+
+async function saveClient() {
+  const data = {
+    name:                document.getElementById('ec-name').value.trim(),
+    business_name:       document.getElementById('ec-business').value.trim()      || null,
+    overall_status:      document.getElementById('ec-status').value.trim()        || 'active',
+    language_preference: document.getElementById('ec-lang').value,
+    phone:               document.getElementById('ec-phone').value.trim()         || null,
+    whatsapp:            document.getElementById('ec-whatsapp').value.trim()      || null,
+    email:               document.getElementById('ec-email').value.trim()         || null,
+    website:             document.getElementById('ec-website').value.trim()       || null,
+    address:             document.getElementById('ec-address').value.trim()       || null,
+    contact_notes:       document.getElementById('ec-contact-notes').value.trim() || null,
+  };
+  if (!data.name) { toast('Name is required.', 'error'); return; }
+
+  const btn = document.getElementById('ec-save-btn');
+  btn.disabled = true; btn.textContent = 'Saving…';
+
+  try {
+    const updated = await api.updateClient(_clientId, data);
+    _data.client = updated;
+    render();
+    closeModal('modal-edit-client');
+    toast('Client updated.');
+  } catch (err) { toast(err.message, 'error'); }
+  finally { btn.disabled = false; btn.textContent = 'Save Changes'; }
+}
+
+// ---- Archive ----
+
+async function archiveClient() {
+  const isArchived = _data.client.is_archived;
+  const msg = isArchived
+    ? 'Restore this client to active?'
+    : 'Archive this client? They move to the Archive tab. All data is preserved.';
+  if (!confirm(msg)) return;
+
+  try {
+    if (isArchived) {
+      await api.restoreClient(_clientId);
+      toast('Client restored.');
+    } else {
+      await api.archiveClient(_clientId);
+      toast('Client archived.');
+      setTimeout(() => { window.location.href = '/dashboard.html'; }, 1000);
+      return;
+    }
+    await loadData();
+  } catch (err) { toast(err.message, 'error'); }
+}
+
+// ---- Portal access ----
+
+function renderPortalAccess(linkedUser, client) {
+  const el = document.getElementById('portal-access-block');
+  if (linkedUser) {
+    el.innerHTML = `
+      <div style="font-size:13px; color:var(--text-2); margin-bottom:8px;">
+        <strong>${esc(linkedUser.email)}</strong><br>
+        <span style="font-size:11px; color:var(--text-3); font-family:var(--mono);">UID: ${esc(linkedUser.firebase_uid)}</span>
+      </div>
+      <button class="btn btn--danger btn--sm" onclick="window.__removePortalAccess('${linkedUser.firebase_uid}')">Remove Access</button>`;
+
+    window.__removePortalAccess = async (uid) => {
+      if (!confirm('Remove portal access for this client?')) return;
+      try {
+        await api.deleteUser(uid);
+        _data.linked_user = null;
+        renderPortalAccess(null, client);
+        toast('Portal access removed.');
+      } catch (err) { toast(err.message, 'error'); }
+    };
+  } else {
+    el.innerHTML = `
+      <div style="font-size:13px; color:var(--text-3); margin-bottom:8px;">No portal login configured.</div>
+      <button class="btn btn--secondary btn--sm" id="add-access-btn">Add Portal Access</button>`;
+    document.getElementById('add-access-btn').addEventListener('click', () => {
+      document.getElementById('pa-email').value = _data.client.email || '';
+      openModal('modal-portal-access');
+    });
+  }
+}
+
+async function savePortalAccess() {
+  const uid   = document.getElementById('pa-uid').value.trim();
+  const email = document.getElementById('pa-email').value.trim();
+  if (!uid || !email) { toast('UID and email are required.', 'error'); return; }
+
+  const btn = document.getElementById('pa-save-btn');
+  btn.disabled = true; btn.textContent = 'Saving…';
+
+  try {
+    await api.upsertUser({
+      firebase_uid:        uid,
+      email,
+      role:                'client',
+      client_id:           parseInt(_clientId),
+      language_preference: _data.client.language_preference || 'en',
+    });
+    await loadData();
+    closeModal('modal-portal-access');
+    toast('Portal access added.');
+  } catch (err) { toast(err.message, 'error'); }
+  finally { btn.disabled = false; btn.textContent = 'Save Access'; }
+}
+
+// ---- Status history ----
+
+function renderHistory(history) {
+  const el = document.getElementById('history-list');
+  if (!history?.length) {
+    el.innerHTML = '<span class="text-muted">No status changes recorded.</span>';
+    return;
+  }
+  el.innerHTML = history.slice(0, 10).map(h => `
+    <div>
+      <span style="color:var(--text-2);">${h.entity_type === 'project' ? '◈ Project' : '◉ Client'}</span>
+      <span>${esc(h.old_status)} → <strong>${esc(h.new_status)}</strong></span><br>
+      <span>${formatDateTime(h.created_at)}</span>
+    </div>`).join('');
+}
+
+init();

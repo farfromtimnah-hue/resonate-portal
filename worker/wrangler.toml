@@ -1,0 +1,37 @@
+# ============================================================
+# Cloudflare Worker — Resonate Business Systems Client Portal API
+# Deploy with: wrangler deploy (from inside the worker/ directory)
+# ============================================================
+
+name            = "resonate-portal-api"
+main            = "src/index.js"
+compatibility_date = "2024-09-23"
+
+# ----------------------------------------------------------
+# D1 Database binding
+# After creating your D1 database, paste the database_id below.
+# Run: wrangler d1 create resonate-portal-db   → copy the id shown
+# ----------------------------------------------------------
+[[d1_databases]]
+binding      = "DB"
+database_name = "resonate-portal-db"
+database_id  = "YOUR_D1_DATABASE_ID"     # ← REPLACE THIS
+
+# ----------------------------------------------------------
+# Environment variables (not secrets — these are fine in plain text)
+# ----------------------------------------------------------
+[vars]
+# Your Firebase project ID — found at Firebase Console > Project Settings
+FIREBASE_PROJECT_ID = "your-firebase-project-id"   # ← REPLACE THIS
+
+# Your GitHub Pages URL (used to restrict CORS in production)
+# During development you can leave this as *
+# In production: "https://YOURUSERNAME.github.io"
+CORS_ORIGIN = "*"                                    # ← UPDATE FOR PRODUCTION
+
+# ----------------------------------------------------------
+# Routes (optional — only needed if you want a custom domain)
+# ----------------------------------------------------------
+# [[routes]]
+# pattern = "api.yourdomain.com/*"
+# zone_name = "yourdomain.com"
