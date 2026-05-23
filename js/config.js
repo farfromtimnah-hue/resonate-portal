@@ -1,19 +1,14 @@
 // ============================================================
-// CONFIGURATION — fill in your own values before deploying
+// CONFIGURATION
 // ============================================================
 
-// Firebase Web App config
-// Where to find it: Firebase Console → Project Settings → Your Apps → Web App → SDK setup
 export const FIREBASE_CONFIG = {
-  apiKey:            "YOUR_API_KEY",             // ← REPLACE
-  authDomain:        "YOUR_PROJECT_ID.firebaseapp.com", // ← REPLACE
-  projectId:         "YOUR_PROJECT_ID",          // ← REPLACE
-  storageBucket:     "YOUR_PROJECT_ID.appspot.com",    // ← REPLACE
-  messagingSenderId: "YOUR_SENDER_ID",           // ← REPLACE
-  appId:             "YOUR_APP_ID"               // ← REPLACE
+  apiKey:            "AIzaSyA3YWrys408IlbeViOyzgKDmOlfauM7N30",
+  authDomain:        "resonate-portal.firebaseapp.com",
+  projectId:         "resonate-portal",
+  storageBucket:     "resonate-portal.firebasestorage.app",
+  messagingSenderId: "328078804214",
+  appId:             "1:328078804214:web:2864592777de63af9618d7"
 };
 
-// Your Cloudflare Worker URL
-// Where to find it: after running `wrangler deploy` in the worker/ directory
-// Example: "https://resonate-portal-api.yourname.workers.dev"
-export const API_BASE = "https://your-worker.your-subdomain.workers.dev"; // ← REPLACE
+export const API_BASE = "https://resonate-portal-api.farfromtimnah.workers.dev";

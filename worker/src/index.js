@@ -22,6 +22,12 @@ export default {
         return jsonResponse({ status: 'ok' }, 200, env);
       }
 
+      // POST /api/login — verify Firebase token, return user role (convenience endpoint)
+      if (method === 'POST' && path === '/api/login') {
+        const user = await authenticate(request, env);
+        return jsonResponse(user, 200, env);
+      }
+
       // All other routes require a valid Firebase token
       const user = await authenticate(request, env);
 
@@ -148,6 +154,22 @@ async function router(request, env, user, url, method, path) {
     if (method === 'DELETE') { requireAdmin(user); return handleDeleteLink(params.id, params.lid, env); }
   }
 
+  // ---- INTAKE RESPONSES ----
+  if (method === 'POST' && path === '/api/intake') {
+    return handleSaveIntake(request, env, user);
+  }
+
+  params = match('/api/intake/:client_id', path);
+  if (params && method === 'GET') {
+    return handleGetIntake(params.client_id, env, user);
+  }
+
+  // ---- LOGO UPLOAD ----
+  if (method === 'POST' && path === '/api/upload-logo') {
+    requireAdmin(user);
+    return handleUploadLogo(request, env);
+  }
+
   return jsonResponse({ error: 'Not found' }, 404, env);
 }
 
@@ -170,20 +192,23 @@ async function handleListUsers(env) {
 
 async function handleUpsertUser(request, env) {
   const body = await request.json();
-  const { firebase_uid, email, role, client_id, language_preference } = body;
+  const { firebase_uid, email, role, client_id, language_preference, first_name, last_name } = body;
   if (!firebase_uid || !email || !role) throw new ApiError('firebase_uid, email, role required', 400);
   if (!['admin', 'client'].includes(role)) throw new ApiError('role must be admin or client', 400);
 
   await env.DB.prepare(`
-    INSERT INTO users (firebase_uid, email, role, client_id, language_preference, updated_at)
-    VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+    INSERT INTO users (firebase_uid, email, role, client_id, language_preference, first_name, last_name, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
     ON CONFLICT(firebase_uid) DO UPDATE SET
-      email = excluded.email,
-      role = excluded.role,
-      client_id = excluded.client_id,
+      email               = excluded.email,
+      role                = excluded.role,
+      client_id           = excluded.client_id,
       language_preference = excluded.language_preference,
-      updated_at = CURRENT_TIMESTAMP
-  `).bind(firebase_uid, email, role, client_id ?? null, language_preference ?? 'en').run();
+      first_name          = excluded.first_name,
+      last_name           = excluded.last_name,
+      updated_at          = CURRENT_TIMESTAMP
+  `).bind(firebase_uid, email, role, client_id ?? null, language_preference ?? 'en',
+          first_name ?? null, last_name ?? null).run();
 
   const user = await env.DB.prepare('SELECT * FROM users WHERE firebase_uid = ?').bind(firebase_uid).first();
   return jsonResponse(user, 200, env);
@@ -235,15 +260,32 @@ async function handleListClients(env, url) {
 async function handleCreateClient(request, env, user) {
   const body = await request.json();
   const {
-    name, business_name, overall_status = 'active', language_preference = 'en',
+    name, business_name, business_display_name, legal_name,
+    overall_status = 'active', language_preference = 'en',
+    brand_color_primary, brand_color_secondary,
     phone, whatsapp, email, website, address, contact_notes
   } = body;
-  if (!name) throw new ApiError('name is required', 400);
+  if (!name && !business_display_name) throw new ApiError('name or business_display_name is required', 400);
+
+  const displayName = business_display_name || business_name || name || '';
+  const contactName = name || displayName;
 
   const result = await env.DB.prepare(`
-    INSERT INTO clients (name, business_name, overall_status, language_preference, phone, whatsapp, email, website, address, contact_notes)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `).bind(name, business_name ?? null, overall_status, language_preference, phone ?? null, whatsapp ?? null, email ?? null, website ?? null, address ?? null, contact_notes ?? null).run();
+    INSERT INTO clients (
+      name, business_name,
+      business_display_name, legal_name,
+      brand_color_primary, brand_color_secondary,
+      overall_status, language_preference,
+      phone, whatsapp, email, website, address, contact_notes
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(
+    contactName, displayName,
+    displayName, legal_name ?? null,
+    brand_color_primary ?? null, brand_color_secondary ?? null,
+    overall_status, language_preference,
+    phone ?? null, whatsapp ?? null, email ?? null,
+    website ?? null, address ?? null, contact_notes ?? null
+  ).run();
 
   const client = await env.DB.prepare('SELECT * FROM clients WHERE id = ?').bind(result.meta.last_row_id).first();
   return jsonResponse(client, 201, env);
@@ -334,42 +376,54 @@ async function handleUpdateClient(id, request, env, user) {
 
   const body = await request.json();
   const {
-    name, business_name, overall_status, language_preference,
+    name, business_name, business_display_name, legal_name,
+    overall_status, language_preference,
+    brand_color_primary, brand_color_secondary, intake_complete,
     phone, whatsapp, email, website, address, contact_notes
   } = body;
 
   // Track status change
   if (overall_status && overall_status !== client.overall_status) {
     await env.DB.prepare(
-      'INSERT INTO status_history (entity_type, client_id, old_status, new_status, changed_by_uid) VALUES (?, ?, ?, ?, ?)'
+      'INSERT INTO status_history (entity_type, client_id, old_status, new_status, changed_by) VALUES (?, ?, ?, ?, ?)'
     ).bind('client', id, client.overall_status, overall_status, user.uid).run();
   }
 
   await env.DB.prepare(`
     UPDATE clients SET
-      name = ?,
-      business_name = ?,
-      overall_status = ?,
-      language_preference = ?,
-      phone = ?,
-      whatsapp = ?,
-      email = ?,
-      website = ?,
-      address = ?,
-      contact_notes = ?,
-      updated_at = CURRENT_TIMESTAMP
+      name                  = ?,
+      business_name         = ?,
+      business_display_name = ?,
+      legal_name            = ?,
+      overall_status        = ?,
+      language_preference   = ?,
+      brand_color_primary   = ?,
+      brand_color_secondary = ?,
+      intake_complete       = ?,
+      phone                 = ?,
+      whatsapp              = ?,
+      email                 = ?,
+      website               = ?,
+      address               = ?,
+      contact_notes         = ?,
+      updated_at            = CURRENT_TIMESTAMP
     WHERE id = ?
   `).bind(
-    name ?? client.name,
-    business_name ?? client.business_name,
-    overall_status ?? client.overall_status,
+    name                ?? client.name,
+    business_name       ?? client.business_name,
+    business_display_name ?? client.business_display_name,
+    legal_name          ?? client.legal_name,
+    overall_status      ?? client.overall_status,
     language_preference ?? client.language_preference,
-    phone ?? client.phone,
-    whatsapp ?? client.whatsapp,
-    email ?? client.email,
-    website ?? client.website,
-    address ?? client.address,
-    contact_notes ?? client.contact_notes,
+    brand_color_primary   !== undefined ? brand_color_primary   : client.brand_color_primary,
+    brand_color_secondary !== undefined ? brand_color_secondary : client.brand_color_secondary,
+    intake_complete     !== undefined ? (intake_complete ? 1 : 0) : client.intake_complete,
+    phone               ?? client.phone,
+    whatsapp            ?? client.whatsapp,
+    email               ?? client.email,
+    website             ?? client.website,
+    address             ?? client.address,
+    contact_notes       ?? client.contact_notes,
     id
   ).run();
 
@@ -420,22 +474,31 @@ async function handleCreateProject(clientId, request, env) {
 
   const body = await request.json();
   const {
-    title, description_en, description_pt, future_features_en, future_features_pt,
+    title, title_en, title_pt,
+    description_en, description_pt, future_features_en, future_features_pt,
     status = 'not_started', link_type = 'live_site', urls = [], due_date,
+    hours_before, hours_after,
     is_client_visible = 1, sort_order = 0
   } = body;
-  if (!title) throw new ApiError('title is required', 400);
+
+  const resolvedTitle   = title    || title_en || '';
+  const resolvedTitleEn = title_en || title    || '';
+  if (!resolvedTitle) throw new ApiError('title or title_en is required', 400);
 
   const result = await env.DB.prepare(`
     INSERT INTO client_projects
-      (client_id, title, description_en, description_pt, future_features_en, future_features_pt,
-       status, link_type, urls, due_date, is_client_visible, sort_order)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      (client_id, title, title_en, title_pt,
+       description_en, description_pt, future_features_en, future_features_pt,
+       status, link_type, urls, due_date,
+       hours_before, hours_after,
+       is_client_visible, sort_order)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).bind(
-    clientId, title,
+    clientId, resolvedTitle, resolvedTitleEn, title_pt ?? null,
     description_en ?? null, description_pt ?? null,
     future_features_en ?? null, future_features_pt ?? null,
     status, link_type, JSON.stringify(urls), due_date ?? null,
+    hours_before ?? null, hours_after ?? null,
     is_client_visible ? 1 : 0, sort_order
   ).run();
 
@@ -453,35 +516,56 @@ async function handleUpdateProject(clientId, projectId, request, env, user) {
 
   const body = await request.json();
   const {
-    title, description_en, description_pt, future_features_en, future_features_pt,
-    status, link_type, urls, due_date, is_client_visible, sort_order
+    title, title_en, title_pt,
+    description_en, description_pt, future_features_en, future_features_pt,
+    status, link_type, urls, due_date,
+    hours_before, hours_after,
+    is_client_visible, sort_order
   } = body;
 
   // Track status change
   if (status && status !== project.status) {
     await env.DB.prepare(
-      'INSERT INTO status_history (entity_type, client_id, project_id, old_status, new_status, changed_by_uid) VALUES (?, ?, ?, ?, ?, ?)'
+      'INSERT INTO status_history (entity_type, client_id, project_id, old_status, new_status, changed_by) VALUES (?, ?, ?, ?, ?, ?)'
     ).bind('project', clientId, projectId, project.status, status, user.uid).run();
   }
 
+  const resolvedTitle   = title    ?? title_en ?? project.title;
+  const resolvedTitleEn = title_en ?? title    ?? project.title_en;
+
   await env.DB.prepare(`
     UPDATE client_projects SET
-      title = ?, description_en = ?, description_pt = ?,
-      future_features_en = ?, future_features_pt = ?,
-      status = ?, link_type = ?, urls = ?, due_date = ?,
-      is_client_visible = ?, sort_order = ?,
-      updated_at = CURRENT_TIMESTAMP
+      title              = ?,
+      title_en           = ?,
+      title_pt           = ?,
+      description_en     = ?,
+      description_pt     = ?,
+      future_features_en = ?,
+      future_features_pt = ?,
+      status             = ?,
+      link_type          = ?,
+      urls               = ?,
+      due_date           = ?,
+      hours_before       = ?,
+      hours_after        = ?,
+      is_client_visible  = ?,
+      sort_order         = ?,
+      updated_at         = CURRENT_TIMESTAMP
     WHERE id = ? AND client_id = ?
   `).bind(
-    title ?? project.title,
-    description_en !== undefined ? description_en : project.description_en,
-    description_pt !== undefined ? description_pt : project.description_pt,
+    resolvedTitle,
+    resolvedTitleEn,
+    title_pt          !== undefined ? title_pt          : project.title_pt,
+    description_en    !== undefined ? description_en    : project.description_en,
+    description_pt    !== undefined ? description_pt    : project.description_pt,
     future_features_en !== undefined ? future_features_en : project.future_features_en,
     future_features_pt !== undefined ? future_features_pt : project.future_features_pt,
-    status ?? project.status,
+    status    ?? project.status,
     link_type ?? project.link_type,
-    urls !== undefined ? JSON.stringify(urls) : project.urls,
-    due_date !== undefined ? due_date : project.due_date,
+    urls      !== undefined ? JSON.stringify(urls) : project.urls,
+    due_date  !== undefined ? due_date  : project.due_date,
+    hours_before !== undefined ? hours_before : project.hours_before,
+    hours_after  !== undefined ? hours_after  : project.hours_after,
     is_client_visible !== undefined ? (is_client_visible ? 1 : 0) : project.is_client_visible,
     sort_order !== undefined ? sort_order : project.sort_order,
     projectId, clientId
@@ -528,14 +612,26 @@ async function handleAddComment(clientId, request, env, user) {
   }
 
   const body = await request.json();
-  const { content, parent_comment_id } = body;
-  if (!content?.trim()) throw new ApiError('content is required', 400);
+  const { content, body_en, body_pt, project_id, parent_comment_id } = body;
+  const resolvedContent = content || body_en || '';
+  if (!resolvedContent.trim()) throw new ApiError('content or body_en is required', 400);
 
   const authorName = user.role === 'admin' ? 'Resonate' : (body.author_name || 'Client');
 
   const result = await env.DB.prepare(
-    'INSERT INTO client_comments (client_id, author_role, author_name, content, parent_comment_id) VALUES (?, ?, ?, ?, ?)'
-  ).bind(clientId, user.role, authorName, content.trim(), parent_comment_id ?? null).run();
+    `INSERT INTO client_comments
+       (client_id, project_id, author_role, author_name, content, body_en, body_pt, parent_comment_id)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+  ).bind(
+    clientId,
+    project_id ?? null,
+    user.role,
+    authorName,
+    resolvedContent.trim(),
+    body_en ?? resolvedContent.trim(),
+    body_pt ?? null,
+    parent_comment_id ?? null
+  ).run();
 
   await env.DB.prepare('UPDATE clients SET updated_at = CURRENT_TIMESTAMP WHERE id = ?').bind(clientId).run();
 
@@ -559,12 +655,13 @@ async function handleListNotes(clientId, env) {
 
 async function handleAddNote(clientId, request, env) {
   const body = await request.json();
-  const { content } = body;
-  if (!content?.trim()) throw new ApiError('content is required', 400);
+  const { content, body: bodyText } = body;
+  const resolved = (content || bodyText || '').trim();
+  if (!resolved) throw new ApiError('content or body is required', 400);
 
   const result = await env.DB.prepare(
-    'INSERT INTO client_private_notes (client_id, content) VALUES (?, ?)'
-  ).bind(clientId, content.trim()).run();
+    'INSERT INTO client_private_notes (client_id, content, body) VALUES (?, ?, ?)'
+  ).bind(clientId, resolved, resolved).run();
 
   const note = await env.DB.prepare('SELECT * FROM client_private_notes WHERE id = ?').bind(result.meta.last_row_id).first();
   return jsonResponse(note, 201, env);
@@ -572,12 +669,13 @@ async function handleAddNote(clientId, request, env) {
 
 async function handleUpdateNote(clientId, noteId, request, env) {
   const body = await request.json();
-  const { content } = body;
-  if (!content?.trim()) throw new ApiError('content is required', 400);
+  const { content, body: bodyText } = body;
+  const resolved = (content || bodyText || '').trim();
+  if (!resolved) throw new ApiError('content or body is required', 400);
 
   await env.DB.prepare(
-    'UPDATE client_private_notes SET content = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND client_id = ?'
-  ).bind(content.trim(), noteId, clientId).run();
+    'UPDATE client_private_notes SET content = ?, body = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND client_id = ?'
+  ).bind(resolved, resolved, noteId, clientId).run();
 
   const note = await env.DB.prepare('SELECT * FROM client_private_notes WHERE id = ?').bind(noteId).first();
   return jsonResponse(note, 200, env);
@@ -607,12 +705,33 @@ async function handleListLinks(clientId, env, user) {
 
 async function handleAddLink(clientId, request, env) {
   const body = await request.json();
-  const { label, url, link_type = 'other', is_client_visible = 0 } = body;
-  if (!label || !url) throw new ApiError('label and url are required', 400);
+  const {
+    label, title_en, title_pt, url,
+    link_type = 'other', resource_type = 'link',
+    is_client_visible = 0, is_global = 0,
+    related_service_id, language = 'both'
+  } = body;
+  const resolvedLabel = label || title_en || '';
+  if (!resolvedLabel || !url) throw new ApiError('label (or title_en) and url are required', 400);
 
-  const result = await env.DB.prepare(
-    'INSERT INTO client_resource_links (client_id, label, url, link_type, is_client_visible) VALUES (?, ?, ?, ?, ?)'
-  ).bind(clientId, label, url, link_type, is_client_visible ? 1 : 0).run();
+  const result = await env.DB.prepare(`
+    INSERT INTO client_resource_links
+      (client_id, label, title_en, title_pt, url, link_type, resource_type,
+       is_client_visible, is_global, related_service_id, language)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(
+    clientId,
+    resolvedLabel,
+    title_en ?? resolvedLabel,
+    title_pt ?? null,
+    url,
+    link_type,
+    resource_type,
+    is_client_visible ? 1 : 0,
+    is_global ? 1 : 0,
+    related_service_id ?? null,
+    language
+  ).run();
 
   const link = await env.DB.prepare('SELECT * FROM client_resource_links WHERE id = ?').bind(result.meta.last_row_id).first();
   return jsonResponse(link, 201, env);
@@ -620,18 +739,42 @@ async function handleAddLink(clientId, request, env) {
 
 async function handleUpdateLink(clientId, linkId, request, env) {
   const body = await request.json();
-  const { label, url, link_type, is_client_visible } = body;
+  const {
+    label, title_en, title_pt, url,
+    link_type, resource_type, is_client_visible, is_global,
+    related_service_id, language
+  } = body;
 
   const existing = await env.DB.prepare('SELECT * FROM client_resource_links WHERE id = ? AND client_id = ?').bind(linkId, clientId).first();
   if (!existing) throw new ApiError('Link not found', 404);
 
-  await env.DB.prepare(
-    'UPDATE client_resource_links SET label = ?, url = ?, link_type = ?, is_client_visible = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND client_id = ?'
-  ).bind(
-    label ?? existing.label,
+  const resolvedLabel = label ?? title_en ?? existing.label;
+
+  await env.DB.prepare(`
+    UPDATE client_resource_links SET
+      label              = ?,
+      title_en           = ?,
+      title_pt           = ?,
+      url                = ?,
+      link_type          = ?,
+      resource_type      = ?,
+      is_client_visible  = ?,
+      is_global          = ?,
+      related_service_id = ?,
+      language           = ?,
+      updated_at         = CURRENT_TIMESTAMP
+    WHERE id = ? AND client_id = ?
+  `).bind(
+    resolvedLabel,
+    title_en ?? existing.title_en ?? resolvedLabel,
+    title_pt ?? existing.title_pt,
     url ?? existing.url,
     link_type ?? existing.link_type,
+    resource_type ?? existing.resource_type,
     is_client_visible !== undefined ? (is_client_visible ? 1 : 0) : existing.is_client_visible,
+    is_global !== undefined ? (is_global ? 1 : 0) : existing.is_global,
+    related_service_id !== undefined ? related_service_id : existing.related_service_id,
+    language ?? existing.language,
     linkId, clientId
   ).run();
 
@@ -642,6 +785,78 @@ async function handleUpdateLink(clientId, linkId, request, env) {
 async function handleDeleteLink(clientId, linkId, env) {
   await env.DB.prepare('DELETE FROM client_resource_links WHERE id = ? AND client_id = ?').bind(linkId, clientId).run();
   return jsonResponse({ success: true }, 200, env);
+}
+
+// ---- Intake Responses ----
+
+async function handleSaveIntake(request, env, user) {
+  const body = await request.json();
+  const { client_id, question_key, answer_en, answer_pt } = body;
+  if (!client_id || !question_key) throw new ApiError('client_id and question_key required', 400);
+
+  // Clients can only save their own intake
+  if (user.role === 'client' && user.client_id !== parseInt(client_id)) {
+    throw new ApiError('Forbidden', 403);
+  }
+
+  await env.DB.prepare(`
+    INSERT INTO client_intake_responses (client_id, question_key, answer_en, answer_pt, updated_at)
+    VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+    ON CONFLICT(client_id, question_key) DO UPDATE SET
+      answer_en  = excluded.answer_en,
+      answer_pt  = excluded.answer_pt,
+      updated_at = CURRENT_TIMESTAMP
+  `).bind(client_id, question_key, answer_en ?? null, answer_pt ?? null).run();
+
+  const row = await env.DB.prepare(
+    'SELECT * FROM client_intake_responses WHERE client_id = ? AND question_key = ?'
+  ).bind(client_id, question_key).first();
+
+  return jsonResponse(row, 200, env);
+}
+
+async function handleGetIntake(clientId, env, user) {
+  if (user.role === 'client' && user.client_id !== parseInt(clientId)) {
+    throw new ApiError('Forbidden', 403);
+  }
+
+  const { results } = await env.DB.prepare(
+    'SELECT * FROM client_intake_responses WHERE client_id = ? ORDER BY question_key ASC'
+  ).bind(clientId).all();
+
+  return jsonResponse(results, 200, env);
+}
+
+// ---- Logo Upload ----
+
+async function handleUploadLogo(request, env) {
+  if (!env.BUCKET) throw new ApiError('R2 bucket not configured', 500);
+
+  const formData = await request.formData();
+  const file     = formData.get('file');
+  const clientId = formData.get('client_id');
+
+  if (!file || !clientId) throw new ApiError('file and client_id required', 400);
+
+  const client = await env.DB.prepare('SELECT id FROM clients WHERE id = ?').bind(clientId).first();
+  if (!client) throw new ApiError('Client not found', 404);
+
+  const ext      = file.name?.split('.').pop()?.toLowerCase() || 'png';
+  const key      = `logos/client-${clientId}-${Date.now()}.${ext}`;
+  const buffer   = await file.arrayBuffer();
+
+  await env.BUCKET.put(key, buffer, {
+    httpMetadata: { contentType: file.type || 'image/png' }
+  });
+
+  // R2 public URL — requires the bucket to have public access enabled
+  const logoUrl = `https://pub-${env.BUCKET_PUBLIC_ID ?? 'YOUR_PUBLIC_ID'}.r2.dev/${key}`;
+
+  await env.DB.prepare(
+    'UPDATE clients SET logo_url = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
+  ).bind(logoUrl, clientId).run();
+
+  return jsonResponse({ logo_url: logoUrl, key }, 200, env);
 }
 
 // ---- Archive list ----
