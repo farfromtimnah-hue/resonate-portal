@@ -606,6 +606,34 @@ html.dark .resource-link:hover { border-color: rgba(156,202,255,0.2); }
 }
 html.dark .resource-link__badge { background: rgba(134,239,172,0.1); color: #86efac; border-color: rgba(134,239,172,0.2); }
 
+/* Portal pill — the whole pill is the link */
+a.resource-link--btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 18px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--brand);
+  text-decoration: none;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  cursor: pointer;
+}
+a.resource-link--btn:hover {
+  background: rgba(0,91,150,0.08);
+  border-color: var(--brand);
+  color: var(--brand);
+}
+.links-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 /* ============================================================
    CONTACT BLOCK
    ============================================================ */

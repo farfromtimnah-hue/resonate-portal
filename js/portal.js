@@ -196,6 +196,34 @@ function portalProjectCardHTML(p) {
 
 // ---- Portal links ----
 
+function linkDisplayLabel(l) {
+  // 1. Use explicit label if present and not blank
+  if (l.label && l.label.trim()) return l.label.trim();
+
+  // 2. Humanize link_type if it's not the catch-all "other"
+  const typeMap = {
+    live_site:       'Live Site',
+    staging:         'Staging',
+    test:            'Test Link',
+    github_repo:     'GitHub Repo',
+    github_project:  'GitHub Project',
+    cloudflare:      'Cloudflare',
+    admin:           'Admin Page',
+    dashboard:       'Dashboard',
+    automation:      'Automation Flow',
+  };
+  if (l.link_type && typeMap[l.link_type]) return typeMap[l.link_type];
+
+  // 3. Extract domain from URL as a readable fallback
+  try {
+    const host = new URL(l.url).hostname.replace(/^www\./, '');
+    if (host) return host;
+  } catch {}
+
+  // 4. Last resort
+  return 'Link';
+}
+
 function renderPortalLinks(links) {
   const section = document.getElementById('portal-links-section');
   const el      = document.getElementById('portal-links-list');
@@ -208,10 +236,9 @@ function renderPortalLinks(links) {
 
   section.classList.remove('hidden');
   el.innerHTML = visible.map(l => `
-    <div class="resource-link">
-      <span class="resource-link__label">${esc(l.label)}</span>
-      <a href="${esc(l.url)}" target="_blank" class="resource-link__url">Open ↗</a>
-    </div>`).join('');
+    <a href="${esc(l.url)}" target="_blank" class="resource-link resource-link--btn">
+      ${esc(linkDisplayLabel(l))} ↗
+    </a>`).join('');
 }
 
 // ---- Comments ----
