@@ -2,10 +2,10 @@
 // Firebase Authentication helpers
 // ============================================================
 
-import { initializeApp }                                  from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+import { initializeApp }                                  from 'https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js';
 import { getAuth, signInWithEmailAndPassword,
          onAuthStateChanged, signOut as fbSignOut,
-         getIdToken }                                     from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+         getIdToken }                                     from 'https://www.gstatic.com/firebasejs/12.13.0/firebase-auth.js';
 import { FIREBASE_CONFIG, API_BASE }                      from './config.js';
 
 const app  = initializeApp(FIREBASE_CONFIG);
