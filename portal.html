@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
   <title>Your Project Portal — Resonate</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -39,10 +41,29 @@
       Resonate
     </span>
 
-    <!-- Language toggle -->
-    <div class="flex items-center gap-2">
-      <button id="lang-en" class="lang-btn lang-btn--active">EN</button>
-      <button id="lang-pt" class="lang-btn">PT</button>
+    <!-- Right side: lang toggle + account actions -->
+    <div class="flex items-center gap-3">
+      <div class="flex items-center gap-1">
+        <button id="lang-en" class="lang-btn lang-btn--active">EN</button>
+        <button id="lang-pt" class="lang-btn">PT</button>
+      </div>
+      <div style="width:1px; height:18px; background:rgba(0,0,0,0.1);"></div>
+      <button id="change-password-btn"
+              style="font-family:'Plus Jakarta Sans',sans-serif; font-size:11px; font-weight:600;
+                     letter-spacing:0.06em; text-transform:uppercase; color:#717781;
+                     background:none; border:none; cursor:pointer; padding:4px 8px; border-radius:6px;
+                     transition:color 0.15s;"
+              onmouseover="this.style.color='#001d35'" onmouseout="this.style.color='#717781'">
+        Change Password
+      </button>
+      <button id="signout-btn"
+              style="font-family:'Plus Jakarta Sans',sans-serif; font-size:11px; font-weight:600;
+                     letter-spacing:0.06em; text-transform:uppercase; color:#717781;
+                     background:none; border:none; cursor:pointer; padding:4px 8px; border-radius:6px;
+                     transition:color 0.15s;"
+              onmouseover="this.style.color='#001d35'" onmouseout="this.style.color='#717781'">
+        Sign Out
+      </button>
     </div>
 
   </div>
@@ -119,12 +140,37 @@
 
   </div><!-- /content -->
 
-  <!-- Sign out -->
-  <div class="text-center pt-6 pb-8">
-    <button id="signout-btn"
-            class="text-[#a0a4ae] hover:text-[#414750] text-[11px] uppercase tracking-widest transition-colors px-4 py-2 rounded-full">
-      Sign Out
-    </button>
+  <!-- First-login: set your password (shown instead of portal content) -->
+  <div id="first-login-panel" class="hidden" style="max-width:400px; margin:3rem auto; text-align:center;">
+    <div style="font-size:2rem; margin-bottom:1rem;">🔑</div>
+    <h2 style="font-family:'Plus Jakarta Sans',sans-serif; font-size:20px; font-weight:700;
+               color:#001d35; margin-bottom:.5rem;">Set Your Password</h2>
+    <p style="font-family:'Plus Jakarta Sans',sans-serif; font-size:14px; color:#717781;
+              margin-bottom:2rem; line-height:1.6;">
+      Welcome! Please create a secure password for your account before accessing your portal.
+    </p>
+    <div id="first-login-error" style="display:none; background:#fee2e2; color:#b91c1c;
+         border-radius:.5rem; padding:.75rem 1rem; font-size:13px; margin-bottom:1rem;
+         font-family:'Plus Jakarta Sans',sans-serif; text-align:left;"></div>
+    <div style="display:flex; flex-direction:column; gap:.75rem; text-align:left;">
+      <div>
+        <label style="display:block; font-family:'Plus Jakarta Sans',sans-serif; font-size:11px;
+                      font-weight:600; letter-spacing:.06em; text-transform:uppercase;
+                      color:#717781; margin-bottom:6px;">New Password</label>
+        <input id="first-new-password" type="password" class="form-control"
+               placeholder="At least 8 characters" autocomplete="new-password">
+      </div>
+      <div>
+        <label style="display:block; font-family:'Plus Jakarta Sans',sans-serif; font-size:11px;
+                      font-weight:600; letter-spacing:.06em; text-transform:uppercase;
+                      color:#717781; margin-bottom:6px;">Confirm Password</label>
+        <input id="first-confirm-password" type="password" class="form-control"
+               placeholder="Repeat your new password" autocomplete="new-password">
+      </div>
+      <button id="first-login-save-btn" class="btn btn--primary" style="margin-top:.5rem;">
+        Set Password &amp; Continue
+      </button>
+    </div>
   </div>
 
 </main>
@@ -136,6 +182,40 @@
   </p>
 </footer>
 
-<script type="module" src="js/portal.js"></script>
+<!-- Change Password Modal -->
+<div id="modal-change-password" class="modal">
+  <div class="modal__box" style="max-width:400px;">
+    <div class="modal__head">
+      <span class="modal__title">Change Password</span>
+      <button type="button" class="modal__close" data-close="modal-change-password">✕</button>
+    </div>
+    <div class="modal__body">
+      <div id="cp-error" style="display:none; background:#fee2e2; color:#b91c1c;
+           border-radius:.5rem; padding:.75rem 1rem; font-size:13px; margin-bottom:1rem;
+           font-family:'Plus Jakarta Sans',sans-serif;"></div>
+      <div class="form-group">
+        <label class="form-label">Current Password</label>
+        <input id="cp-current" type="password" class="form-control"
+               placeholder="Your current password" autocomplete="current-password">
+      </div>
+      <div class="form-group">
+        <label class="form-label">New Password</label>
+        <input id="cp-new" type="password" class="form-control"
+               placeholder="At least 8 characters" autocomplete="new-password">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Confirm New Password</label>
+        <input id="cp-confirm" type="password" class="form-control"
+               placeholder="Repeat your new password" autocomplete="new-password">
+      </div>
+    </div>
+    <div class="modal__footer">
+      <button type="button" class="btn btn--secondary" data-close="modal-change-password">Cancel</button>
+      <button id="cp-save-btn" class="btn btn--primary">Update Password</button>
+    </div>
+  </div>
+</div>
+
+<script type="module" src="js/portal.js?v=2"></script>
 </body>
 </html>

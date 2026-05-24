@@ -2,11 +2,11 @@
 // Client portal page — simplified, bilingual, read + comment only
 // ============================================================
 
-import { requireAuth, signOut } from './auth.js';
+import { requireAuth, signOut, changePassword, setInitialPassword } from './auth.js';
 import { api }                   from './api.js';
 import { t, setLang, getLang, statusLabel } from './t.js';
 import { esc, nl2br, formatDate, formatDateTime, toast, telLink, waLink, projectCounts,
-         statusClass } from './utils.js';
+         statusClass, openModal, closeModal } from './utils.js';
 
 let _data    = null;
 let _lang    = 'en';
@@ -21,6 +21,7 @@ async function init() {
   setLang(_lang);
   updateLangButtons();
 
+  // Sign out (header button)
   document.getElementById('signout-btn').addEventListener('click', async () => {
     await signOut(); window.location.href = '/resonate-portal/index.html';
   });
@@ -28,6 +29,24 @@ async function init() {
   document.getElementById('lang-en').addEventListener('click', () => switchLang('en'));
   document.getElementById('lang-pt').addEventListener('click', () => switchLang('pt'));
   document.getElementById('portal-send-btn').addEventListener('click', sendComment);
+
+  // Change password modal wire-up
+  document.getElementById('change-password-btn').addEventListener('click', openChangePasswordModal);
+  document.querySelectorAll('[data-close]').forEach(btn =>
+    btn.addEventListener('click', () => closeModal(btn.dataset.close))
+  );
+  document.getElementById('modal-change-password').addEventListener('click', e => {
+    if (e.target === e.currentTarget) closeModal('modal-change-password');
+  });
+  document.getElementById('cp-save-btn').addEventListener('click', submitChangePassword);
+
+  // First-login: must_change_password
+  if (_profile.must_change_password) {
+    document.getElementById('loading').classList.add('hidden');
+    document.getElementById('first-login-panel').classList.remove('hidden');
+    document.getElementById('first-login-save-btn').addEventListener('click', submitFirstLogin);
+    return;   // don't load portal data until password is set
+  }
 
   await loadData();
 }
@@ -252,6 +271,86 @@ function renderContact(client) {
   if (client.whatsapp) el.innerHTML += `<a href="${waLink(client.whatsapp)}"  class="btn btn-wa" target="_blank">${t('portal_whatsapp')}</a>`;
   if (client.email)    el.innerHTML += `<a href="mailto:${esc(client.email)}" class="btn btn-email">${t('portal_email')}</a>`;
   if (client.website)  el.innerHTML += `<a href="${esc(client.website)}"      class="btn btn--secondary" target="_blank">${t('portal_website')}</a>`;
+}
+
+// ---- Password change (Feature 1 — general) ----
+
+function openChangePasswordModal() {
+  document.getElementById('cp-current').value = '';
+  document.getElementById('cp-new').value     = '';
+  document.getElementById('cp-confirm').value = '';
+  const errEl = document.getElementById('cp-error');
+  errEl.style.display = 'none';
+  errEl.textContent   = '';
+  openModal('modal-change-password');
+}
+
+async function submitChangePassword() {
+  const currentPw = document.getElementById('cp-current').value;
+  const newPw     = document.getElementById('cp-new').value;
+  const confirmPw = document.getElementById('cp-confirm').value;
+  const errEl     = document.getElementById('cp-error');
+  const btn       = document.getElementById('cp-save-btn');
+
+  errEl.style.display = 'none';
+
+  if (!currentPw) { showCpError('Please enter your current password.'); return; }
+  if (newPw.length < 8) { showCpError('New password must be at least 8 characters.'); return; }
+  if (newPw !== confirmPw) { showCpError('Passwords do not match.'); return; }
+
+  btn.disabled = true; btn.textContent = 'Updating…';
+  try {
+    await changePassword(currentPw, newPw);
+    closeModal('modal-change-password');
+    toast(_lang === 'pt' ? 'Senha atualizada com sucesso.' : 'Password updated successfully.');
+  } catch (err) {
+    const msg = err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential'
+      ? (_lang === 'pt' ? 'Senha atual incorreta.' : 'Current password is incorrect.')
+      : (err.message || 'Failed to update password.');
+    showCpError(msg);
+  } finally {
+    btn.disabled = false; btn.textContent = 'Update Password';
+  }
+}
+
+function showCpError(msg) {
+  const el = document.getElementById('cp-error');
+  el.textContent   = msg;
+  el.style.display = 'block';
+}
+
+// ---- Password change (Feature 2 — first login) ----
+
+async function submitFirstLogin() {
+  const newPw     = document.getElementById('first-new-password').value;
+  const confirmPw = document.getElementById('first-confirm-password').value;
+  const errEl     = document.getElementById('first-login-error');
+  const btn       = document.getElementById('first-login-save-btn');
+
+  errEl.style.display = 'none';
+
+  if (newPw.length < 8) { showFirstLoginError('Password must be at least 8 characters.'); return; }
+  if (newPw !== confirmPw) { showFirstLoginError('Passwords do not match.'); return; }
+
+  btn.disabled = true; btn.textContent = 'Setting password…';
+  try {
+    await setInitialPassword(newPw);
+    await api.passwordChanged();   // flip must_change_password = 0 in D1
+    // Show the portal now
+    document.getElementById('first-login-panel').classList.add('hidden');
+    document.getElementById('loading').classList.remove('hidden');
+    await loadData();
+    toast('Password set! Welcome to your portal.');
+  } catch (err) {
+    showFirstLoginError(err.message || 'Failed to set password. Please try again.');
+    btn.disabled = false; btn.textContent = 'Set Password & Continue';
+  }
+}
+
+function showFirstLoginError(msg) {
+  const el = document.getElementById('first-login-error');
+  el.textContent   = msg;
+  el.style.display = 'block';
 }
 
 init();

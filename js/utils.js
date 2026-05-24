@@ -94,12 +94,12 @@ export function openModal(id) {
     if (first) first.focus();
   }, 50);
 
-  // Register an Escape-only keydown handler (no modifier keys — so Cmd/Ctrl+C never fires it)
+  // Register an Escape-only keydown handler.
+  // Guard: bail immediately on ANY modifier key so Cmd+V, Cmd+C, etc. never close the modal.
   if (_escHandler) document.removeEventListener('keydown', _escHandler);
   _escHandler = (e) => {
-    if (e.key === 'Escape' && !e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey) {
-      closeModal(id);
-    }
+    if (e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) return; // modifier → ignore completely
+    if (e.key === 'Escape') closeModal(id);
   };
   document.addEventListener('keydown', _escHandler);
 }

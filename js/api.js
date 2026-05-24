@@ -9,6 +9,7 @@ async function req(method, path, body) {
   const token = await getToken();
   const opts  = {
     method,
+    cache: 'no-store',   // never serve stale data from the browser cache
     headers: {
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json'
@@ -32,7 +33,8 @@ export class ApiError extends Error {
 
 // ---- User / auth ----
 export const api = {
-  me: () => req('GET', '/api/me'),
+  me:              ()    => req('GET',  '/api/me'),
+  passwordChanged: ()    => req('POST', '/api/me/password-changed'),
 
   // Users (admin)
   users:        ()               => req('GET',    '/api/users'),

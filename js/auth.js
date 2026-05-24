@@ -5,7 +5,9 @@
 import { initializeApp }                                  from 'https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js';
 import { getAuth, signInWithEmailAndPassword,
          onAuthStateChanged, signOut as fbSignOut,
-         getIdToken }                                     from 'https://www.gstatic.com/firebasejs/12.13.0/firebase-auth.js';
+         getIdToken, updatePassword,
+         reauthenticateWithCredential,
+         EmailAuthProvider }                              from 'https://www.gstatic.com/firebasejs/12.13.0/firebase-auth.js';
 import { FIREBASE_CONFIG, API_BASE }                      from './config.js';
 
 const app  = initializeApp(FIREBASE_CONFIG);
@@ -36,6 +38,21 @@ export async function getProfile() {
   if (_profile) return _profile;
   await waitForAuth();
   return _profile;
+}
+
+// Change the current user's password.
+// Always reauthenticates first so it works even after a long session.
+export async function changePassword(currentPassword, newPassword) {
+  if (!_fbUser) throw new Error('Not signed in');
+  const credential = EmailAuthProvider.credential(_fbUser.email, currentPassword);
+  await reauthenticateWithCredential(_fbUser, credential);
+  await updatePassword(_fbUser, newPassword);
+}
+
+// For first-login: user just authenticated so no reauthentication needed.
+export async function setInitialPassword(newPassword) {
+  if (!_fbUser) throw new Error('Not signed in');
+  await updatePassword(_fbUser, newPassword);
 }
 
 export async function getToken() {

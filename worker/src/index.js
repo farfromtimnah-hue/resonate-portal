@@ -54,6 +54,14 @@ async function router(request, env, user, url, method, path) {
     return handleGetMe(env, user);
   }
 
+  // POST /api/me/password-changed — client clears the must_change_password flag after setting new password
+  if (method === 'POST' && path === '/api/me/password-changed') {
+    await env.DB.prepare(
+      'UPDATE users SET must_change_password = 0, updated_at = CURRENT_TIMESTAMP WHERE firebase_uid = ?'
+    ).bind(user.uid).run();
+    return jsonResponse({ success: true }, 200, env);
+  }
+
   // ---- USER MANAGEMENT (admin only) ----
   if (method === 'GET' && path === '/api/users') {
     requireAdmin(user);
@@ -197,8 +205,9 @@ async function handleUpsertUser(request, env) {
   if (!['admin', 'client'].includes(role)) throw new ApiError('role must be admin or client', 400);
 
   await env.DB.prepare(`
-    INSERT INTO users (firebase_uid, email, role, client_id, language_preference, first_name, last_name, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+    INSERT INTO users (firebase_uid, email, role, client_id, language_preference, first_name, last_name,
+                       must_change_password, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP)
     ON CONFLICT(firebase_uid) DO UPDATE SET
       email               = excluded.email,
       role                = excluded.role,
@@ -207,6 +216,7 @@ async function handleUpsertUser(request, env) {
       first_name          = excluded.first_name,
       last_name           = excluded.last_name,
       updated_at          = CURRENT_TIMESTAMP
+      -- must_change_password intentionally NOT updated here: only reset by the user themselves
   `).bind(firebase_uid, email, role, client_id ?? null, language_preference ?? 'en',
           first_name ?? null, last_name ?? null).run();
 
@@ -892,12 +902,13 @@ async function authenticate(request, env) {
   if (!dbUser) throw new ApiError('User not registered in portal. Contact your administrator.', 403);
 
   return {
-    uid: payload.sub,
-    email: payload.email,
-    role: dbUser.role,
-    client_id: dbUser.client_id,
-    language_preference: dbUser.language_preference,
-    db_id: dbUser.id
+    uid:                  payload.sub,
+    email:                payload.email,
+    role:                 dbUser.role,
+    client_id:            dbUser.client_id,
+    language_preference:  dbUser.language_preference,
+    must_change_password: dbUser.must_change_password === 1,
+    db_id:                dbUser.id
   };
 }
 
