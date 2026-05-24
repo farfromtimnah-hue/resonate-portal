@@ -259,8 +259,8 @@
 
   getProfile().then(profile => {
     if (!profile) return;
-    if (profile.role === 'admin')  window.location.href = '/dashboard.html';
-    if (profile.role === 'client') window.location.href = '/portal.html';
+    if (profile.role === 'admin')  window.location.href = '/resonate-portal/dashboard.html';
+    if (profile.role === 'client') window.location.href = '/resonate-portal/portal.html';
   }).catch(() => {});
 
   const form  = document.getElementById('login-form');
@@ -278,8 +278,8 @@
 
     try {
       const profile = await signIn(email, password);
-      if (profile.role === 'admin')  window.location.href = '/dashboard.html';
-      if (profile.role === 'client') window.location.href = '/portal.html';
+      if (profile.role === 'admin')  window.location.href = '/resonate-portal/dashboard.html';
+      if (profile.role === 'client') window.location.href = '/resonate-portal/portal.html';
     } catch (err) {
       let msg = 'Incorrect email or password. Please try again.';
       if (err.message?.includes('not registered')) msg = err.message;
