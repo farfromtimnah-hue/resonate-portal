@@ -362,7 +362,7 @@ async function buildAdminClientResponse(client, env) {
   ).bind(client.id).first();
 
   const { results: history } = await env.DB.prepare(
-    'SELECT * FROM status_history WHERE client_id = ? ORDER BY created_at DESC LIMIT 20'
+    'SELECT * FROM status_history WHERE client_id = ? ORDER BY changed_at DESC LIMIT 20'
   ).bind(client.id).all();
 
   projects.forEach(p => { try { p.urls = JSON.parse(p.urls); } catch { p.urls = []; } });

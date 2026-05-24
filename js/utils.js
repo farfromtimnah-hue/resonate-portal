@@ -79,14 +79,38 @@ export function toast(message, type = 'success') {
 }
 
 // Simple modal open/close
+// Tracks the active Escape-key handler so it can be removed on close.
+let _escHandler = null;
+
 export function openModal(id) {
   const m = document.getElementById(id);
-  if (m) { m.classList.add('modal--open'); document.body.classList.add('no-scroll'); }
+  if (!m) return;
+  m.classList.add('modal--open');
+  document.body.classList.add('no-scroll');
+
+  // Move focus to the first interactive field for usability
+  setTimeout(() => {
+    const first = m.querySelector('input:not([type="hidden"]), select, textarea');
+    if (first) first.focus();
+  }, 50);
+
+  // Register an Escape-only keydown handler (no modifier keys — so Cmd/Ctrl+C never fires it)
+  if (_escHandler) document.removeEventListener('keydown', _escHandler);
+  _escHandler = (e) => {
+    if (e.key === 'Escape' && !e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey) {
+      closeModal(id);
+    }
+  };
+  document.addEventListener('keydown', _escHandler);
 }
 
 export function closeModal(id) {
   const m = document.getElementById(id);
   if (m) { m.classList.remove('modal--open'); document.body.classList.remove('no-scroll'); }
+  if (_escHandler) {
+    document.removeEventListener('keydown', _escHandler);
+    _escHandler = null;
+  }
 }
 
 // Get URL query param

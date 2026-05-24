@@ -66,7 +66,14 @@ async function loadData() {
     document.getElementById('loading').classList.add('hidden');
     document.getElementById('content').classList.remove('hidden');
   } catch (err) {
-    document.getElementById('loading').textContent = `Error: ${err.message}`;
+    const loadingEl = document.getElementById('loading');
+    loadingEl.innerHTML = `
+      <div style="text-align:center; padding:2rem;">
+        <div style="font-size:1.5rem; margin-bottom:.75rem;">⚠️</div>
+        <div style="color:var(--s-red, #f87171); font-weight:600; margin-bottom:.5rem;">Failed to load client</div>
+        <div style="color:var(--text-3); font-size:13px; margin-bottom:1.25rem;">${esc(err.message)}</div>
+        <button onclick="location.reload()" style="background:var(--primary);color:#fff;border:none;border-radius:9999px;padding:8px 20px;font-size:13px;cursor:pointer;">Retry</button>
+      </div>`;
   }
 }
 
@@ -714,7 +721,7 @@ function renderHistory(history) {
     <div>
       <span style="color:var(--text-2);">${h.entity_type === 'project' ? '◈ Project' : '◉ Client'}</span>
       <span>${esc(h.old_status)} → <strong>${esc(h.new_status)}</strong></span><br>
-      <span>${formatDateTime(h.created_at)}</span>
+      <span>${formatDateTime(h.changed_at)}</span>
     </div>`).join('');
 }
 
