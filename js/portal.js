@@ -4,8 +4,9 @@
 
 import { requireAuth, signOut } from './auth.js';
 import { api }                   from './api.js';
-import { t, setLang, getLang, statusLabel, statusClass } from './t.js';
-import { esc, nl2br, formatDate, formatDateTime, toast, telLink, waLink, projectCounts } from './utils.js';
+import { t, setLang, getLang, statusLabel } from './t.js';
+import { esc, nl2br, formatDate, formatDateTime, toast, telLink, waLink, projectCounts,
+         statusClass } from './utils.js';
 
 let _data    = null;
 let _lang    = 'en';

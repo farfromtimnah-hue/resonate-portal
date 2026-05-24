@@ -4,9 +4,10 @@
 
 import { requireAuth, signOut } from './auth.js';
 import { api }                   from './api.js';
-import { statusLabel, statusClass, STATUS_OPTIONS } from './t.js';
+import { statusLabel, STATUS_OPTIONS } from './t.js';
 import { esc, nl2br, formatDate, formatDateTime, formatDateFull,
-         toast, openModal, closeModal, qp, telLink, waLink, projectCounts } from './utils.js';
+         toast, openModal, closeModal, qp, telLink, waLink, projectCounts,
+         statusClass } from './utils.js';
 
 let _clientId = null;
 let _data     = null;          // { client, projects, comments, notes, links, linked_user, history }

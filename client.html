@@ -93,6 +93,16 @@
 <!-- ── Main Content ─────────────────────────────────────────── -->
 <main class="ml-72 min-h-screen relative z-10 px-8 xl:px-12 py-10">
 
+  <!-- Back button — always visible, above loading state -->
+  <div style="margin-bottom:1.5rem;">
+    <a href="/resonate-portal/dashboard.html"
+       style="display:inline-flex; align-items:center; gap:6px; color:rgba(193,199,209,0.6); font-family:'Plus Jakarta Sans',sans-serif; font-size:12px; font-weight:600; letter-spacing:0.06em; text-transform:uppercase; text-decoration:none; transition:color 0.15s;"
+       onmouseover="this.style.color='#9ccaff'" onmouseout="this.style.color='rgba(193,199,209,0.6)'">
+      <span class="material-symbols-outlined" style="font-size:16px;">arrow_back</span>
+      Dashboard
+    </a>
+  </div>
+
   <!-- Loading -->
   <div id="loading" class="loading">Loading…</div>
 
@@ -474,6 +484,18 @@
   </div>
 </div>
 
-<script type="module" src="js/client-page.js"></script>
+<script>
+  // Catch any module-load error (e.g. bad import) and show it clearly
+  window.addEventListener('error', function(e) {
+    if (e.filename && e.filename.includes('client-page')) {
+      var el = document.getElementById('loading');
+      if (el) el.innerHTML =
+        '<div style="color:#f87171;font-family:sans-serif;padding:1rem;">' +
+        '<strong>Script error — please hard-refresh (Cmd+Shift+R)</strong><br>' +
+        '<small style="opacity:.6">' + e.message + '</small></div>';
+    }
+  });
+</script>
+<script type="module" src="js/client-page.js?v=4"></script>
 </body>
 </html>
