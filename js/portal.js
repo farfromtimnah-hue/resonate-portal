@@ -21,7 +21,7 @@ async function init() {
   updateLangButtons();
 
   document.getElementById('signout-btn').addEventListener('click', async () => {
-    await signOut(); window.location.href = '/index.html';
+    await signOut(); window.location.href = '/resonate-portal/index.html';
   });
 
   document.getElementById('lang-en').addEventListener('click', () => switchLang('en'));

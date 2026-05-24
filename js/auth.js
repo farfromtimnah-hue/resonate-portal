@@ -52,13 +52,13 @@ export async function getToken() {
 export async function requireAuth(expectedRole = null) {
   const profile = await getProfile();
   if (!profile) {
-    window.location.href = '/index.html';
+    window.location.href = '/resonate-portal/index.html';
     return null;
   }
   if (expectedRole && profile.role !== expectedRole) {
     // Wrong role — send to the correct page
-    if (profile.role === 'admin')  window.location.href = '/dashboard.html';
-    if (profile.role === 'client') window.location.href = '/portal.html';
+    if (profile.role === 'admin')  window.location.href = '/resonate-portal/dashboard.html';
+    if (profile.role === 'client') window.location.href = '/resonate-portal/portal.html';
     return null;
   }
   return profile;

@@ -13,7 +13,7 @@ async function init() {
   if (!profile) return;
 
   document.getElementById('signout-btn').addEventListener('click', async () => {
-    await signOut(); window.location.href = '/index.html';
+    await signOut(); window.location.href = '/resonate-portal/index.html';
   });
 
   document.getElementById('search').addEventListener('input', debounce(() => {
@@ -60,7 +60,7 @@ function render(clients) {
         ${c.archived_at ? `Archived ${formatDateFull(c.archived_at)}` : ''}
       </div>
       <div class="archive-card__actions">
-        <a href="/client.html?id=${c.id}" class="btn btn--secondary btn--sm">View</a>
+        <a href="/resonate-portal/client.html?id=${c.id}" class="btn btn--secondary btn--sm">View</a>
         <button class="btn btn--secondary btn--sm restore-btn" data-id="${c.id}">Restore</button>
       </div>
     </div>`).join('');

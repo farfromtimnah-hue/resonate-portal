@@ -15,7 +15,7 @@ async function init() {
   if (!profile) return;
 
   document.getElementById('signout-btn').addEventListener('click', async () => {
-    await signOut(); window.location.href = '/index.html';
+    await signOut(); window.location.href = '/resonate-portal/index.html';
   });
 
   // Modal close buttons
@@ -98,7 +98,7 @@ function clientCardHTML(c) {
   const email    = c.email    ? `<a href="mailto:${esc(c.email)}" class="btn btn--sm btn-email contact-btn" title="Email">✉ Email</a>` : '';
 
   return `
-    <a href="/client.html?id=${c.id}" class="client-card">
+    <a href="/resonate-portal/client.html?id=${c.id}" class="client-card">
       <div class="client-card__header">
         <div style="flex:1; min-width:0;">
           <div class="client-card__name">${esc(c.name)}</div>
@@ -151,7 +151,7 @@ async function createClient() {
     closeModal('modal-create-client');
     clearCreateForm();
     toast('Client created.');
-    window.location.href = `/client.html?id=${client.id}`;
+    window.location.href = `/resonate-portal/client.html?id=${client.id}`;
   } catch (err) {
     toast(err.message, 'error');
   } finally {
