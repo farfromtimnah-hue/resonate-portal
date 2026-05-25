@@ -45,6 +45,15 @@ async function init() {
     switchTab('vision');
   });
 
+  // Share button — event delegation on the projects panel (always in DOM)
+  document.getElementById('tab-panel-projects').addEventListener('click', e => {
+    const btn = e.target.closest('.portal-share-btn');
+    if (!btn) return;
+    const pid = +btn.dataset.pid;
+    const project = _data?.projects?.find(p => p.id === pid);
+    if (project) shareProject(project, btn);
+  });
+
   // Change password modal wire-up
   document.getElementById('change-password-btn').addEventListener('click', openChangePasswordModal);
   document.querySelectorAll('[data-close]').forEach(btn =>
@@ -250,6 +259,11 @@ function portalProjectCardHTML(p, projectLinks = []) {
       <div class="project-card__footer">
         <span class="text-muted">${_lang === 'pt' ? 'Atualizado' : 'Updated'} ${formatDate(p.updated_at)}</span>
         ${p.due_date ? `<span class="text-muted">${_lang === 'pt' ? 'Prazo' : 'Due'} ${formatDate(p.due_date)}</span>` : ''}
+        <button class="portal-share-btn" data-pid="${p.id}"
+                title="${_lang === 'pt' ? 'Compartilhar este projeto' : 'Share this project'}">
+          <span class="material-symbols-outlined" style="font-size:15px;">share</span>
+          ${_lang === 'pt' ? 'Compartilhar' : 'Share'}
+        </button>
       </div>
     </div>`;
 }
@@ -425,6 +439,117 @@ function showFirstLoginError(msg) {
   const el = document.getElementById('first-login-error');
   el.textContent   = msg;
   el.style.display = 'block';
+}
+
+// ---- Share project ----
+
+async function shareProject(p, anchorEl) {
+  const bizName  = _data.client.business_name || _data.client.name;
+  const desc     = _lang === 'pt'
+    ? (p.description_pt || p.description_en || '')
+    : (p.description_en || p.description_pt || '');
+
+  // Build the public URL for this project
+  const publicUrl = new URL('public.html', window.location.href).href + '?project=' + p.id;
+
+  // Compose share text
+  const intro    = _lang === 'pt'
+    ? `*${p.title}* — ${bizName}`
+    : `*${p.title}* — ${bizName}`;
+  const viewLine = _lang === 'pt' ? `Ver projeto: ${publicUrl}` : `View project: ${publicUrl}`;
+  const shareText = [intro, desc, viewLine].filter(Boolean).join('\n\n');
+
+  // Try native share (works great on mobile — triggers WhatsApp, Messages, etc.)
+  if (navigator.share) {
+    try {
+      await navigator.share({ title: p.title, text: shareText, url: publicUrl });
+    } catch (err) {
+      // AbortError = user dismissed — that's fine. Any other error: fall through to menu.
+      if (err.name !== 'AbortError') showShareMenu(anchorEl, shareText, publicUrl, p.title, bizName);
+    }
+    return;
+  }
+
+  // Desktop fallback: custom share menu
+  showShareMenu(anchorEl, shareText, publicUrl, p.title, bizName);
+}
+
+function showShareMenu(anchorEl, text, url, title, bizName) {
+  // Create singleton menu if it doesn't exist yet
+  let menu = document.getElementById('portal-share-menu');
+  if (!menu) {
+    menu = document.createElement('div');
+    menu.id        = 'portal-share-menu';
+    menu.className = 'share-menu';
+    menu.innerHTML = `
+      <a id="smenu-wa" class="share-menu__item" target="_blank" rel="noopener noreferrer">
+        <span class="share-menu__icon">💬</span>WhatsApp
+      </a>
+      <a id="smenu-email" class="share-menu__item">
+        <span class="share-menu__icon">✉️</span>Email
+      </a>
+      <button id="smenu-copy" class="share-menu__item">
+        <span class="share-menu__icon" id="smenu-copy-icon">🔗</span><span id="smenu-copy-label">Copy Link</span>
+      </button>`;
+    document.body.appendChild(menu);
+  }
+
+  // Populate with current project's data
+  document.getElementById('smenu-wa').href    = `https://wa.me/?text=${encodeURIComponent(text)}`;
+  document.getElementById('smenu-email').href =
+    `mailto:?subject=${encodeURIComponent(`${title} — ${bizName}`)}&body=${encodeURIComponent(text)}`;
+
+  const copyLabel = document.getElementById('smenu-copy-label');
+  const copyIcon  = document.getElementById('smenu-copy-icon');
+  copyLabel.textContent = _lang === 'pt' ? 'Copiar link' : 'Copy Link';
+  copyIcon.textContent  = '🔗';
+
+  document.getElementById('smenu-copy').onclick = async () => {
+    try {
+      await navigator.clipboard.writeText(url);
+      copyIcon.textContent  = '✓';
+      copyLabel.textContent = _lang === 'pt' ? 'Copiado!' : 'Copied!';
+      setTimeout(() => {
+        copyIcon.textContent  = '🔗';
+        copyLabel.textContent = _lang === 'pt' ? 'Copiar link' : 'Copy Link';
+      }, 1800);
+    } catch {
+      toast(_lang === 'pt' ? 'Copie o link manualmente.' : 'Copy the link manually.', 'error');
+    }
+  };
+
+  // Position menu below the share button
+  const rect = anchorEl.getBoundingClientRect();
+  const menuWidth = 172;
+  menu.style.display = 'block';
+  menu.style.top     = `${rect.bottom + window.scrollY + 6}px`;
+  menu.style.left    = `${Math.min(rect.left + window.scrollX, window.innerWidth - menuWidth - 12)}px`;
+
+  // Close on outside click or Escape
+  const close = (e) => {
+    if (!menu.contains(e.target) && e.target !== anchorEl) {
+      hideShareMenu();
+      document.removeEventListener('click', close, true);
+      document.removeEventListener('keydown', onEsc);
+    }
+  };
+  const onEsc = (e) => {
+    if (e.key === 'Escape') {
+      hideShareMenu();
+      document.removeEventListener('click', close, true);
+      document.removeEventListener('keydown', onEsc);
+    }
+  };
+  // Defer so the share button's own click doesn't immediately close the menu
+  setTimeout(() => {
+    document.addEventListener('click', close, true);
+    document.addEventListener('keydown', onEsc);
+  }, 0);
+}
+
+function hideShareMenu() {
+  const menu = document.getElementById('portal-share-menu');
+  if (menu) menu.style.display = 'none';
 }
 
 init();

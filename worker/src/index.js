@@ -28,6 +28,12 @@ export default {
         return jsonResponse(user, 200, env);
       }
 
+      // GET /api/public/projects/:id — no auth required (public read-only project view)
+      const publicParams = match('/api/public/projects/:id', path);
+      if (publicParams && method === 'GET') {
+        return handlePublicProject(publicParams.id, env);
+      }
+
       // All other routes require a valid Firebase token
       const user = await authenticate(request, env);
 
@@ -870,6 +876,37 @@ async function handleUploadLogo(request, env) {
   ).bind(logoUrl, clientId).run();
 
   return jsonResponse({ logo_url: logoUrl, key }, 200, env);
+}
+
+// ---- Public project view (no auth) ----
+
+async function handlePublicProject(projectId, env) {
+  const project = await env.DB.prepare(`
+    SELECT id, client_id, title,
+           description_en, description_pt,
+           future_features_en, future_features_pt,
+           status, due_date, updated_at
+    FROM client_projects
+    WHERE id = ? AND is_client_visible = 1
+  `).bind(projectId).first();
+
+  if (!project) throw new ApiError('Project not found', 404);
+
+  const client = await env.DB.prepare(
+    'SELECT business_name, logo_url, language_preference FROM clients WHERE id = ?'
+  ).bind(project.client_id).first();
+
+  const { results: links } = await env.DB.prepare(`
+    SELECT id, label, url, link_type
+    FROM client_resource_links
+    WHERE project_id = ? AND is_client_visible = 1
+    ORDER BY created_at ASC
+  `).bind(projectId).all();
+
+  // Strip client_id from project before sending
+  const { client_id: _removed, ...safeProject } = project;
+
+  return jsonResponse({ project: safeProject, client, links }, 200, env);
 }
 
 // ---- Archive list ----
