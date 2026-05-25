@@ -33,11 +33,20 @@
   <style>
     html, body { margin: 0; padding: 0; overflow: hidden; height: 100%; background: #0a1628; }
 
-    #bg-canvas {
+    #bg-video {
       position: fixed;
       inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
       z-index: 0;
-      display: block;
+    }
+
+    #bg-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.45);
+      z-index: 1;
     }
 
     .glass-card {
@@ -123,8 +132,11 @@
 </head>
 <body>
 
-<!-- ── Animated canvas background ────────────────────────── -->
-<canvas id="bg-canvas"></canvas>
+<!-- ── Video background ───────────────────────────────────── -->
+<video id="bg-video" autoplay muted loop playsinline>
+  <source src="https://pub-e211b514f9d24671bfa2577d123c7544.r2.dev/ripple-loop.mp4" type="video/mp4">
+</video>
+<div id="bg-overlay"></div>
 
 <!-- ── Login UI ───────────────────────────────────────────── -->
 <div style="position:relative; z-index:10; display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; padding:24px;">
@@ -210,77 +222,6 @@
     Resonate Business Systems © 2025
   </p>
 </div>
-
-<!-- ── Canvas ripple animation ────────────────────────────── -->
-<script>
-(function() {
-  const canvas = document.getElementById('bg-canvas');
-  const ctx    = canvas.getContext('2d');
-  const BG     = '#0a1628';
-
-  function resize() {
-    canvas.width  = window.innerWidth;
-    canvas.height = window.innerHeight;
-  }
-
-  function makeRing(stagger) {
-    const cx = canvas.width  / 2;
-    const cy = canvas.height / 2;
-    const jitter = Math.min(canvas.width, canvas.height) * 0.06;
-    const maxR   = Math.hypot(canvas.width, canvas.height) * 0.58;
-    return {
-      x:     cx + (Math.random() - 0.5) * jitter * 2,
-      y:     cy + (Math.random() - 0.5) * jitter * 2,
-      r:     stagger != null ? maxR * stagger : 0,
-      maxR:  maxR,
-      speed: 0.5 + Math.random() * 0.35,
-    };
-  }
-
-  let rings     = [];
-  let lastSpawn = -9999;
-
-  function seed() {
-    resize();
-    rings = [];
-    for (let i = 0; i < 7; i++) {
-      rings.push(makeRing(i / 7));
-    }
-  }
-
-  seed();
-  window.addEventListener('resize', seed);
-
-  function draw(ts) {
-    ctx.fillStyle = BG;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    for (let i = rings.length - 1; i >= 0; i--) {
-      const r     = rings[i];
-      const alpha = 0.32 * Math.max(0, 1 - r.r / r.maxR);
-
-      ctx.beginPath();
-      ctx.arc(r.x, r.y, r.r, 0, Math.PI * 2);
-      ctx.strokeStyle = `rgba(108, 172, 230, ${alpha})`;
-      ctx.lineWidth   = 1.2;
-      ctx.stroke();
-
-      r.r += r.speed;
-      if (r.r >= r.maxR) rings.splice(i, 1);
-    }
-
-    // Spawn a new ring every ~900ms, keep max 8 alive
-    if (ts - lastSpawn > 900 && rings.length < 8) {
-      rings.push(makeRing(null));
-      lastSpawn = ts;
-    }
-
-    requestAnimationFrame(draw);
-  }
-
-  requestAnimationFrame(draw);
-})();
-</script>
 
 <!-- ── Firebase auth logic ────────────────────────────────── -->
 <script type="module">
