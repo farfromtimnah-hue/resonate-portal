@@ -39,7 +39,6 @@ async function init() {
   document.getElementById('archive-now-btn')?.addEventListener('click', archiveClient);
   document.getElementById('add-project-btn').addEventListener('click', openAddProject);
   document.getElementById('add-note-btn').addEventListener('click',    openAddNote);
-  document.getElementById('add-link-btn').addEventListener('click',    () => addLinkRow());
   document.getElementById('send-comment-btn').addEventListener('click', sendComment);
 
   // Save handlers
@@ -125,8 +124,7 @@ function render() {
   // Notes
   renderNotes(notes);
 
-  // Links
-  renderLinks(links);
+  // Links are rendered per-project inside renderProjects
 
   // Portal access
   renderPortalAccess(linked_user, client);
@@ -212,7 +210,6 @@ function renderProjects(projects) {
         } else {
           document.getElementById('all-complete-banner')?.classList.add('hidden');
         }
-        // Update local data
         const p = _data.projects.find(p => p.id == pid);
         if (p) p.status = e.target.value;
         renderProgress(_data.projects);
@@ -225,16 +222,22 @@ function renderProjects(projects) {
   el.querySelectorAll('.proj-edit-btn').forEach(btn => {
     btn.addEventListener('click', () => openEditProject(parseInt(btn.dataset.pid)));
   });
+
+  // Populate existing links for each project card
+  renderProjectLinks();
+
+  // "Add Link" buttons — one per project card
+  el.querySelectorAll('.add-proj-link-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const pid       = parseInt(btn.dataset.pid);
+      const container = btn.closest('.project-card').querySelector('.proj-links-list');
+      addLinkRow(null, pid, container);
+    });
+  });
 }
 
 function projectCardHTML(p) {
-  const urlsArr  = Array.isArray(p.urls) ? p.urls : [];
-  const linkType = p.link_type || 'link';
-  const hidden   = !p.is_client_visible;
-
-  const urlLinks = urlsArr.map(u =>
-    `<a href="${esc(u)}" target="_blank" class="project-link">${esc(linkType)} ↗</a>`
-  ).join('');
+  const hidden = !p.is_client_visible;
 
   const dueLine = p.due_date
     ? `<span>Due ${formatDateFull(p.due_date)}</span>`
@@ -245,7 +248,7 @@ function projectCardHTML(p) {
     : `<span class="badge status--green" style="font-size:10px;">Client visible</span>`;
 
   return `
-    <div class="project-card ${hidden ? 'project-card--hidden' : ''}">
+    <div class="project-card ${hidden ? 'project-card--hidden' : ''}" data-project-id="${p.id}">
       <div class="project-card__head">
         <span class="project-card__title">${esc(p.title)}</span>
         <div class="project-card__actions">
@@ -260,13 +263,20 @@ function projectCardHTML(p) {
 
       ${p.description_en ? `<div class="project-card__body">${nl2br(p.description_en)}</div>` : ''}
 
-      ${urlLinks ? `<div class="project-card__links">${urlLinks}</div>` : ''}
-
       ${p.future_features_en ? `
         <div style="margin-top:10px; padding-top:10px; border-top:1px solid var(--border);">
           <div style="font-size:11px; font-weight:600; color:var(--text-3); text-transform:uppercase; letter-spacing:.05em; margin-bottom:6px;">Coming Up</div>
           <div class="future-block">${nl2br(p.future_features_en)}</div>
         </div>` : ''}
+
+      <div class="proj-links-section" style="margin-top:10px; padding-top:10px; border-top:1px solid var(--border);">
+        <div class="proj-links-list" data-pid="${p.id}"></div>
+        <button class="add-proj-link-btn btn--icon-bare" data-pid="${p.id}"
+                style="margin-top:6px; font-size:11px; font-weight:600; letter-spacing:.05em; text-transform:uppercase; color:var(--text-3); display:flex; align-items:center; gap:3px;">
+          <span class="material-symbols-outlined" style="font-size:13px;">add</span>
+          Add Link
+        </button>
+      </div>
 
       <div class="project-card__footer">
         ${visibilityBadge}
@@ -407,14 +417,21 @@ async function saveNote() {
 
 // ---- Links ----
 
-function renderLinks(links) {
-  document.getElementById('links-list').innerHTML = '';
-  links.forEach(l => addLinkRow(l));
+// Populate each project card's link container from _data.links
+function renderProjectLinks() {
+  document.querySelectorAll('.proj-links-list').forEach(container => {
+    const pid = parseInt(container.dataset.pid);
+    container.innerHTML = '';
+    (_data.links || [])
+      .filter(l => l.project_id === pid)
+      .forEach(l => addLinkRow(l, pid, container));
+  });
 }
 
-function addLinkRow(link = null) {
-  const listEl = document.getElementById('links-list');
+function addLinkRow(link = null, projectId = null, containerEl = null) {
+  if (!containerEl) return; // requires an explicit container (project-scoped)
 
+  const listEl = containerEl;
   const row = document.createElement('div');
   row.className = 'link-row';
   if (link?.id) row.dataset.id = String(link.id);
@@ -492,7 +509,7 @@ function addLinkRow(link = null) {
         const l = _data.links.find(x => x.id === +row.dataset.id);
         if (l) { l.label = updated.label; l.url = updated.url; }
       } else {
-        const created = await api.addLink(_clientId, { label, url, is_client_visible: isVisible });
+        const created = await api.addLink(_clientId, { label, url, is_client_visible: isVisible, project_id: projectId });
         row.dataset.id = String(created.id);
         _data.links.push(created);
       }
@@ -525,8 +542,6 @@ function openEditProject(id) {
 
   document.getElementById('proj-title').value     = p.title       || '';
   document.getElementById('proj-status').value    = p.status      || 'not_started';
-  document.getElementById('proj-link-type').value = p.link_type   || 'live_site';
-  document.getElementById('proj-urls').value      = (Array.isArray(p.urls) ? p.urls : []).join('\n');
   document.getElementById('proj-desc-en').value   = p.description_en     || '';
   document.getElementById('proj-desc-pt').value   = p.description_pt     || '';
   document.getElementById('proj-future-en').value = p.future_features_en || '';
@@ -540,10 +555,9 @@ function openEditProject(id) {
 }
 
 function clearProjectForm() {
-  ['proj-title','proj-urls','proj-desc-en','proj-desc-pt','proj-future-en','proj-future-pt','proj-due']
+  ['proj-title','proj-desc-en','proj-desc-pt','proj-future-en','proj-future-pt','proj-due']
     .forEach(id => { document.getElementById(id).value = ''; });
   document.getElementById('proj-status').value    = 'not_started';
-  document.getElementById('proj-link-type').value = 'live_site';
   document.getElementById('proj-visible').checked = true;
 }
 
@@ -551,14 +565,9 @@ async function saveProject() {
   const title = document.getElementById('proj-title').value.trim();
   if (!title) { toast('Project title is required.', 'error'); return; }
 
-  const rawUrls = document.getElementById('proj-urls').value.trim();
-  const urls    = rawUrls ? rawUrls.split('\n').map(u => u.trim()).filter(Boolean) : [];
-
   const data = {
     title,
     status:               document.getElementById('proj-status').value,
-    link_type:            document.getElementById('proj-link-type').value,
-    urls,
     description_en:       document.getElementById('proj-desc-en').value.trim()   || null,
     description_pt:       document.getElementById('proj-desc-pt').value.trim()   || null,
     future_features_en:   document.getElementById('proj-future-en').value.trim() || null,

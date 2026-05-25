@@ -342,7 +342,7 @@ async function buildClientPortalResponse(client, env) {
   ).bind(client.id).all();
 
   const { results: links } = await env.DB.prepare(
-    'SELECT id, label, url, link_type FROM client_resource_links WHERE client_id = ? AND is_client_visible = 1 ORDER BY created_at ASC'
+    'SELECT id, project_id, label, url, link_type FROM client_resource_links WHERE client_id = ? AND is_client_visible = 1 ORDER BY created_at ASC'
   ).bind(client.id).all();
 
   projects.forEach(p => { try { p.urls = JSON.parse(p.urls); } catch { p.urls = []; } });
@@ -364,7 +364,7 @@ async function buildAdminClientResponse(client, env) {
   ).bind(client.id).all();
 
   const { results: links } = await env.DB.prepare(
-    'SELECT * FROM client_resource_links WHERE client_id = ? ORDER BY created_at ASC'
+    'SELECT * FROM client_resource_links WHERE client_id = ? ORDER BY project_id ASC, created_at ASC'
   ).bind(client.id).all();
 
   const linkedUser = await env.DB.prepare(
@@ -718,19 +718,21 @@ async function handleAddLink(clientId, request, env) {
   const {
     label, title_en, title_pt, url,
     link_type = 'other', resource_type = 'link',
-    is_client_visible = 0, is_global = 0,
-    related_service_id, language = 'both'
+    is_client_visible = 1, is_global = 0,
+    related_service_id, language = 'both',
+    project_id
   } = body;
   const resolvedLabel = label || title_en || '';
   if (!resolvedLabel || !url) throw new ApiError('label (or title_en) and url are required', 400);
 
   const result = await env.DB.prepare(`
     INSERT INTO client_resource_links
-      (client_id, label, title_en, title_pt, url, link_type, resource_type,
+      (client_id, project_id, label, title_en, title_pt, url, link_type, resource_type,
        is_client_visible, is_global, related_service_id, language)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).bind(
     clientId,
+    project_id ?? null,
     resolvedLabel,
     title_en ?? resolvedLabel,
     title_pt ?? null,

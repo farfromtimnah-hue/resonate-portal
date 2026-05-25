@@ -104,16 +104,13 @@ function render() {
 }
 
 function renderContent() {
-  const { client, projects, comments, links } = _data;
+  const { client, projects, comments } = _data;
 
   // Progress
   renderProgress(projects);
 
-  // Projects
+  // Projects (links are rendered per-project inside the card)
   renderProjects(projects);
-
-  // Client-visible links
-  renderPortalLinks(links);
 
   // Comments
   renderComments(comments);
@@ -156,16 +153,18 @@ function renderProjects(projects) {
     return;
   }
 
-  el.innerHTML = visible.map(p => portalProjectCardHTML(p)).join('');
+  el.innerHTML = visible.map(p => {
+    const projectLinks = (_data.links || []).filter(l => l.project_id === p.id && l.is_client_visible !== 0);
+    return portalProjectCardHTML(p, projectLinks);
+  }).join('');
 }
 
-function portalProjectCardHTML(p) {
-  const desc    = _lang === 'pt' ? (p.description_pt     || p.description_en)     : (p.description_en     || p.description_pt);
-  const future  = _lang === 'pt' ? (p.future_features_pt || p.future_features_en) : (p.future_features_en || p.future_features_pt);
-  const urlsArr = Array.isArray(p.urls) ? p.urls : [];
+function portalProjectCardHTML(p, projectLinks = []) {
+  const desc   = _lang === 'pt' ? (p.description_pt     || p.description_en)     : (p.description_en     || p.description_pt);
+  const future = _lang === 'pt' ? (p.future_features_pt || p.future_features_en) : (p.future_features_en || p.future_features_pt);
 
-  const urlLinks = urlsArr.map(u =>
-    `<a href="${esc(u)}" target="_blank" class="project-link">${esc(p.link_type || 'link')} ↗</a>`
+  const linkPills = projectLinks.map(l =>
+    `<a href="${esc(l.url)}" target="_blank" class="resource-link resource-link--btn">${esc(linkDisplayLabel(l))} ↗</a>`
   ).join('');
 
   return `
@@ -177,7 +176,7 @@ function portalProjectCardHTML(p) {
 
       ${desc ? `<div class="project-card__body">${nl2br(desc)}</div>` : ''}
 
-      ${urlLinks ? `<div class="project-card__links">${urlLinks}</div>` : ''}
+      ${linkPills ? `<div class="project-card__links links-list">${linkPills}</div>` : ''}
 
       ${future ? `
         <div style="margin-top:10px; padding-top:10px; border-top:1px solid var(--border);">
@@ -224,22 +223,6 @@ function linkDisplayLabel(l) {
   return 'Link';
 }
 
-function renderPortalLinks(links) {
-  const section = document.getElementById('portal-links-section');
-  const el      = document.getElementById('portal-links-list');
-  const visible = (links || []).filter(l => l.is_client_visible !== 0);
-
-  if (!visible.length) {
-    section.classList.add('hidden');
-    return;
-  }
-
-  section.classList.remove('hidden');
-  el.innerHTML = visible.map(l => `
-    <a href="${esc(l.url)}" target="_blank" class="resource-link resource-link--btn">
-      ${esc(linkDisplayLabel(l))} ↗
-    </a>`).join('');
-}
 
 // ---- Comments ----
 

@@ -214,16 +214,6 @@
           <div id="notes-empty" class="text-outline-variant text-[12px] hidden">No notes yet.</div>
         </div>
 
-        <!-- Links -->
-        <div class="bg-inverse-surface rounded-lg border border-white/5 p-6">
-          <p class="text-outline-variant text-[11px] uppercase font-semibold tracking-widest mb-3">Links</p>
-          <div id="links-list" class="flex flex-col gap-2 mb-3"></div>
-          <button id="add-link-btn" type="button"
-                  class="flex items-center gap-1 text-outline-variant hover:text-primary-fixed-dim text-[11px] uppercase tracking-widest transition-colors">
-            <span class="material-symbols-outlined text-[14px]">add</span>
-            Add Link
-          </button>
-        </div>
 
         <!-- Portal Access -->
         <div class="bg-inverse-surface rounded-lg border border-white/5 p-6">
@@ -324,37 +314,16 @@
         <label class="form-label">Project Title *</label>
         <input id="proj-title" type="text" class="form-control" placeholder="e.g. Live Website, Automation Flow, Dashboard">
       </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">Status</label>
-          <select id="proj-status" class="form-control">
-            <option value="not_started">Not Started</option>
-            <option value="in_progress">In Progress</option>
-            <option value="waiting_on_client">Waiting on Client</option>
-            <option value="v1_done">Version 1 Done</option>
-            <option value="updates_in_progress">Updates in Progress</option>
-            <option value="completed">Completed</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Link Label</label>
-          <select id="proj-link-type" class="form-control">
-            <option value="live_site">Live Site</option>
-            <option value="staging">Staging</option>
-            <option value="test">Test Link</option>
-            <option value="dashboard">Dashboard</option>
-            <option value="automation">Automation Flow</option>
-            <option value="github_repo">GitHub Repo</option>
-            <option value="github_project">GitHub Project</option>
-            <option value="cloudflare">Cloudflare</option>
-            <option value="admin">Admin Page</option>
-            <option value="other">Other</option>
-          </select>
-        </div>
-      </div>
       <div class="form-group">
-        <label class="form-label">URLs (one per line)</label>
-        <textarea id="proj-urls" class="form-control" rows="3" placeholder="https://...&#10;https://..."></textarea>
+        <label class="form-label">Status</label>
+        <select id="proj-status" class="form-control">
+          <option value="not_started">Not Started</option>
+          <option value="in_progress">In Progress</option>
+          <option value="waiting_on_client">Waiting on Client</option>
+          <option value="v1_done">Version 1 Done</option>
+          <option value="updates_in_progress">Updates in Progress</option>
+          <option value="completed">Completed</option>
+        </select>
       </div>
       <div class="form-group">
         <label class="form-label">Description (English)</label>
@@ -452,6 +421,6 @@
     }
   });
 </script>
-<script type="module" src="js/client-page.js?v=5"></script>
+<script type="module" src="js/client-page.js?v=6"></script>
 </body>
 </html>
