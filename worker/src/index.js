@@ -1007,7 +1007,7 @@ async function handleGetFeedback(clientId, url, env, user) {
   if (!projectId) throw new ApiError('project_id required', 400);
 
   const { results } = await env.DB.prepare(`
-    SELECT id, comment_type, content, body_en, body_pt, is_edited, admin_translation, created_at, updated_at
+    SELECT id, comment_type, content, body_en, body_pt, is_edited, admin_translation, created_at
     FROM client_comments
     WHERE client_id = ? AND project_id = ? AND comment_type IN ('favorite','suggestion')
     ORDER BY created_at ASC
@@ -1034,7 +1034,7 @@ async function handleUpsertFeedback(clientId, request, env, user) {
     // Update — mark as edited
     await env.DB.prepare(`
       UPDATE client_comments
-      SET content = ?, body_en = ?, body_pt = ?, is_edited = 1, updated_at = CURRENT_TIMESTAMP
+      SET content = ?, body_en = ?, body_pt = ?, is_edited = 1
       WHERE id = ?
     `).bind(body, body, body, existing.id).run();
     const row = await env.DB.prepare('SELECT * FROM client_comments WHERE id = ?').bind(existing.id).first();
@@ -1057,7 +1057,7 @@ async function handleUpsertFeedbackTranslation(clientId, request, env) {
 
   await env.DB.prepare(`
     UPDATE client_comments
-    SET admin_translation = ?, updated_at = CURRENT_TIMESTAMP
+    SET admin_translation = ?
     WHERE client_id = ? AND project_id = ? AND comment_type = ?
   `).bind(admin_translation ?? null, clientId, project_id, comment_type).run();
   return jsonResponse({ success: true }, 200, env);
