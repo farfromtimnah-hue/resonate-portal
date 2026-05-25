@@ -133,10 +133,46 @@
 <body>
 
 <!-- ── Video background ───────────────────────────────────── -->
-<video id="bg-video" autoplay muted loop playsinline>
+<video id="bg-video" autoplay muted playsinline>
   <source src="https://pub-e211b514f9d24671bfa2577d123c7544.r2.dev/ripple-loop.mp4" type="video/mp4">
 </video>
 <div id="bg-overlay"></div>
+
+<!-- ── Ping-pong video loop ───────────────────────────────── -->
+<script>
+(function () {
+  var v = document.getElementById('bg-video');
+  var reversing = false;
+  var lastTs    = null;
+
+  // When forward play ends, step currentTime backwards at ≈ 1× speed
+  v.addEventListener('ended', function () {
+    reversing = true;
+    lastTs    = null;
+    requestAnimationFrame(stepBack);
+  });
+
+  function stepBack(ts) {
+    if (!reversing) return;
+
+    if (lastTs !== null) {
+      // Cap dt at 100 ms so a backgrounded tab resuming doesn't jump
+      var dt = Math.min((ts - lastTs) / 1000, 0.1);
+      v.currentTime = Math.max(0, v.currentTime - dt);
+    }
+    lastTs = ts;
+
+    if (v.currentTime <= 0.05) {
+      reversing     = false;
+      v.currentTime = 0;
+      v.play().catch(function () {});
+      return;
+    }
+
+    requestAnimationFrame(stepBack);
+  }
+})();
+</script>
 
 <!-- ── Login UI ───────────────────────────────────────────── -->
 <div style="position:relative; z-index:10; display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; padding:24px;">
