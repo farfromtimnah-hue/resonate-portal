@@ -1,12 +1,15 @@
 ## Status
 - Project scaffolded (all backend, JS logic, and HTML structure intact)
 - Design system analysis complete
-- All 6 HTML/CSS pages complete and deployed on GitHub Pages
+- All HTML/CSS pages complete and deployed on GitHub Pages
 - Firebase Auth connected (real config wired in)
 - Cloudflare Worker complete with all routes and deployed
-- D1 schema v2 applied to remote database
+- D1 schema v2 applied to remote database; schema updates applied per session
 - Admin user (Nicole LePage) seeded in D1
 - GitHub Pages live and routing correctly at farfromtimnah-hue.github.io/resonate-portal
+- R2 bucket live: resonate-logos / pub-cec1d75467e245eb85ad5c1a9955a3e2.r2.dev
+- Public project view live: public.html?project=<id> (no login required)
+- Alice Prata phone/WhatsApp updated to +12144485917 in D1
 
 ## Completed ✓
 
@@ -26,6 +29,43 @@
 11. worker/wrangler.toml — D1 ID bound, Firebase project ID set, CORS locked to GitHub Pages, R2 bucket stub
 12. firebase.json — hosting config created
 13. PR #1 opened and merged: backend/firebase-worker-schema → main
+
+### Sessions 4–6 — Portal features, logo upload, share button, public view
+
+#### Session 4 fixes
+19a. isProjectFormDirty() — new projects only; false for edits
+19b. New projects created at top (sort_order: 0, existing shifted to idx+1)
+19c. openAddProject passes shouldClose dirty-check guard to openModal
+
+#### Session 5 — Logo upload + portal identity + tabs + warm states
+20. Logo upload (admin client page): R2 upload via POST /api/upload-logo; preview shows img or initials
+21. Client portal identity overhaul: logo_url shown as <img> if set, else styled wordmark
+22. Portal greeting with first_name: "Welcome back, Alice" / "Olá, Alice"
+    - first_name/last_name added to authenticate() return; available as _profile.first_name
+23. Projects / Vision tab navigation with smart default:
+    - Defaults to Vision tab when no visible projects; Projects tab when projects exist
+    - _tabManuallySet flag prevents auto-switching after user explicitly picks a tab
+24. Warm empty states — portal_no_projects and portal_no_comments updated with warm copy
+25. Vision tab: bilingual brand manifesto rendered from t.js vision_copy key
+26. #portal-vision-extras div reserved for future content
+27. Progress section hidden when no projects; shown when projects exist
+
+#### Session 6 — Share button + public project view
+28. Share button on each portal project card (event delegation, no per-card listener)
+    - navigator.share() on mobile (native sheet: WhatsApp, Messages, etc.)
+    - Custom floating menu on desktop: WhatsApp, Email, Copy Link (singleton pattern)
+    - Share URL: public.html?project=<id>
+29. public.html — new read-only public project page (no login required)
+    - Sticky header with EN/PT toggle
+    - Renders project card, links, Coming Up, dates
+    - Falls back to lang from client.language_preference
+30. js/public.js — no auth, raw fetch to /api/public/projects/:id
+31. Worker: GET /api/public/projects/:id — unauthenticated route
+    - Checked BEFORE authenticate() in main fetch handler
+    - Returns { project: safeProject, client, links } — client_id stripped via destructuring
+    - Only returns project if is_client_visible = 1
+32. wrangler.toml: BUCKET_PUBLIC_URL set to live R2 URL
+33. D1: logo_url column confirmed present (ALTER TABLE returned duplicate-column; column pre-existed)
 
 ### Session 3 — Deployment & live fixes
 14. wrangler deploy — Worker deployed to resonate-portal-api.farfromtimnah.workers.dev
@@ -88,6 +128,9 @@
 - POST /api/intake                 — upsert intake response (ON CONFLICT idempotent)
 - GET  /api/intake/:client_id      — list intake responses (admin or own client)
 - POST /api/upload-logo            — R2 upload, updates clients.logo_url
+- GET  /api/public/projects/:id    — unauthenticated public project view
+- GET  /api/clients/:id/feedback   — project feedback (favorite/suggestion rows) by project_id
+- PUT  /api/clients/:id/feedback   — upsert feedback row; marks is_edited=1 on update
 
 ## D1 Schema — 12 Tables
 - users (firebase_uid, role, first_name, last_name, language_preference, client_id)
@@ -118,8 +161,7 @@
 - R2 logo upload: still needs bucket creation + public access + BUCKET_PUBLIC_ID env var
 
 ## Next Steps
-- Create a first client record and test the full admin flow end to end
-- Create an R2 bucket (wrangler r2 bucket create resonate-logos) when logo upload is needed
-- Set Firebase Console → Authentication → Authorized domains → farfromtimnah-hue.github.io
-  (if not already done — prevents other origins using the auth project)
-- Add client users in Firebase Auth + D1 to test the portal flow
+- After implementing Item 11 (Firebase account creation): add FIREBASE_API_KEY to wrangler.toml secrets
+- After implementing Item 12 (Google Sign In): whitelist farfromtimnah-hue.github.io in Firebase Console → Authentication → Authorized domains; enable Google provider
+- Run `wrangler deploy` after each worker change
+- Run D1 ALTER TABLE migrations for Items 9/10 (comment_type, is_edited, admin_translation columns)
