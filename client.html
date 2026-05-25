@@ -214,18 +214,15 @@
           <div id="notes-empty" class="text-outline-variant text-[12px] hidden">No notes yet.</div>
         </div>
 
-        <!-- Internal Links -->
+        <!-- Links -->
         <div class="bg-inverse-surface rounded-lg border border-white/5 p-6">
-          <div class="flex items-center justify-between mb-4">
-            <p class="text-outline-variant text-[11px] uppercase font-semibold tracking-widest">Internal Links</p>
-            <button id="add-link-btn"
-                    class="flex items-center gap-1 text-outline-variant hover:text-primary-fixed-dim text-[11px] uppercase tracking-widest transition-colors px-3 py-1.5 rounded-full border border-white/10">
-              <span class="material-symbols-outlined text-[13px]">add</span>
-              Add
-            </button>
-          </div>
-          <div id="links-list" class="links-list"></div>
-          <div id="links-empty" class="text-outline-variant text-[12px] hidden">No links yet.</div>
+          <p class="text-outline-variant text-[11px] uppercase font-semibold tracking-widest mb-3">Links</p>
+          <div id="links-list" class="flex flex-col gap-2 mb-3"></div>
+          <button id="add-link-btn" type="button"
+                  class="flex items-center gap-1 text-outline-variant hover:text-primary-fixed-dim text-[11px] uppercase tracking-widest transition-colors">
+            <span class="material-symbols-outlined text-[14px]">add</span>
+            Add Link
+          </button>
         </div>
 
         <!-- Portal Access -->
@@ -416,50 +413,6 @@
   </div>
 </div>
 
-<!-- Add/Edit Link Modal -->
-<div id="modal-link" class="modal">
-  <div class="modal__box" style="max-width:480px;">
-    <div class="modal__head">
-      <span class="modal__title" id="modal-link-title">Add Link</span>
-      <button type="button" class="modal__close" data-close="modal-link">✕</button>
-    </div>
-    <div class="modal__body">
-      <div class="form-group">
-        <label class="form-label">Button Label (shown to client) *</label>
-        <input id="link-label" type="text" class="form-control" placeholder="e.g. Download Zoho Mail App, View Your Invoice, Access Your Portal">
-      </div>
-      <div class="form-group">
-        <label class="form-label">URL *</label>
-        <input id="link-url" type="url" class="form-control" placeholder="https://…">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Type</label>
-        <select id="link-type" class="form-control">
-          <option value="live_site">Live Site</option>
-          <option value="staging">Staging</option>
-          <option value="test">Test Link</option>
-          <option value="github_repo">GitHub Repo</option>
-          <option value="github_project">GitHub Project</option>
-          <option value="cloudflare">Cloudflare</option>
-          <option value="admin">Admin Page</option>
-          <option value="dashboard">Dashboard</option>
-          <option value="automation">Automation Flow</option>
-          <option value="other">Other</option>
-        </select>
-      </div>
-      <label class="form-check" style="margin-top:4px;">
-        <input id="link-visible" type="checkbox">
-        <span>Show this link to the client</span>
-      </label>
-    </div>
-    <div class="modal__footer">
-      <button id="link-delete-btn" class="btn btn--danger btn--sm hidden">Delete</button>
-      <button type="button" class="btn btn--secondary" data-close="modal-link">Cancel</button>
-      <button id="link-save-btn" class="btn btn--primary">Save Link</button>
-    </div>
-  </div>
-</div>
-
 <!-- Add Portal Access Modal -->
 <div id="modal-portal-access" class="modal">
   <div class="modal__box" style="max-width:440px;">
@@ -499,6 +452,6 @@
     }
   });
 </script>
-<script type="module" src="js/client-page.js?v=4"></script>
+<script type="module" src="js/client-page.js?v=5"></script>
 </body>
 </html>

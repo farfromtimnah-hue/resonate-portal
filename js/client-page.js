@@ -13,7 +13,6 @@ let _clientId = null;
 let _data     = null;          // { client, projects, comments, notes, links, linked_user, history }
 let _editingProjectId = null;
 let _editingNoteId    = null;
-let _editingLinkId    = null;
 
 async function init() {
   const profile = await requireAuth('admin');
@@ -40,7 +39,7 @@ async function init() {
   document.getElementById('archive-now-btn')?.addEventListener('click', archiveClient);
   document.getElementById('add-project-btn').addEventListener('click', openAddProject);
   document.getElementById('add-note-btn').addEventListener('click',    openAddNote);
-  document.getElementById('add-link-btn').addEventListener('click',    openAddLink);
+  document.getElementById('add-link-btn').addEventListener('click',    () => addLinkRow());
   document.getElementById('send-comment-btn').addEventListener('click', sendComment);
 
   // Save handlers
@@ -48,8 +47,6 @@ async function init() {
   document.getElementById('proj-save-btn').addEventListener('click',  saveProject);
   document.getElementById('proj-delete-btn').addEventListener('click',deleteProject);
   document.getElementById('note-save-btn').addEventListener('click',  saveNote);
-  document.getElementById('link-save-btn').addEventListener('click',  saveLink);
-  document.getElementById('link-delete-btn').addEventListener('click',deleteLink);
   document.getElementById('pa-save-btn').addEventListener('click',    savePortalAccess);
 
   await loadData();
@@ -411,84 +408,104 @@ async function saveNote() {
 // ---- Links ----
 
 function renderLinks(links) {
-  const el    = document.getElementById('links-list');
-  const empty = document.getElementById('links-empty');
-  if (!links.length) {
-    el.innerHTML = '';
-    empty.classList.remove('hidden');
-    return;
+  document.getElementById('links-list').innerHTML = '';
+  links.forEach(l => addLinkRow(l));
+}
+
+function addLinkRow(link = null) {
+  const listEl = document.getElementById('links-list');
+
+  const row = document.createElement('div');
+  row.className = 'link-row';
+  if (link?.id) row.dataset.id = String(link.id);
+
+  // Label input
+  const labelInp = document.createElement('input');
+  labelInp.type = 'text';
+  labelInp.className = 'form-control link-row__label';
+  labelInp.placeholder = 'e.g. Download Zoho Mail App';
+  labelInp.value = link?.label || '';
+
+  // URL input
+  const urlInp = document.createElement('input');
+  urlInp.type = 'text';
+  urlInp.className = 'form-control link-row__url';
+  urlInp.placeholder = 'https://…';
+  urlInp.value = link?.url || '';
+
+  // Client-visible eye toggle
+  let isVisible = link ? !!link.is_client_visible : true;
+  const eyeBtn = document.createElement('button');
+  eyeBtn.type = 'button';
+  eyeBtn.className = 'btn--icon-bare';
+  function syncEye() {
+    eyeBtn.title = isVisible
+      ? 'Shown on client portal — click to hide'
+      : 'Hidden from client portal — click to show';
+    eyeBtn.innerHTML = `<span class="material-symbols-outlined" style="font-size:18px;${isVisible ? ' color:var(--brand)' : ' opacity:0.3'}">visibility</span>`;
   }
-  empty.classList.add('hidden');
-
-  el.innerHTML = links.map(l => `
-    <div class="resource-link">
-      <span class="resource-link__label">${esc(l.label)}</span>
-      <a href="${esc(l.url)}" target="_blank" class="resource-link__url" title="${esc(l.url)}">Open ↗</a>
-      ${l.is_client_visible ? `<span class="resource-link__badge">Client visible</span>` : ''}
-      <button class="btn btn--ghost btn--sm btn--icon" style="margin-left:4px;"
-        onclick="window.__editLink(${l.id})" title="Edit">✎</button>
-    </div>`).join('');
-
-  window.__editLink = (id) => {
-    const link = _data.links.find(l => l.id === id);
-    if (!link) return;
-    _editingLinkId = id;
-    document.getElementById('link-label').value   = link.label;
-    document.getElementById('link-url').value     = link.url;
-    document.getElementById('link-type').value    = link.link_type;
-    document.getElementById('link-visible').checked = !!link.is_client_visible;
-    document.getElementById('link-delete-btn').classList.remove('hidden');
-    document.getElementById('modal-link-title').textContent = 'Edit Link';
-    openModal('modal-link');
-  };
-}
-
-function openAddLink() {
-  _editingLinkId = null;
-  document.getElementById('link-label').value    = '';
-  document.getElementById('link-url').value      = '';
-  document.getElementById('link-type').value     = 'other';
-  document.getElementById('link-visible').checked = false;
-  document.getElementById('link-delete-btn').classList.add('hidden');
-  document.getElementById('modal-link-title').textContent = 'Add Link';
-  openModal('modal-link');
-}
-
-async function saveLink() {
-  const label   = document.getElementById('link-label').value.trim();
-  const url     = document.getElementById('link-url').value.trim();
-  const type    = document.getElementById('link-type').value;
-  const visible = document.getElementById('link-visible').checked;
-  if (!label || !url) { toast('Label and URL are required.', 'error'); return; }
-
-  const btn = document.getElementById('link-save-btn');
-  btn.disabled = true; btn.textContent = 'Saving…';
-
-  try {
-    if (_editingLinkId) {
-      const link = await api.updateLink(_clientId, _editingLinkId, { label, url, link_type: type, is_client_visible: visible });
-      const idx  = _data.links.findIndex(l => l.id === _editingLinkId);
-      if (idx >= 0) _data.links[idx] = link;
-    } else {
-      const link = await api.addLink(_clientId, { label, url, link_type: type, is_client_visible: visible });
-      _data.links.push(link);
+  syncEye();
+  eyeBtn.addEventListener('click', async () => {
+    isVisible = !isVisible;
+    syncEye();
+    if (!row.dataset.id) return; // will be saved on first auto-save
+    try {
+      const updated = await api.updateLink(_clientId, +row.dataset.id, { is_client_visible: isVisible });
+      const l = _data.links.find(x => x.id === +row.dataset.id);
+      if (l) l.is_client_visible = updated.is_client_visible;
+    } catch (err) {
+      isVisible = !isVisible; syncEye();
+      toast(err.message, 'error');
     }
-    renderLinks(_data.links);
-    closeModal('modal-link');
-    toast('Link saved.');
-  } catch (err) { toast(err.message, 'error'); }
-  finally { btn.disabled = false; btn.textContent = 'Save Link'; }
-}
+  });
 
-async function deleteLink() {
-  if (!confirm('Delete this link?')) return;
-  try {
-    await api.deleteLink(_clientId, _editingLinkId);
-    _data.links = _data.links.filter(l => l.id !== _editingLinkId);
-    renderLinks(_data.links);
-    closeModal('modal-link');
-    toast('Link deleted.');
-  } catch (err) { toast(err.message, 'error'); }
+  // Remove button
+  const xBtn = document.createElement('button');
+  xBtn.type = 'button';
+  xBtn.className = 'btn--icon-bare';
+  xBtn.title = 'Remove link';
+  xBtn.innerHTML = `<span class="material-symbols-outlined" style="font-size:16px; color:var(--s-red, #f87171)">close</span>`;
+  xBtn.addEventListener('click', async () => {
+    if (row.dataset.id) {
+      if (!confirm('Delete this link?')) return;
+      try {
+        await api.deleteLink(_clientId, +row.dataset.id);
+        _data.links = _data.links.filter(x => x.id !== +row.dataset.id);
+        row.remove();
+      } catch (err) { toast(err.message, 'error'); }
+    } else {
+      row.remove();
+    }
+  });
+
+  // Auto-save: fires when either input loses focus, saves when both fields are filled
+  let isSaving = false;
+  async function autoSave() {
+    if (isSaving) return;
+    const label = labelInp.value.trim();
+    const url   = urlInp.value.trim();
+    if (!label || !url) return;
+    isSaving = true;
+    try {
+      if (row.dataset.id) {
+        const updated = await api.updateLink(_clientId, +row.dataset.id, { label, url });
+        const l = _data.links.find(x => x.id === +row.dataset.id);
+        if (l) { l.label = updated.label; l.url = updated.url; }
+      } else {
+        const created = await api.addLink(_clientId, { label, url, is_client_visible: isVisible });
+        row.dataset.id = String(created.id);
+        _data.links.push(created);
+      }
+    } catch (err) { toast(err.message, 'error'); }
+    finally { isSaving = false; }
+  }
+  labelInp.addEventListener('blur', autoSave);
+  urlInp.addEventListener('blur', autoSave);
+
+  row.append(labelInp, urlInp, eyeBtn, xBtn);
+  listEl.appendChild(row);
+
+  if (!link) labelInp.focus();
 }
 
 // ---- Projects CRUD ----

@@ -634,6 +634,35 @@ a.resource-link--btn:hover {
   gap: 8px;
 }
 
+/* Inline link editor rows (admin client page) */
+.link-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.link-row .form-control {
+  padding: 6px 10px;
+  font-size: 12px;
+  height: auto;
+}
+.link-row__label { flex: 1; min-width: 0; }
+.link-row__url   { flex: 1.5; min-width: 0; }
+
+/* Bare icon button — no background, just the icon */
+.btn--icon-bare {
+  background: none;
+  border: none;
+  padding: 4px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.12s;
+}
+.btn--icon-bare:hover { background: rgba(255,255,255,0.06); }
+
 /* ============================================================
    CONTACT BLOCK
    ============================================================ */
