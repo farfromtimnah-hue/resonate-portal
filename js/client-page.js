@@ -440,21 +440,25 @@ function addLinkRow(link = null, projectId = null, containerEl = null) {
   urlInp.value = link?.url || '';
 
   // Client-visible eye toggle
+  // New (unsaved) rows are always created as visible=1; the toggle is enabled only after first save.
   let isVisible = link ? !!link.is_client_visible : true;
   const eyeBtn = document.createElement('button');
   eyeBtn.type = 'button';
   eyeBtn.className = 'btn--icon-bare';
   function syncEye() {
-    eyeBtn.title = isVisible
-      ? 'Shown on client portal — click to hide'
-      : 'Hidden from client portal — click to show';
+    const unsaved = !row.dataset.id;
+    eyeBtn.title = unsaved
+      ? 'Visible to client by default — save to change'
+      : (isVisible ? 'Shown on client portal — click to hide' : 'Hidden from client portal — click to show');
+    eyeBtn.style.opacity = unsaved ? '0.35' : '1';
+    eyeBtn.style.cursor  = unsaved ? 'default' : 'pointer';
     eyeBtn.innerHTML = `<span class="material-symbols-outlined" style="font-size:18px;${isVisible ? ' color:var(--brand)' : ' opacity:0.3'}">visibility</span>`;
   }
   syncEye();
   eyeBtn.addEventListener('click', async () => {
+    if (!row.dataset.id) return; // not saved yet — always visible on first save
     isVisible = !isVisible;
     syncEye();
-    if (!row.dataset.id) return; // will be saved on first auto-save
     try {
       const updated = await api.updateLink(_clientId, +row.dataset.id, { is_client_visible: isVisible });
       const l = _data.links.find(x => x.id === +row.dataset.id);
@@ -498,8 +502,11 @@ function addLinkRow(link = null, projectId = null, containerEl = null) {
         const l = _data.links.find(x => x.id === +row.dataset.id);
         if (l) { l.label = updated.label; l.url = updated.url; }
       } else {
-        const created = await api.addLink(_clientId, { label, url, is_client_visible: isVisible, project_id: projectId });
+        // Always create visible=1; eye toggle becomes active after save
+        const created = await api.addLink(_clientId, { label, url, is_client_visible: 1, project_id: projectId });
         row.dataset.id = String(created.id);
+        isVisible = true;   // keep in sync with what was saved
+        syncEye();          // activate the toggle now that the row has an id
         _data.links.push(created);
       }
     } catch (err) { toast(err.message, 'error'); }
