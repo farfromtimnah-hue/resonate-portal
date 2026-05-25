@@ -23,8 +23,9 @@ async function init() {
     btn.addEventListener('click', () => closeModal(btn.dataset.close));
   });
 
-  // Close modal on backdrop click
+  // Close modal on backdrop click (except temp-pw — must click Done)
   document.querySelectorAll('.modal').forEach(m => {
+    if (m.id === 'modal-temp-password') return; // force user to click Done
     m.addEventListener('click', e => { if (e.target === m) closeModal(m.id); });
   });
 
@@ -36,6 +37,19 @@ async function init() {
   document.getElementById('filter-lang').addEventListener('change',   loadClients);
 
   await loadClients();
+}
+
+function showSkeletons(grid, count = 5) {
+  grid.innerHTML = Array.from({ length: count }, () => `
+    <div class="skeleton-card">
+      <div class="skeleton-line skeleton-line--lg"></div>
+      <div class="skeleton-line skeleton-line--sm" style="margin-top:14px;"></div>
+      <div class="skeleton-line skeleton-line--xs" style="margin-top:6px;"></div>
+      <div style="display:flex;gap:8px;margin-top:18px;">
+        <div class="skeleton-line" style="width:70px;height:28px;border-radius:9999px;margin-bottom:0;"></div>
+        <div class="skeleton-line" style="width:80px;height:28px;border-radius:9999px;margin-bottom:0;"></div>
+      </div>
+    </div>`).join('');
 }
 
 async function loadClients() {
@@ -51,7 +65,8 @@ async function loadClients() {
   const qs = params.toString() ? `?${params}` : '';
 
   const grid = document.getElementById('clients-grid');
-  grid.innerHTML = '<div class="loading">Loading…</div>';
+  // Show skeletons immediately — never a blank screen
+  showSkeletons(grid, 5);
 
   try {
     _clients = await api.clients(qs);
@@ -79,9 +94,37 @@ function renderClients(clients) {
     return;
   }
 
-  grid.innerHTML = clients.map(c => clientCardHTML(c)).join('');
+  // Render first 5 immediately, then append the rest after paint
+  const first = clients.slice(0, 5);
+  const rest  = clients.slice(5);
 
-  // Wire up action buttons (stop propagation so card click doesn't fire)
+  grid.innerHTML = first.map(c => clientCardHTML(c)).join('');
+  wireContactBtns(grid);
+
+  if (rest.length) {
+    const append = () => {
+      const frag = document.createDocumentFragment();
+      rest.forEach(c => {
+        const div = document.createElement('div');
+        div.innerHTML = clientCardHTML(c);
+        frag.appendChild(div.firstElementChild);
+      });
+      grid.appendChild(frag);
+      wireContactBtns(grid);
+    };
+    if ('requestIdleCallback' in window) {
+      requestIdleCallback(append, { timeout: 500 });
+    } else {
+      setTimeout(append, 0);
+    }
+  }
+}
+
+function wireContactBtns(grid) {
+  grid.querySelectorAll('.contact-btn').forEach(btn => {
+    // Remove old listener before re-adding to avoid duplicates on re-render
+    btn.replaceWith(btn.cloneNode(true));
+  });
   grid.querySelectorAll('.contact-btn').forEach(btn => {
     btn.addEventListener('click', e => e.stopPropagation());
   });
@@ -126,44 +169,143 @@ function clientCardHTML(c) {
     </a>`;
 }
 
+// Build full international phone number from country-code select + number input
+function buildPhone(ccId, numId) {
+  const cc  = document.getElementById(ccId)?.value || '';
+  const num = document.getElementById(numId)?.value.trim().replace(/\D/g, '') || '';
+  if (!num) return null;
+  return cc + num;
+}
+
 async function createClient() {
   const btn = document.getElementById('cc-save-btn');
   btn.disabled = true;
   btn.textContent = 'Creating…';
 
   try {
+    const firstName = document.getElementById('cc-first-name').value.trim();
+    const lastName  = document.getElementById('cc-last-name').value.trim();
+    // Auto-fill contact name if left blank
+    const nameField = document.getElementById('cc-name');
+    if (!nameField.value.trim() && (firstName || lastName)) {
+      nameField.value = [firstName, lastName].filter(Boolean).join(' ');
+    }
+
     const data = {
-      name:                document.getElementById('cc-name').value.trim(),
+      name:                nameField.value.trim(),
+      first_name:          firstName || null,
+      last_name:           lastName  || null,
       business_name:       document.getElementById('cc-business').value.trim()  || null,
       email:               document.getElementById('cc-email').value.trim()     || null,
       language_preference: document.getElementById('cc-lang').value,
-      phone:               document.getElementById('cc-phone').value.trim()     || null,
-      whatsapp:            document.getElementById('cc-whatsapp').value.trim()  || null,
+      phone:               buildPhone('cc-phone-cc', 'cc-phone-num'),
+      whatsapp:            buildPhone('cc-wa-cc',    'cc-wa-num'),
       website:             document.getElementById('cc-website').value.trim()   || null,
       overall_status:      document.getElementById('cc-status').value.trim()    || 'active',
       address:             document.getElementById('cc-address').value.trim()   || null,
       contact_notes:       document.getElementById('cc-notes').value.trim()     || null,
     };
 
-    if (!data.name) { toast('Contact name is required.', 'error'); return; }
+    if (!data.name) { toast('Contact name is required.', 'error'); btn.disabled = false; btn.textContent = 'Create Client'; return; }
 
-    const client = await api.createClient(data);
+    const res = await api.createClient(data);
+    const client = res.client || res; // worker now returns { client, temp_password }
     closeModal('modal-create-client');
     clearCreateForm();
-    toast('Client created.');
-    window.location.href = `/resonate-portal/client.html?id=${client.id}`;
+
+    if (res.temp_password) {
+      showTempPasswordModal(res.temp_password, client, data.email, data.whatsapp, data.language_preference);
+    } else {
+      toast('Client created.');
+      window.location.href = `/resonate-portal/client.html?id=${client.id}`;
+    }
   } catch (err) {
     toast(err.message, 'error');
+    const btn2 = document.getElementById('cc-save-btn');
+    btn2.disabled = false;
+    btn2.textContent = 'Create Client';
   } finally {
     btn.disabled = false;
     btn.textContent = 'Create Client';
   }
 }
 
+function showTempPasswordModal(tempPw, client, email, whatsapp, lang) {
+  document.getElementById('temp-pw-display').textContent = tempPw;
+
+  // Copy button
+  document.getElementById('temp-pw-copy-btn').onclick = async () => {
+    try {
+      await navigator.clipboard.writeText(tempPw);
+      document.getElementById('temp-pw-copy-btn').textContent = 'Copied!';
+      setTimeout(() => { document.getElementById('temp-pw-copy-btn').textContent = 'Copy Password'; }, 1800);
+    } catch {}
+  };
+
+  // Done button — show send-welcome modal
+  document.getElementById('temp-pw-done-btn').onclick = () => {
+    closeModal('modal-temp-password');
+    showSendWelcomeModal(client, email, whatsapp, lang, tempPw);
+  };
+
+  openModal('modal-temp-password');
+}
+
+function showSendWelcomeModal(client, email, whatsapp, lang, tempPw) {
+  const name      = client.name || 'there';
+  const firstName = name.trim().split(/\s+/)[0];
+  const portalUrl = `https://farfromtimnah-hue.github.io/resonate-portal/portal.html`;
+
+  const msgEn = `Hi ${firstName}! We're so glad you're here. Your Resonate portal is ready and waiting for you. Log in here: ${portalUrl} — Email: ${email || ''} / Temporary password: ${tempPw}. Can't wait to get started together!`;
+  const msgPt = `Oi ${firstName}! Tudo bem? Que alegria ter você aqui! Seu portal Resonate está prontinho te esperando. Acesse aqui: ${portalUrl} — E-mail: ${email || ''} / Senha temporária: ${tempPw}. Mal podemos esperar para começar essa jornada juntos!`;
+
+  const msg = lang === 'pt' ? msgPt : msgEn;
+
+  document.getElementById('welcome-msg-preview').value = msg;
+
+  // WhatsApp button — opens wa.me with pre-filled message
+  const waBtn = document.getElementById('welcome-wa-btn');
+  if (whatsapp) {
+    const waNum = whatsapp.replace(/\D/g, '');
+    waBtn.href = `https://wa.me/${waNum}?text=${encodeURIComponent(msg)}`;
+    waBtn.style.display = '';
+  } else {
+    waBtn.style.display = 'none';
+  }
+
+  // Email button — opens mail client
+  const emailBtn = document.getElementById('welcome-email-btn');
+  if (email) {
+    const subject = lang === 'pt' ? 'Seu portal Resonate está pronto!' : 'Your Resonate portal is ready!';
+    // Get live textarea value so admin can edit before sending
+    emailBtn.onclick = () => {
+      const body = document.getElementById('welcome-msg-preview').value;
+      window.open(`mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
+    };
+    emailBtn.removeAttribute('href');
+    emailBtn.style.display = '';
+  } else {
+    emailBtn.style.display = 'none';
+  }
+
+  openModal('modal-send-welcome');
+
+  // After closing: navigate to client page
+  const closeHandler = () => {
+    window.location.href = `/resonate-portal/client.html?id=${client.id}`;
+  };
+  document.getElementById('modal-send-welcome').addEventListener('click', e => {
+    if (e.target === e.currentTarget) closeHandler();
+  }, { once: true });
+  // Also wire skip button
+  document.querySelector('[data-close="modal-send-welcome"]').addEventListener('click', closeHandler, { once: true });
+}
+
 function clearCreateForm() {
-  ['cc-name','cc-business','cc-email','cc-phone','cc-whatsapp',
-   'cc-website','cc-address','cc-notes'].forEach(id => {
-    document.getElementById(id).value = '';
+  ['cc-first-name','cc-last-name','cc-name','cc-business','cc-email',
+   'cc-phone-num','cc-wa-num','cc-website','cc-address','cc-notes'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
   });
   document.getElementById('cc-status').value = 'active';
   document.getElementById('cc-lang').value   = 'en';

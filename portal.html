@@ -80,11 +80,16 @@
   <!-- Content (hidden until loaded) -->
   <div id="content" class="hidden">
 
-    <!-- Identity: logo / wordmark + greeting -->
-    <div class="pb-6 mb-5 border-b border-black/5">
-      <div id="portal-logo-area" class="mb-2"></div>
-      <p id="portal-greeting" class="portal-greeting"></p>
+    <!-- Identity: logo / wordmark + greeting — single flex row -->
+    <div class="pb-5 mb-4 border-b border-black/5">
+      <div class="portal-identity-row">
+        <div id="portal-logo-area"></div>
+        <p id="portal-greeting" class="portal-greeting"></p>
+      </div>
     </div>
+
+    <!-- Welcome message -->
+    <p id="portal-welcome-msg" class="portal-welcome-msg"></p>
 
     <!-- Progress (hidden when no projects) -->
     <div id="portal-progress-section" class="bg-white rounded-lg border border-black/5 p-6 shadow-sm mb-5">
@@ -131,6 +136,7 @@
         <label class="form-label" style="display:block; margin-bottom:6px;"
                data-i18n="portal_message_us">Send a Message</label>
         <textarea id="portal-comment-input" class="form-control" rows="3"
+                  data-i18n-ph="portal_message_placeholder"
                   placeholder="Type your message here…"></textarea>
         <div style="display:flex; justify-content:flex-end; margin-top:8px;">
           <button id="portal-send-btn" class="btn btn--primary">
@@ -225,6 +231,6 @@
   </div>
 </div>
 
-<script type="module" src="js/portal.js?v=9"></script>
+<script type="module" src="js/portal.js?v=10"></script>
 </body>
 </html>

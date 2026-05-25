@@ -48,8 +48,11 @@
 <div class="bg-glow-1"></div>
 <div class="bg-glow-2"></div>
 
+<!-- Mobile overlay -->
+<div id="mobile-nav-overlay" class="mobile-nav-overlay"></div>
+
 <!-- ── Left Sidebar ─────────────────────────────────────────── -->
-<aside class="fixed left-0 top-0 h-full w-72 flex flex-col bg-inverse-surface border-r border-white/5 z-50">
+<aside id="client-sidebar" class="client-sidebar fixed left-0 top-0 h-full w-72 flex flex-col bg-inverse-surface border-r border-white/5 z-50">
   <div class="flex flex-col h-full px-6 py-8">
 
     <!-- Brand -->
@@ -94,7 +97,15 @@
 </aside>
 
 <!-- ── Main Content ─────────────────────────────────────────── -->
-<main class="ml-72 min-h-screen relative z-10 px-8 xl:px-12 py-10">
+<main class="client-main ml-72 min-h-screen relative z-10 px-8 xl:px-12 py-10">
+
+  <!-- Mobile header (hamburger + brand) — hidden on desktop -->
+  <div class="client-mobile-header">
+    <button id="mobile-menu-btn" class="mobile-menu-btn" aria-label="Open navigation">
+      <span class="material-symbols-outlined" style="font-size:22px;">menu</span>
+    </button>
+    <span style="font-family:'Newsreader',serif; font-weight:700; font-size:18px; color:#9ccaff; letter-spacing:-0.02em;">Resonate</span>
+  </div>
 
   <!-- Back button — always visible, above loading state -->
   <div style="margin-bottom:1.5rem;">
@@ -451,6 +462,20 @@
     }
   });
 </script>
-<script type="module" src="js/client-page.js?v=11"></script>
+<script type="module" src="js/client-page.js?v=12"></script>
+
+<script>
+(function () {
+  var btn     = document.getElementById('mobile-menu-btn');
+  var sidebar = document.getElementById('client-sidebar');
+  var overlay = document.getElementById('mobile-nav-overlay');
+  if (!btn) return;
+  function open()  { sidebar.classList.add('client-sidebar--open');  overlay.classList.add('mobile-nav-overlay--open');  document.body.style.overflow='hidden'; }
+  function close() { sidebar.classList.remove('client-sidebar--open'); overlay.classList.remove('mobile-nav-overlay--open'); document.body.style.overflow=''; }
+  btn.addEventListener('click', open);
+  overlay.addEventListener('click', close);
+  document.addEventListener('keydown', function(e){ if (e.key === 'Escape') close(); });
+})();
+</script>
 </body>
 </html>

@@ -143,7 +143,6 @@ const STRINGS = {
     // Portal
     portal_title:             'Your Project Portal',
     portal_status_heading:    'Project Status',
-    portal_contact_heading:   'Get in Touch',
     portal_call:              'Call',
     portal_whatsapp:          'WhatsApp',
     portal_email:             'Email',
@@ -154,6 +153,18 @@ const STRINGS = {
     portal_greeting:          'Welcome back',
     portal_tab_projects:      'Projects',
     portal_tab_vision:        'Vision',
+    portal_contact_heading:   'My door is always open',
+    portal_message_placeholder: 'Type your message here…',
+    portal_welcome_message:   'We know it takes trust to hand over a hat — and we don\'t take that lightly. Everything we\'re building together lives here. See something that sparks an idea? Every project has space for your favorite things — and how we could go further.',
+
+    // Per-project feedback boxes (Item 9)
+    feedback_favorite_label:      'A few of my favorite things',
+    feedback_favorite_placeholder:'My favorite part was…',
+    feedback_suggestion_label:    'How we could go further',
+    feedback_suggestion_placeholder:'Something I\'d change…',
+    feedback_edited_pill:         'Edited',
+    feedback_saving:              'Saving…',
+    feedback_saved:               'Saved',
     vision_copy:              'Every founder starts out wearing every hat. That\'s how it has to be. But at some point, the hats start wearing you. You still have the vision. You still have the drive that started all of this. But you can\'t get to it — because you\'re buried under everything else. Resonate builds the systems that hold the hats you\'ve outgrown. Not to throw them away. To hang them up — so you can walk out the door unburdened and finally chase the future you built this for. Freedom for the future. Fewer hats. More vision.',
 
     // Archive
@@ -300,7 +311,6 @@ const STRINGS = {
 
     portal_title:             'Seu Portal de Projetos',
     portal_status_heading:    'Status do Projeto',
-    portal_contact_heading:   'Fale Conosco',
     portal_call:              'Ligar',
     portal_whatsapp:          'WhatsApp',
     portal_email:             'E-mail',
@@ -308,9 +318,21 @@ const STRINGS = {
     portal_message_us:        'Enviar Mensagem',
     portal_no_projects:       'Seu primeiro projeto aparecerá aqui assim que começarmos — você está em boas mãos.',
     portal_no_comments:       'Nenhuma mensagem ainda — entre em contato a qualquer momento.',
-    portal_greeting:          'Olá',
+    portal_greeting:          'Bem-vinda',
     portal_tab_projects:      'Projetos',
     portal_tab_vision:        'Visão',
+    portal_contact_heading:   'Minha porta está sempre aberta',
+    portal_message_placeholder: 'Digite sua mensagem aqui…',
+    portal_welcome_message:   'Sabemos que é preciso confiança para entregar um chapéu — e não levamos isso levianamente. Tudo o que estamos construindo juntos está aqui. Viu algo que desperta uma ideia? Cada projeto tem espaço para o que você mais gostou — e para como podemos ir mais longe.',
+
+    // Per-project feedback boxes (Item 9)
+    feedback_favorite_label:      'Que saudade boa',
+    feedback_favorite_placeholder:'O que mais gostei foi…',
+    feedback_suggestion_label:    'Como podemos ir mais longe',
+    feedback_suggestion_placeholder:'Algo que eu mudaria…',
+    feedback_edited_pill:         'Editado',
+    feedback_saving:              'Salvando…',
+    feedback_saved:               'Salvo',
     vision_copy:              'Todo fundador começa usando todos os chapéus. É assim que precisa ser. Mas em algum momento, os chapéus começam a usar você. Você ainda tem a visão. Você ainda tem o impulso que deu início a tudo isso. Mas você não consegue alcançá-la — porque está enterrado sob tudo o mais. A Resonate constrói os sistemas que carregam os chapéus que você já superou. Não para descartá-los. Para pendurá-los — para que você possa sair pela porta sem peso e finalmente perseguir o futuro pelo qual construiu tudo isso. Liberdade para o futuro. Menos chapéus. Mais visão.',
 
     archive_title:            'Arquivo',

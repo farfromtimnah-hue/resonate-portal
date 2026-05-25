@@ -73,6 +73,11 @@ export const api = {
   updateLink:    (clientId, id, d) => req('PUT',  `/api/clients/${clientId}/links/${id}`, d),
   deleteLink:    (clientId, id)  => req('DELETE', `/api/clients/${clientId}/links/${id}`),
 
+  // Project feedback (favorite / suggestion inputs on portal project cards)
+  getFeedback:   (clientId, projectId) => req('GET', `/api/clients/${clientId}/feedback?project_id=${projectId}`),
+  upsertFeedback:(clientId, d)         => req('PUT', `/api/clients/${clientId}/feedback`, d),
+  saveFeedbackTranslation: (clientId, d) => req('PUT', `/api/clients/${clientId}/feedback/translation`, d),
+
   // Logo upload (multipart/form-data — bypasses the JSON req() helper)
   uploadLogo: async (clientId, file) => {
     const token = await getToken();

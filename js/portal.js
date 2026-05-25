@@ -8,9 +8,10 @@ import { t, setLang, getLang, statusLabel } from './t.js';
 import { esc, nl2br, formatDate, formatDateTime, toast, telLink, waLink, projectCounts,
          statusClass, openModal, closeModal } from './utils.js?v=2';
 
-let _data    = null;
-let _lang    = 'en';
-let _profile = null;
+let _data     = null;
+let _feedback = {};   // keyed by `${projectId}_${comment_type}` → row
+let _lang     = 'en';
+let _profile  = null;
 
 // Tab state — 'projects' | 'vision'
 // _tabManuallySet prevents auto-switching after user explicitly picks a tab
@@ -54,6 +55,13 @@ async function init() {
     if (project) shareProject(project, btn);
   });
 
+  // Feedback textareas — auto-save on blur (event delegation)
+  document.getElementById('tab-panel-projects').addEventListener('focusout', e => {
+    const ta = e.target.closest('.feedback-textarea');
+    if (!ta) return;
+    saveFeedback(+ta.dataset.pid, ta.dataset.type, ta.value.trim(), ta);
+  });
+
   // Change password modal wire-up
   document.getElementById('change-password-btn').addEventListener('click', openChangePasswordModal);
   document.querySelectorAll('[data-close]').forEach(btn =>
@@ -81,6 +89,17 @@ async function loadData() {
 
   try {
     _data = await api.getClient(_profile.client_id);
+
+    // Pre-load feedback for all visible projects
+    _feedback = {};
+    const visible = (_data.projects || []).filter(p => p.is_client_visible !== 0);
+    await Promise.all(visible.map(async p => {
+      try {
+        const rows = await api.getFeedback(_profile.client_id, p.id);
+        rows.forEach(r => { _feedback[`${p.id}_${r.comment_type}`] = r; });
+      } catch {} // non-fatal — project just won't have pre-populated feedback
+    }));
+
     render();
     document.getElementById('loading').classList.add('hidden');
     document.getElementById('content').classList.remove('hidden');
@@ -142,6 +161,9 @@ function renderContent() {
   // Greeting (updates on language switch)
   renderGreeting(client);
 
+  // Welcome message (updates on language switch)
+  renderWelcomeMessage();
+
   // Progress (hidden when no projects)
   renderProgress(projects);
 
@@ -162,6 +184,11 @@ function renderContent() {
 
   // Contact actions
   renderContact(client);
+}
+
+function renderWelcomeMessage() {
+  const el = document.getElementById('portal-welcome-msg');
+  if (el) el.textContent = t('portal_welcome_message');
 }
 
 function renderGreeting(client) {
@@ -202,7 +229,7 @@ function renderProgress(projects) {
       <div class="progress-count__label">${_lang === 'pt' ? 'Em andamento' : 'In Progress'}</div>
     </div>
     <div class="progress-count">
-      <div class="progress-count__number" style="color:var(--s-green)">${counts.completed}</div>
+      <div class="progress-count__number" style="color:var(--s-green)">${counts.completed} 🎩</div>
       <div class="progress-count__label">${_lang === 'pt' ? 'Concluídos' : 'Complete'}</div>
     </div>`;
 
@@ -237,10 +264,20 @@ function portalProjectCardHTML(p, projectLinks = []) {
     `<a href="${esc(l.url)}" target="_blank" class="resource-link resource-link--btn">${esc(linkDisplayLabel(l))} ↗</a>`
   ).join('');
 
+  const hatEmoji = p.status === 'completed' ? ' 🎩' : '';
+
+  // Pre-populate feedback boxes from _feedback cache
+  const favRow = _feedback[`${p.id}_favorite`];
+  const sugRow = _feedback[`${p.id}_suggestion`];
+  const favVal  = esc(favRow?.content  || '');
+  const sugVal  = esc(sugRow?.content  || '');
+  const favEdited = favRow?.is_edited ? `<span class="feedback-edited-pill">${t('feedback_edited_pill')}</span>` : '';
+  const sugEdited = sugRow?.is_edited ? `<span class="feedback-edited-pill">${t('feedback_edited_pill')}</span>` : '';
+
   return `
     <div class="project-card">
       <div class="project-card__head">
-        <span class="project-card__title">${esc(p.title)}</span>
+        <span class="project-card__title">${esc(p.title)}${hatEmoji}</span>
         <span class="badge ${statusClass(p.status)}">${statusLabel(p.status)}</span>
       </div>
 
@@ -265,7 +302,77 @@ function portalProjectCardHTML(p, projectLinks = []) {
           ${_lang === 'pt' ? 'Compartilhar' : 'Share'}
         </button>
       </div>
+
+      <!-- Per-project feedback boxes (client-editable, auto-save on blur) -->
+      <div class="feedback-boxes" style="margin-top:16px; padding-top:16px; border-top:1px solid var(--border);">
+        <div class="feedback-box" style="margin-bottom:14px;">
+          <div class="feedback-box__label">
+            ${t('feedback_favorite_label')} ${favEdited}
+          </div>
+          <textarea class="feedback-textarea form-control"
+                    data-pid="${p.id}" data-type="favorite"
+                    rows="3"
+                    placeholder="${t('feedback_favorite_placeholder')}">${favVal}</textarea>
+          <div class="feedback-status" data-pid="${p.id}" data-type="favorite"></div>
+        </div>
+        <div class="feedback-box">
+          <div class="feedback-box__label">
+            ${t('feedback_suggestion_label')} ${sugEdited}
+          </div>
+          <textarea class="feedback-textarea form-control"
+                    data-pid="${p.id}" data-type="suggestion"
+                    rows="3"
+                    placeholder="${t('feedback_suggestion_placeholder')}">${sugVal}</textarea>
+          <div class="feedback-status" data-pid="${p.id}" data-type="suggestion"></div>
+        </div>
+      </div>
     </div>`;
+}
+
+// ---- Project feedback auto-save ----
+
+async function saveFeedback(projectId, commentType, body, textareaEl) {
+  // Find the status indicator element for this textarea
+  const statusEl = document.querySelector(`.feedback-status[data-pid="${projectId}"][data-type="${commentType}"]`);
+
+  // Don't save if body is empty and there's no existing row
+  const existing = _feedback[`${projectId}_${commentType}`];
+  if (!body && !existing) return;
+
+  // Don't save if body hasn't changed
+  if (existing && (existing.content || '') === body) return;
+
+  if (statusEl) statusEl.textContent = t('feedback_saving');
+
+  try {
+    const row = await api.upsertFeedback(_profile.client_id, {
+      project_id:   projectId,
+      comment_type: commentType,
+      body,
+    });
+    _feedback[`${projectId}_${commentType}`] = row;
+
+    // Update the "Edited" pill without full re-render
+    if (row.is_edited && textareaEl) {
+      const labelEl = textareaEl.closest('.feedback-box')?.querySelector('.feedback-box__label');
+      if (labelEl && !labelEl.querySelector('.feedback-edited-pill')) {
+        const pill = document.createElement('span');
+        pill.className = 'feedback-edited-pill';
+        pill.textContent = t('feedback_edited_pill');
+        labelEl.appendChild(pill);
+      }
+    }
+
+    if (statusEl) {
+      statusEl.textContent = t('feedback_saved');
+      setTimeout(() => { if (statusEl) statusEl.textContent = ''; }, 2000);
+    }
+  } catch (err) {
+    if (statusEl) {
+      statusEl.textContent = '⚠ ' + (err.message || 'Save failed');
+      setTimeout(() => { if (statusEl) statusEl.textContent = ''; }, 3000);
+    }
+  }
 }
 
 // ---- Portal links ----

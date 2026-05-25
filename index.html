@@ -33,17 +33,28 @@
   <style>
     html, body { margin: 0; padding: 0; overflow: hidden; height: 100%; background: #0a1628; }
 
-    #bg-video {
+    /* iOS Safari requires video inside a fixed+overflow:hidden wrapper.
+       position:fixed on the video itself causes rendering bugs on iOS. */
+    #bg-wrap {
       position: fixed;
+      inset: 0;
+      overflow: hidden;
+      z-index: 0;
+      background: #0a1628; /* shows immediately before video loads */
+    }
+    #bg-video {
+      position: absolute;
       inset: 0;
       width: 100%;
       height: 100%;
       object-fit: cover;
-      z-index: 0;
+      background: #0a1628;
+      user-select: none;
+      -webkit-user-select: none;
+      pointer-events: none;
     }
-
     #bg-overlay {
-      position: fixed;
+      position: absolute;
       inset: 0;
       background: rgba(0, 0, 0, 0.45);
       z-index: 1;
@@ -115,6 +126,53 @@
       padding: 0 1em;
     }
 
+    /* Divider between email form and Google button */
+    .pill-divider {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 20px 0 16px;
+      color: rgba(255,255,255,0.28);
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+    .pill-divider::before,
+    .pill-divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: rgba(255,255,255,0.12);
+    }
+
+    /* Custom glassmorphism Google button */
+    .pill-google-btn {
+      width: 100%;
+      background: rgba(255,255,255,0.10);
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 9999px;
+      padding: 13px 24px;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      color: rgba(255,255,255,0.9);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      transition: background 0.15s, border-color 0.15s;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+    .pill-google-btn:hover {
+      background: rgba(255,255,255,0.16);
+      border-color: rgba(255,255,255,0.28);
+    }
+    .pill-google-btn:active { transform: scale(0.97); }
+    .pill-google-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
     /* Login error */
     .login-error {
       background: rgba(186,26,26,0.18);
@@ -133,16 +191,28 @@
 <body>
 
 <!-- ── Video background ───────────────────────────────────── -->
-<video id="bg-video" autoplay muted playsinline>
-  <source src="https://pub-e211b514f9d24671bfa2577d123c7544.r2.dev/ripple-loop.mp4" type="video/mp4">
-</video>
-<div id="bg-overlay"></div>
+<!-- bg-wrap is fixed+overflow:hidden; video inside is absolute.
+     This is the canonical iOS Safari workaround for video backgrounds. -->
+<div id="bg-wrap">
+  <video id="bg-video" autoplay muted loop playsinline>
+    <source src="https://pub-e211b514f9d24671bfa2577d123c7544.r2.dev/ripple-loop.mp4" type="video/mp4">
+  </video>
+  <div id="bg-overlay"></div>
+</div>
 
-<!-- ── Freeze on last frame when video ends ───────────────── -->
+<!-- ── iOS video fallback: if video hasn't started in 2 s, rely on bg-wrap #0a1628 ── -->
 <script>
-  document.getElementById('bg-video').addEventListener('ended', function () {
-    this.pause();
-  });
+(function () {
+  var video = document.getElementById('bg-video');
+  var started = false;
+  video.addEventListener('canplay', function () { started = true; }, { once: true });
+  setTimeout(function () {
+    if (!started) {
+      // Video stalled — bg-wrap already shows #0a1628, just fade in a dark overlay
+      video.style.display = 'none';
+    }
+  }, 2000);
+})();
 </script>
 
 <!-- ── Login UI ───────────────────────────────────────────── -->
@@ -220,6 +290,21 @@
         Sign In
         <span class="material-symbols-outlined" style="font-size:18px; font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24;">arrow_forward</span>
       </button>
+
+      <!-- Divider -->
+      <div class="pill-divider"><span id="divider-or">or</span></div>
+
+      <!-- Custom glassmorphism Google button -->
+      <button id="google-btn" type="button" class="pill-google-btn">
+        <!-- Google "G" logo SVG -->
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;">
+          <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 01-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.616z" fill="#4285F4"/>
+          <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 009 18z" fill="#34A853"/>
+          <path d="M3.964 10.71A5.41 5.41 0 013.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 000 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/>
+          <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 00.957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
+        </svg>
+        <span id="google-btn-text">Continue with Google</span>
+      </button>
     </form>
 
   </div>
@@ -232,7 +317,7 @@
 
 <!-- ── Firebase auth logic ────────────────────────────────── -->
 <script type="module">
-  import { signIn, signOut, getProfile } from './js/auth.js';
+  import { signIn, signOut, signInWithGoogle, getProfile } from './js/auth.js';
 
   const form        = document.getElementById('login-form');
   const btn         = document.getElementById('login-btn');
@@ -241,6 +326,15 @@
   const sessionLabel= document.getElementById('session-label');
   const continueBtn = document.getElementById('continue-btn');
   const signoutBtn  = document.getElementById('session-signout-btn');
+  const googleBtn   = document.getElementById('google-btn');
+
+  // Detect browser language for Google button label and divider text
+  if (navigator.language?.startsWith('pt')) {
+    const t = document.getElementById('google-btn-text');
+    if (t) t.textContent = 'Entrar com Google';
+    const d = document.getElementById('divider-or');
+    if (d) d.textContent = 'ou';
+  }
 
   function destFor(role) {
     return role === 'admin'
@@ -275,6 +369,29 @@
     sessionPanel.style.display = 'none';
     form.style.display = '';
     errEl.classList.remove('login-error--visible');
+  });
+
+  // ── Google Sign In ────────────────────────────────────────────
+  googleBtn.addEventListener('click', async () => {
+    googleBtn.disabled = true;
+    const originalContent = googleBtn.innerHTML;
+    document.getElementById('google-btn-text').textContent =
+      navigator.language?.startsWith('pt') ? 'Entrando…' : 'Signing in…';
+    errEl.classList.remove('login-error--visible');
+
+    try {
+      const profile = await signInWithGoogle();
+      window.location.href = destFor(profile.role);
+    } catch (err) {
+      if (err.code !== 'auth/popup-closed-by-user' && err.code !== 'auth/cancelled-popup-request') {
+        let msg = 'Google sign-in failed. Please try again.';
+        if (err.message?.includes('not registered')) msg = err.message;
+        errEl.textContent = msg;
+        errEl.classList.add('login-error--visible');
+      }
+      googleBtn.disabled = false;
+      googleBtn.innerHTML = originalContent;
+    }
   });
 
   // ── Login form submit ─────────────────────────────────────────

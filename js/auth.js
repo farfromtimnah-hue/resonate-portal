@@ -4,6 +4,7 @@
 
 import { initializeApp }                                  from 'https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js';
 import { getAuth, signInWithEmailAndPassword,
+         signInWithPopup, GoogleAuthProvider,
          onAuthStateChanged, signOut as fbSignOut,
          getIdToken, updatePassword,
          reauthenticateWithCredential,
@@ -23,6 +24,15 @@ export function getAuth_() { return auth; }
 
 export async function signIn(email, password) {
   const cred = await signInWithEmailAndPassword(auth, email, password);
+  _fbUser  = cred.user;
+  _profile = await fetchProfile(cred.user);
+  return _profile;
+}
+
+export async function signInWithGoogle() {
+  const provider = new GoogleAuthProvider();
+  provider.setCustomParameters({ prompt: 'select_account' });
+  const cred = await signInWithPopup(auth, provider);
   _fbUser  = cred.user;
   _profile = await fetchProfile(cred.user);
   return _profile;

@@ -11,6 +11,7 @@ import { esc, nl2br, formatDate, formatDateTime, formatDateFull,
 
 let _clientId = null;
 let _data     = null;          // { client, projects, comments, notes, links, linked_user, history }
+let _adminFeedback = {};       // keyed by `${projectId}_${comment_type}` → row
 let _editingProjectId = null;
 let _editingNoteId    = null;
 
@@ -110,6 +111,16 @@ async function loadData() {
 
   try {
     _data = await api.getClient(_clientId);
+
+    // Pre-load client feedback for all projects
+    _adminFeedback = {};
+    await Promise.all((_data.projects || []).map(async p => {
+      try {
+        const rows = await api.getFeedback(_clientId, p.id);
+        rows.forEach(r => { _adminFeedback[`${p.id}_${r.comment_type}`] = r; });
+      } catch {} // non-fatal
+    }));
+
     render();
     document.getElementById('loading').classList.add('hidden');
     document.getElementById('content').classList.remove('hidden');
@@ -268,6 +279,24 @@ function renderProjects(projects) {
 
   el.innerHTML = projects.map(p => projectCardHTML(p)).join('');
 
+  // Admin translation auto-save on blur (event delegation on the list)
+  el.querySelectorAll('.admin-translation-textarea').forEach(ta => {
+    ta.addEventListener('blur', async () => {
+      const pid   = +ta.dataset.pid;
+      const type  = ta.dataset.type;
+      const value = ta.value.trim();
+      try {
+        await api.saveFeedbackTranslation(_clientId, {
+          project_id: pid, comment_type: type, admin_translation: value
+        });
+        // Update local cache
+        if (_adminFeedback[`${pid}_${type}`]) {
+          _adminFeedback[`${pid}_${type}`].admin_translation = value;
+        }
+      } catch (err) { toast('Translation save failed: ' + err.message, 'error'); }
+    });
+  });
+
   // ── Drag-and-drop reorder ───────────────────────────────────
   let _draggingPid = null;
 
@@ -383,7 +412,7 @@ function projectCardHTML(p) {
     <div class="project-card ${hidden ? 'project-card--hidden' : ''}" data-project-id="${p.id}" draggable="true">
       <div class="project-card__head">
         <span class="drag-handle material-symbols-outlined" title="Drag to reorder">drag_indicator</span>
-        <span class="project-card__title">${esc(p.title)}</span>
+        <span class="project-card__title">${esc(p.title)}${p.status === 'completed' ? ' 🎩' : ''}</span>
         <div class="project-card__actions">
           <select class="status-select" data-pid="${p.id}" title="Change status">
             ${STATUS_OPTIONS.map(s =>
@@ -409,7 +438,43 @@ function projectCardHTML(p) {
         ${dueLine}
         <span style="margin-left:auto; color:var(--text-3);">Updated ${formatDate(p.updated_at)}</span>
       </div>
+
+      <!-- Admin view of client feedback (read-only + translation) -->
+      ${adminFeedbackHTML(p.id)}
     </div>`;
+}
+
+function adminFeedbackHTML(projectId) {
+  const types = [
+    { key: 'favorite',   label: "Client's favorite things",  transLabel: 'Translation: a few of my favorite things' },
+    { key: 'suggestion', label: "Client's suggestions",       transLabel: 'Translation: how we could go further' },
+  ];
+
+  const blocks = types.map(({ key, label, transLabel }) => {
+    const row     = _adminFeedback[`${projectId}_${key}`];
+    const body    = row?.content?.trim() || '';
+    const trans   = row?.admin_translation?.trim() || '';
+    const editedPill = row?.is_edited
+      ? `<span class="feedback-edited-pill" style="margin-left:6px;">Edited</span>` : '';
+
+    return `
+      <div class="admin-feedback-section">
+        <div class="admin-feedback-label">${label}${editedPill}</div>
+        <div class="admin-feedback-block ${body ? '' : 'admin-feedback-block--empty'}">
+          ${body ? esc(body).replace(/\n/g,'<br>') : 'No response yet'}
+        </div>
+        ${body ? `
+          <div class="admin-translation-field">
+            <div class="admin-translation-label">${transLabel}</div>
+            <textarea class="form-control admin-translation-textarea"
+                      data-pid="${projectId}" data-type="${key}"
+                      rows="2"
+                      placeholder="Type your translation here…">${esc(trans)}</textarea>
+          </div>` : ''}
+      </div>`;
+  }).join('');
+
+  return `<div class="admin-feedback-wrapper" style="margin-top:16px; padding-top:16px; border-top:1px solid var(--border);">${blocks}</div>`;
 }
 
 // ---- Comments ----

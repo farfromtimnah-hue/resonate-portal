@@ -801,26 +801,49 @@ html.dark .banner--info    { background: rgba(0,91,150,0.12); color: #9ccaff; bo
    PORTAL IDENTITY — logo, wordmark, greeting
    ============================================================ */
 
+/* Identity row — logo + greeting on same line */
+.portal-identity-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
 .portal-logo-img {
-  max-height: 72px;
-  max-width: 260px;
+  max-height: 56px;
+  max-width: 180px;
   object-fit: contain;
   display: block;
+  flex-shrink: 0;
 }
 .portal-wordmark {
   font-family: 'Newsreader', serif;
-  font-size: 34px;
+  font-size: 28px;
   font-weight: 700;
   color: #001d35;
   letter-spacing: -0.025em;
   line-height: 1.1;
+  flex-shrink: 0;
 }
 .portal-greeting {
   font-family: var(--font);
-  font-size: 15px;
-  color: var(--text-3);
-  margin-top: 6px;
-  font-style: italic;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-1);
+  margin: 0;
+  line-height: 1.25;
+}
+
+/* Welcome message — appears above project tabs */
+.portal-welcome-msg {
+  font-family: var(--font);
+  font-size: 14px;
+  line-height: 1.75;
+  color: var(--text-2);
+  margin: 0 0 20px;
+  padding: 16px 20px;
+  background: rgba(0, 91, 150, 0.04);
+  border-left: 3px solid var(--brand);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
 }
 
 /* ============================================================
@@ -1002,3 +1025,264 @@ html.dark .banner--info    { background: rgba(0,91,150,0.12); color: #9ccaff; bo
   width: 20px;
   text-align: center;
 }
+
+/* ============================================================
+   MOBILE NAV DRAWER (admin pages — hidden on desktop)
+   ============================================================ */
+
+/* Overlay behind the drawer */
+.mobile-nav-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 200;
+}
+.mobile-nav-overlay--open { display: block; }
+
+/* Slide-in drawer */
+.mobile-nav-drawer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 280px;
+  max-width: 85vw;
+  background: #1a1d26;
+  border-right: 1px solid rgba(255,255,255,0.06);
+  z-index: 300;
+  display: flex;
+  flex-direction: column;
+  padding: 32px 20px 32px;
+  transform: translateX(-100%);
+  transition: transform 0.26s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.mobile-nav-drawer--open { transform: translateX(0); }
+
+.mobile-nav-drawer__brand {
+  font-family: 'Newsreader', serif;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #9ccaff;
+  text-decoration: none;
+  margin-bottom: 32px;
+  display: block;
+}
+
+/* Nav links inside drawer — 44×44 min touch targets */
+.mobile-nav-drawer__link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  padding: 10px 16px;
+  border-radius: 9999px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: #c1c7d1;
+  text-decoration: none;
+  transition: background 0.15s, color 0.15s;
+  margin-bottom: 2px;
+}
+.mobile-nav-drawer__link:hover,
+.mobile-nav-drawer__link--active {
+  background: rgba(156, 202, 255, 0.08);
+  color: #9ccaff;
+}
+.mobile-nav-drawer__link .material-symbols-outlined {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+/* Hamburger button */
+.mobile-menu-btn {
+  display: none; /* shown via media query below */
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  border-radius: 8px;
+  color: #c1c7d1;
+  padding: 0;
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+.mobile-menu-btn:hover { background: rgba(255,255,255,0.06); }
+
+/* Only show hamburger below md (768px) */
+@media (max-width: 767px) {
+  .mobile-menu-btn { display: flex; }
+}
+
+/* client.html sidebar — hidden on mobile, slides in as drawer */
+@media (max-width: 767px) {
+  .client-sidebar {
+    transform: translateX(-100%);
+    transition: transform 0.26s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 300 !important;
+  }
+  .client-sidebar--open {
+    transform: translateX(0);
+  }
+  .client-main {
+    margin-left: 0 !important;
+  }
+  /* Mobile top bar for client.html */
+  .client-mobile-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 20px;
+    background: rgba(26,29,38,0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    margin: -40px -32px 24px;
+  }
+}
+@media (min-width: 768px) {
+  .client-mobile-header { display: none !important; }
+}
+
+/* Phone field — country code + number side by side */
+.phone-field {
+  display: flex;
+  gap: 6px;
+  align-items: stretch;
+}
+.phone-field .phone-cc {
+  width: 96px;
+  flex-shrink: 0;
+}
+.phone-field .phone-num {
+  flex: 1;
+}
+
+/* ============================================================
+   PER-PROJECT FEEDBACK BOXES (portal.html client input)
+   ============================================================ */
+
+.feedback-box__label {
+  font-family: var(--font);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.feedback-textarea {
+  resize: vertical;
+  min-height: 72px;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.feedback-edited-pill {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 9999px;
+  padding: 1px 7px;
+}
+.feedback-status {
+  font-family: var(--font);
+  font-size: 11px;
+  color: var(--text-3);
+  min-height: 16px;
+  margin-top: 4px;
+}
+
+/* Admin feedback read-only (client-page.js) */
+.admin-feedback-block {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  font-family: var(--font);
+  font-size: 13px;
+  color: var(--text-2);
+  line-height: 1.65;
+  white-space: pre-line;
+  min-height: 40px;
+}
+.admin-feedback-block--empty {
+  color: var(--text-3);
+  font-style: italic;
+}
+.admin-feedback-section {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+.admin-feedback-label {
+  font-family: var(--font);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.admin-translation-field {
+  margin-top: 8px;
+}
+.admin-translation-label {
+  font-family: var(--font);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  opacity: 0.7;
+  margin-bottom: 4px;
+}
+.admin-translation-textarea {
+  background: rgba(255,183,129,0.06);
+  border-color: rgba(255,183,129,0.2);
+  font-size: 12px;
+  min-height: 56px;
+  resize: vertical;
+}
+.admin-translation-textarea:focus {
+  border-color: rgba(255,183,129,0.5);
+}
+
+/* Skeleton loading cards */
+@keyframes skeletonPulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.45; }
+}
+.skeleton-card {
+  background: #2e3135;
+  border: 1px solid rgba(255,255,255,0.05);
+  border-radius: 1rem;
+  padding: 20px;
+  animation: skeletonPulse 1.4s ease-in-out infinite;
+}
+.skeleton-line {
+  background: rgba(255,255,255,0.08);
+  border-radius: 9999px;
+  height: 12px;
+  margin-bottom: 10px;
+}
+.skeleton-line--lg { height: 16px; width: 60%; }
+.skeleton-line--sm { height: 10px; width: 80%; }
+.skeleton-line--xs { height: 10px; width: 40%; }

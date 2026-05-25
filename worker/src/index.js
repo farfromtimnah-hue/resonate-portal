@@ -184,6 +184,22 @@ async function router(request, env, user, url, method, path) {
     return handleUploadLogo(request, env);
   }
 
+  // ---- PROJECT FEEDBACK (favorite / suggestion per project) ----
+  // GET  /api/clients/:id/feedback?project_id=X  — returns feedback rows for that project
+  // PUT  /api/clients/:id/feedback               — upsert a row by (client_id, project_id, comment_type)
+  // PUT  /api/clients/:id/feedback/translation   — admin saves admin_translation on a row
+  params = match('/api/clients/:id/feedback/translation', path);
+  if (params && method === 'PUT') {
+    requireAdmin(user);
+    return handleUpsertFeedbackTranslation(params.id, request, env);
+  }
+
+  params = match('/api/clients/:id/feedback', path);
+  if (params) {
+    if (method === 'GET') return handleGetFeedback(params.id, url, env, user);
+    if (method === 'PUT') return handleUpsertFeedback(params.id, request, env, user);
+  }
+
   return jsonResponse({ error: 'Not found' }, 404, env);
 }
 
@@ -273,13 +289,29 @@ async function handleListClients(env, url) {
   return jsonResponse(results, 200, env);
 }
 
+// Generate a secure temporary password: 8 random chars + uppercase + digit + symbol
+function generateTempPassword() {
+  const chars   = 'abcdefghijkmnpqrstuvwxyz'; // no l/o to avoid confusion
+  const uppers  = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+  const digits  = '23456789';
+  const symbols = '!@#$';
+  let pw = '';
+  for (let i = 0; i < 6; i++) pw += chars[Math.floor(Math.random() * chars.length)];
+  pw += uppers[Math.floor(Math.random() * uppers.length)];
+  pw += digits[Math.floor(Math.random() * digits.length)];
+  pw += symbols[Math.floor(Math.random() * symbols.length)];
+  // Shuffle so special chars aren't always at the end
+  return pw.split('').sort(() => Math.random() - 0.5).join('');
+}
+
 async function handleCreateClient(request, env, user) {
   const body = await request.json();
   const {
     name, business_name, business_display_name, legal_name,
     overall_status = 'active', language_preference = 'en',
     brand_color_primary, brand_color_secondary,
-    phone, whatsapp, email, website, address, contact_notes
+    phone, whatsapp, email, website, address, contact_notes,
+    first_name, last_name,
   } = body;
   if (!name && !business_display_name) throw new ApiError('name or business_display_name is required', 400);
 
@@ -304,7 +336,62 @@ async function handleCreateClient(request, env, user) {
   ).run();
 
   const client = await env.DB.prepare('SELECT * FROM clients WHERE id = ?').bind(result.meta.last_row_id).first();
-  return jsonResponse(client, 201, env);
+
+  // ── Auto-create Firebase account if email + API key are present ──
+  let temp_password = null;
+  let firebase_uid  = null;
+
+  if (email && env.FIREBASE_API_KEY && env.FIREBASE_API_KEY !== 'REPLACE_WITH_YOUR_FIREBASE_WEB_API_KEY') {
+    try {
+      temp_password = generateTempPassword();
+
+      // Extract first/last name from contact name
+      const nameParts  = contactName.trim().split(/\s+/);
+      const fn = first_name || nameParts[0] || '';
+      const ln = last_name  || nameParts.slice(1).join(' ') || '';
+
+      // Create Firebase Auth account via REST API
+      const fbRes = await fetch(
+        `https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${env.FIREBASE_API_KEY}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email,
+            password:    temp_password,
+            displayName: contactName,
+          }),
+        }
+      );
+
+      if (fbRes.ok) {
+        const fbData = await fbRes.json();
+        firebase_uid = fbData.localId;
+
+        // Save user record in D1
+        await env.DB.prepare(`
+          INSERT INTO users (firebase_uid, email, role, client_id, language_preference,
+                             first_name, last_name, must_change_password)
+          VALUES (?, ?, 'client', ?, ?, ?, ?, 1)
+          ON CONFLICT(firebase_uid) DO UPDATE SET
+            email = excluded.email, client_id = excluded.client_id,
+            language_preference = excluded.language_preference,
+            first_name = excluded.first_name, last_name = excluded.last_name,
+            updated_at = CURRENT_TIMESTAMP
+        `).bind(firebase_uid, email, client.id, language_preference, fn || null, ln || null).run();
+      } else {
+        // Log the error but don't fail the client creation
+        const fbErr = await fbRes.json().catch(() => ({}));
+        console.error('Firebase account creation failed:', fbErr);
+        temp_password = null; // signal to front-end that FB creation failed
+      }
+    } catch (fbErr) {
+      console.error('Firebase account creation error:', fbErr);
+      temp_password = null;
+    }
+  }
+
+  return jsonResponse({ client, temp_password, firebase_uid }, 201, env);
 }
 
 async function handleGetClient(id, env, user) {
@@ -907,6 +994,73 @@ async function handlePublicProject(projectId, env) {
   const { client_id: _removed, ...safeProject } = project;
 
   return jsonResponse({ project: safeProject, client, links }, 200, env);
+}
+
+// ---- Project feedback (favorite / suggestion) ----
+
+async function handleGetFeedback(clientId, url, env, user) {
+  // Clients can only read their own feedback; admins can read any
+  if (user.role !== 'admin' && String(user.client_id) !== String(clientId)) {
+    throw new ApiError('Forbidden', 403);
+  }
+  const projectId = url.searchParams.get('project_id');
+  if (!projectId) throw new ApiError('project_id required', 400);
+
+  const { results } = await env.DB.prepare(`
+    SELECT id, comment_type, content, body_en, body_pt, is_edited, admin_translation, created_at, updated_at
+    FROM client_comments
+    WHERE client_id = ? AND project_id = ? AND comment_type IN ('favorite','suggestion')
+    ORDER BY created_at ASC
+  `).bind(clientId, projectId).all();
+  return jsonResponse(results, 200, env);
+}
+
+async function handleUpsertFeedback(clientId, request, env, user) {
+  // Only the owning client (or admin) can write feedback
+  if (user.role !== 'admin' && String(user.client_id) !== String(clientId)) {
+    throw new ApiError('Forbidden', 403);
+  }
+  const { project_id, comment_type, body } = await request.json();
+  if (!project_id) throw new ApiError('project_id required', 400);
+  if (!['favorite','suggestion'].includes(comment_type)) throw new ApiError('comment_type must be favorite or suggestion', 400);
+
+  // Check if row already exists
+  const existing = await env.DB.prepare(`
+    SELECT id FROM client_comments
+    WHERE client_id = ? AND project_id = ? AND comment_type = ?
+  `).bind(clientId, project_id, comment_type).first();
+
+  if (existing) {
+    // Update — mark as edited
+    await env.DB.prepare(`
+      UPDATE client_comments
+      SET content = ?, body_en = ?, body_pt = ?, is_edited = 1, updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `).bind(body, body, body, existing.id).run();
+    const row = await env.DB.prepare('SELECT * FROM client_comments WHERE id = ?').bind(existing.id).first();
+    return jsonResponse(row, 200, env);
+  } else {
+    // Insert new
+    const result = await env.DB.prepare(`
+      INSERT INTO client_comments (client_id, project_id, comment_type, content, body_en, body_pt, author_role, is_edited)
+      VALUES (?, ?, ?, ?, ?, ?, 'client', 0)
+    `).bind(clientId, project_id, comment_type, body, body, body).run();
+    const row = await env.DB.prepare('SELECT * FROM client_comments WHERE id = ?').bind(result.meta.last_row_id).first();
+    return jsonResponse(row, 201, env);
+  }
+}
+
+async function handleUpsertFeedbackTranslation(clientId, request, env) {
+  const { project_id, comment_type, admin_translation } = await request.json();
+  if (!project_id) throw new ApiError('project_id required', 400);
+  if (!['favorite','suggestion'].includes(comment_type)) throw new ApiError('comment_type must be favorite or suggestion', 400);
+
+  await env.DB.prepare(`
+    UPDATE client_comments
+    SET admin_translation = ?, updated_at = CURRENT_TIMESTAMP
+    WHERE client_id = ? AND project_id = ? AND comment_type = ?
+  `).bind(admin_translation ?? null, clientId, project_id, comment_type).run();
+  return jsonResponse({ success: true }, 200, env);
 }
 
 // ---- Archive list ----
