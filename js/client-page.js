@@ -212,7 +212,76 @@ function renderProjects(projects) {
 
   el.innerHTML = projects.map(p => projectCardHTML(p)).join('');
 
-  // Status dropdowns (inline)
+  // ── Drag-and-drop reorder ───────────────────────────────────
+  let _draggingPid = null;
+
+  el.querySelectorAll('.project-card[data-project-id]').forEach(card => {
+    card.addEventListener('dragstart', e => {
+      _draggingPid = +card.dataset.projectId;
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', String(_draggingPid));
+      // Defer adding the class so the drag ghost renders normally first
+      setTimeout(() => card.classList.add('project-card--dragging'), 0);
+    });
+
+    card.addEventListener('dragend', () => {
+      card.classList.remove('project-card--dragging');
+      el.querySelectorAll('.project-card').forEach(c =>
+        c.classList.remove('project-card--drop-above', 'project-card--drop-below')
+      );
+    });
+
+    card.addEventListener('dragover', e => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      el.querySelectorAll('.project-card').forEach(c =>
+        c.classList.remove('project-card--drop-above', 'project-card--drop-below')
+      );
+      const rect = card.getBoundingClientRect();
+      card.classList.add(
+        e.clientY < rect.top + rect.height / 2
+          ? 'project-card--drop-above'
+          : 'project-card--drop-below'
+      );
+    });
+
+    card.addEventListener('dragleave', e => {
+      if (!card.contains(e.relatedTarget)) {
+        card.classList.remove('project-card--drop-above', 'project-card--drop-below');
+      }
+    });
+
+    card.addEventListener('drop', async e => {
+      e.preventDefault();
+      const targetPid = +card.dataset.projectId;
+      if (targetPid === _draggingPid) return;
+
+      const insertBefore = card.classList.contains('project-card--drop-above');
+
+      // Reorder the in-memory array
+      const srcIdx = _data.projects.findIndex(p => p.id === _draggingPid);
+      const [moved] = _data.projects.splice(srcIdx, 1);
+      const tgtIdx  = _data.projects.findIndex(p => p.id === targetPid);
+      _data.projects.splice(insertBefore ? tgtIdx : tgtIdx + 1, 0, moved);
+
+      // Re-render immediately so the order is visible
+      renderProjects(_data.projects);
+
+      // Persist new sort_order values (parallel)
+      try {
+        await Promise.all(
+          _data.projects.map((p, idx) =>
+            api.updateProject(_clientId, p.id, { sort_order: idx })
+          )
+        );
+        toast('Order saved.');
+      } catch {
+        toast('Order updated locally — failed to save to server.', 'error');
+      }
+    });
+  });
+
+  // ── Status dropdowns (inline) ──────────────────────────────
   el.querySelectorAll('.status-select').forEach(sel => {
     sel.addEventListener('change', async (e) => {
       const pid = e.target.dataset.pid;
@@ -231,7 +300,7 @@ function renderProjects(projects) {
     });
   });
 
-  // Edit buttons
+  // ── Edit buttons ───────────────────────────────────────────
   el.querySelectorAll('.proj-edit-btn').forEach(btn => {
     btn.addEventListener('click', () => openEditProject(parseInt(btn.dataset.pid)));
   });
@@ -255,8 +324,9 @@ function projectCardHTML(p) {
     : `<span class="badge status--green" style="font-size:10px;">Client visible</span>`;
 
   return `
-    <div class="project-card ${hidden ? 'project-card--hidden' : ''}" data-project-id="${p.id}">
+    <div class="project-card ${hidden ? 'project-card--hidden' : ''}" data-project-id="${p.id}" draggable="true">
       <div class="project-card__head">
+        <span class="drag-handle material-symbols-outlined" title="Drag to reorder">drag_indicator</span>
         <span class="project-card__title">${esc(p.title)}</span>
         <div class="project-card__actions">
           <select class="status-select" data-pid="${p.id}" title="Change status">
@@ -501,14 +571,15 @@ function addLinkRow(link = null, projectId = null, containerEl = null) {
         const updated = await api.updateLink(_clientId, +row.dataset.id, { label, url });
         const l = _data.links.find(x => x.id === +row.dataset.id);
         if (l) { l.label = updated.label; l.url = updated.url; }
-      } else {
-        // Always create visible=1; eye toggle becomes active after save
+      } else if (projectId !== null) {
+        // Create new link (edit-project flow: project already has an id)
         const created = await api.addLink(_clientId, { label, url, is_client_visible: 1, project_id: projectId });
         row.dataset.id = String(created.id);
         isVisible = true;   // keep in sync with what was saved
         syncEye();          // activate the toggle now that the row has an id
         _data.links.push(created);
       }
+      // else: projectId is null (add-project flow) — saved in saveProject after project is created
     } catch (err) { toast(err.message, 'error'); }
     finally { isSaving = false; }
   }
@@ -563,7 +634,7 @@ function clearProjectForm() {
     .forEach(id => { document.getElementById(id).value = ''; });
   document.getElementById('proj-status').value    = 'not_started';
   document.getElementById('proj-visible').checked = true;
-  document.getElementById('proj-links-section').style.display = 'none';
+  document.getElementById('proj-links-section').style.display = '';
   document.getElementById('proj-links-list').innerHTML = '';
 }
 
@@ -596,6 +667,21 @@ async function saveProject() {
     } else {
       const project = await api.createProject(_clientId, data);
       _data.projects.push(project);
+
+      // Save any link rows filled in before the project existed
+      const linkRows = document.querySelectorAll('#proj-links-list .link-row');
+      for (const row of linkRows) {
+        if (row.dataset.id) continue;  // already saved (shouldn't happen in add flow)
+        const lbl = row.querySelector('.link-row__label').value.trim();
+        const lUrl = row.querySelector('.link-row__url').value.trim();
+        if (lbl && lUrl) {
+          try {
+            const created = await api.addLink(_clientId, { label: lbl, url: lUrl, is_client_visible: 1, project_id: project.id });
+            _data.links.push(created);
+          } catch { /* best-effort */ }
+        }
+      }
+
       document.getElementById('all-complete-banner')?.classList.add('hidden');
     }
 
