@@ -48,6 +48,19 @@ async function init() {
   document.getElementById('note-save-btn').addEventListener('click',  saveNote);
   document.getElementById('pa-save-btn').addEventListener('click',    savePortalAccess);
 
+  // Project link editor (inside the Edit Project modal)
+  document.getElementById('proj-add-link-btn').addEventListener('click', () => {
+    addLinkRow(null, _editingProjectId, document.getElementById('proj-links-list'));
+  });
+
+  // When the project modal closes (cancel or backdrop), refresh cards to show updated link pills
+  document.querySelectorAll('[data-close="modal-project"]').forEach(btn => {
+    btn.addEventListener('click', () => { if (_data) renderProjects(_data.projects); });
+  });
+  document.getElementById('modal-project').addEventListener('click', e => {
+    if (e.target === e.currentTarget && _data) renderProjects(_data.projects);
+  });
+
   await loadData();
 }
 
@@ -222,22 +235,16 @@ function renderProjects(projects) {
   el.querySelectorAll('.proj-edit-btn').forEach(btn => {
     btn.addEventListener('click', () => openEditProject(parseInt(btn.dataset.pid)));
   });
-
-  // Populate existing links for each project card
-  renderProjectLinks();
-
-  // "Add Link" buttons — one per project card
-  el.querySelectorAll('.add-proj-link-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const pid       = parseInt(btn.dataset.pid);
-      const container = btn.closest('.project-card').querySelector('.proj-links-list');
-      addLinkRow(null, pid, container);
-    });
-  });
 }
 
 function projectCardHTML(p) {
   const hidden = !p.is_client_visible;
+
+  // Read-only link pills — populated from _data.links (project-scoped)
+  const projectLinks = (_data.links || []).filter(l => l.project_id === p.id);
+  const linkPills    = projectLinks
+    .map(l => `<a href="${esc(l.url)}" target="_blank" class="resource-link resource-link--btn" style="font-size:12px; padding:6px 14px;">${esc(l.label || l.url)} ↗</a>`)
+    .join('');
 
   const dueLine = p.due_date
     ? `<span>Due ${formatDateFull(p.due_date)}</span>`
@@ -263,20 +270,13 @@ function projectCardHTML(p) {
 
       ${p.description_en ? `<div class="project-card__body">${nl2br(p.description_en)}</div>` : ''}
 
+      ${linkPills ? `<div class="project-card__links links-list" style="margin-top:8px;">${linkPills}</div>` : ''}
+
       ${p.future_features_en ? `
         <div style="margin-top:10px; padding-top:10px; border-top:1px solid var(--border);">
           <div style="font-size:11px; font-weight:600; color:var(--text-3); text-transform:uppercase; letter-spacing:.05em; margin-bottom:6px;">Coming Up</div>
           <div class="future-block">${nl2br(p.future_features_en)}</div>
         </div>` : ''}
-
-      <div class="proj-links-section" style="margin-top:10px; padding-top:10px; border-top:1px solid var(--border);">
-        <div class="proj-links-list" data-pid="${p.id}"></div>
-        <button class="add-proj-link-btn btn--icon-bare" data-pid="${p.id}"
-                style="margin-top:6px; font-size:11px; font-weight:600; letter-spacing:.05em; text-transform:uppercase; color:var(--text-3); display:flex; align-items:center; gap:3px;">
-          <span class="material-symbols-outlined" style="font-size:13px;">add</span>
-          Add Link
-        </button>
-      </div>
 
       <div class="project-card__footer">
         ${visibilityBadge}
@@ -417,17 +417,6 @@ async function saveNote() {
 
 // ---- Links ----
 
-// Populate each project card's link container from _data.links
-function renderProjectLinks() {
-  document.querySelectorAll('.proj-links-list').forEach(container => {
-    const pid = parseInt(container.dataset.pid);
-    container.innerHTML = '';
-    (_data.links || [])
-      .filter(l => l.project_id === pid)
-      .forEach(l => addLinkRow(l, pid, container));
-  });
-}
-
 function addLinkRow(link = null, projectId = null, containerEl = null) {
   if (!containerEl) return; // requires an explicit container (project-scoped)
 
@@ -549,6 +538,14 @@ function openEditProject(id) {
   document.getElementById('proj-due').value       = p.due_date    || '';
   document.getElementById('proj-visible').checked = !!p.is_client_visible;
 
+  // Show and populate the links section with this project's links
+  const linksList = document.getElementById('proj-links-list');
+  document.getElementById('proj-links-section').style.display = '';
+  linksList.innerHTML = '';
+  (_data.links || [])
+    .filter(l => l.project_id === id)
+    .forEach(l => addLinkRow(l, id, linksList));
+
   document.getElementById('modal-project-title').textContent = 'Edit Project';
   document.getElementById('proj-delete-btn').classList.remove('hidden');
   openModal('modal-project');
@@ -559,6 +556,8 @@ function clearProjectForm() {
     .forEach(id => { document.getElementById(id).value = ''; });
   document.getElementById('proj-status').value    = 'not_started';
   document.getElementById('proj-visible').checked = true;
+  document.getElementById('proj-links-section').style.display = 'none';
+  document.getElementById('proj-links-list').innerHTML = '';
 }
 
 async function saveProject() {

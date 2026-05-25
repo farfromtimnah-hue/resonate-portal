@@ -353,6 +353,19 @@
           </label>
         </div>
       </div>
+      <!-- Links (shown only when editing an existing project) -->
+      <div id="proj-links-section" style="display:none; margin-top:16px; padding-top:16px; border-top:1px solid rgba(255,255,255,0.08);">
+        <label class="form-label" style="margin-bottom:8px; display:block;">Links</label>
+        <div id="proj-links-list" class="flex flex-col gap-2 mb-2"></div>
+        <button id="proj-add-link-btn" type="button"
+                style="background:none; border:none; cursor:pointer; padding:0; display:flex; align-items:center; gap:4px;
+                       font-family:'Plus Jakarta Sans',sans-serif; font-size:11px; font-weight:600;
+                       letter-spacing:.06em; text-transform:uppercase; color:rgba(193,199,209,0.5);"
+                onmouseover="this.style.color='#9ccaff'" onmouseout="this.style.color='rgba(193,199,209,0.5)'">
+          <span class="material-symbols-outlined" style="font-size:13px;">add</span>
+          Add Link
+        </button>
+      </div>
     </div>
     <div class="modal__footer">
       <button id="proj-delete-btn" class="btn btn--danger btn--sm hidden">Delete Project</button>
@@ -421,6 +434,6 @@
     }
   });
 </script>
-<script type="module" src="js/client-page.js?v=6"></script>
+<script type="module" src="js/client-page.js?v=7"></script>
 </body>
 </html>
