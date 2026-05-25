@@ -23,7 +23,7 @@
     }
   </script>
 
-  <link rel="stylesheet" href="css/app.css">
+  <link rel="stylesheet" href="css/app.css?v=2">
 
   <style>
     body { font-family: 'Plus Jakarta Sans', sans-serif; background: #F8F7F4; color: #414750; }
@@ -53,7 +53,8 @@
                      letter-spacing:0.06em; text-transform:uppercase; color:#717781;
                      background:none; border:none; cursor:pointer; padding:4px 8px; border-radius:6px;
                      transition:color 0.15s;"
-              onmouseover="this.style.color='#001d35'" onmouseout="this.style.color='#717781'">
+              onmouseover="this.style.color='#001d35'" onmouseout="this.style.color='#717781'"
+              data-i18n="change_password">
         Change Password
       </button>
       <button id="signout-btn"
@@ -61,7 +62,8 @@
                      letter-spacing:0.06em; text-transform:uppercase; color:#717781;
                      background:none; border:none; cursor:pointer; padding:4px 8px; border-radius:6px;
                      transition:color 0.15s;"
-              onmouseover="this.style.color='#001d35'" onmouseout="this.style.color='#717781'">
+              onmouseover="this.style.color='#001d35'" onmouseout="this.style.color='#717781'"
+              data-i18n="sign_out">
         Sign Out
       </button>
     </div>
@@ -209,6 +211,6 @@
   </div>
 </div>
 
-<script type="module" src="js/portal.js?v=6"></script>
+<script type="module" src="js/portal.js?v=7"></script>
 </body>
 </html>

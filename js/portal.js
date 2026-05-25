@@ -6,7 +6,7 @@ import { requireAuth, signOut, changePassword, setInitialPassword } from './auth
 import { api }                   from './api.js';
 import { t, setLang, getLang, statusLabel } from './t.js';
 import { esc, nl2br, formatDate, formatDateTime, toast, telLink, waLink, projectCounts,
-         statusClass, openModal, closeModal } from './utils.js';
+         statusClass, openModal, closeModal } from './utils.js?v=2';
 
 let _data    = null;
 let _lang    = 'en';

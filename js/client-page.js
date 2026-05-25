@@ -7,7 +7,7 @@ import { api }                   from './api.js';
 import { statusLabel, STATUS_OPTIONS } from './t.js';
 import { esc, nl2br, formatDate, formatDateTime, formatDateFull,
          toast, openModal, closeModal, qp, telLink, waLink, projectCounts,
-         statusClass } from './utils.js';
+         statusClass } from './utils.js?v=2';
 
 let _clientId = null;
 let _data     = null;          // { client, projects, comments, notes, links, linked_user, history }
@@ -25,11 +25,13 @@ async function init() {
     await signOut(); window.location.href = '/resonate-portal/index.html';
   });
 
-  // Modal close buttons
+  // Modal close buttons — project modal handled separately (dirty-check on add-project flow)
   document.querySelectorAll('[data-close]').forEach(btn => {
+    if (btn.dataset.close === 'modal-project') return;
     btn.addEventListener('click', () => closeModal(btn.dataset.close));
   });
   document.querySelectorAll('.modal').forEach(m => {
+    if (m.id === 'modal-project') return;
     m.addEventListener('click', e => { if (e.target === m) closeModal(m.id); });
   });
 
@@ -53,12 +55,17 @@ async function init() {
     addLinkRow(null, _editingProjectId, document.getElementById('proj-links-list'));
   });
 
-  // When the project modal closes (cancel or backdrop), refresh cards to show updated link pills
+  // Project modal — close with dirty-check for add-project flow
+  function maybeCloseProjectModal() {
+    if (isProjectFormDirty() && !confirm('Discard unsaved project?')) return;
+    if (_data) renderProjects(_data.projects);
+    closeModal('modal-project');
+  }
   document.querySelectorAll('[data-close="modal-project"]').forEach(btn => {
-    btn.addEventListener('click', () => { if (_data) renderProjects(_data.projects); });
+    btn.addEventListener('click', maybeCloseProjectModal);
   });
   document.getElementById('modal-project').addEventListener('click', e => {
-    if (e.target === e.currentTarget && _data) renderProjects(_data.projects);
+    if (e.target === e.currentTarget) maybeCloseProjectModal();
   });
 
   await loadData();
@@ -594,12 +601,22 @@ function addLinkRow(link = null, projectId = null, containerEl = null) {
 
 // ---- Projects CRUD ----
 
+function isProjectFormDirty() {
+  if (_editingProjectId) return false; // edit flow: existing project, no discard concern
+  const title = document.getElementById('proj-title')?.value.trim();
+  const links  = document.querySelectorAll('#proj-links-list .link-row');
+  return (!!title && title.length > 0) || links.length > 0;
+}
+
 function openAddProject() {
   _editingProjectId = null;
   clearProjectForm();
   document.getElementById('modal-project-title').textContent = 'Add Project';
   document.getElementById('proj-delete-btn').classList.add('hidden');
-  openModal('modal-project');
+  openModal('modal-project', () => {
+    if (!isProjectFormDirty()) return true;
+    return confirm('Discard unsaved project?');
+  });
 }
 
 function openEditProject(id) {
@@ -665,8 +682,20 @@ async function saveProject() {
         document.getElementById('all-complete-banner')?.classList.remove('hidden');
       }
     } else {
-      const project = await api.createProject(_clientId, data);
-      _data.projects.push(project);
+      // Create at sort_order 0 so it lands at the top
+      const project = await api.createProject(_clientId, { ...data, sort_order: 0 });
+
+      // Shift all existing projects down by 1 (in parallel)
+      if (_data.projects.length > 0) {
+        await Promise.all(
+          _data.projects.map((p, idx) =>
+            api.updateProject(_clientId, p.id, { sort_order: idx + 1 })
+          )
+        );
+        _data.projects.forEach((p, idx) => { p.sort_order = idx + 1; });
+      }
+
+      _data.projects.unshift(project);  // prepend so in-memory order matches DB
 
       // Save any link rows filled in before the project existed
       const linkRows = document.querySelectorAll('#proj-links-list .link-row');

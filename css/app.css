@@ -374,6 +374,8 @@ html.dark .client-card:hover { background: #363a3f; border-color: rgba(156,202,2
 }
 html.dark .project-card:hover { border-color: rgba(156,202,255,0.2); }
 .project-card--hidden { opacity: 0.55; border-style: dashed; }
+/* Belt-and-suspenders spacing: works even if the flex+gap on .project-list is overridden */
+.project-card + .project-card { margin-top: 12px; }
 
 /* Drag-and-drop */
 .drag-handle {

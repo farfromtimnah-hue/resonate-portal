@@ -14,6 +14,7 @@ const STRINGS = {
     // Auth
     sign_in:                 'Sign In',
     sign_out:                'Sign Out',
+    change_password:         'Change Password',
     email:                   'Email address',
     password:                'Password',
     signing_in:              'Signing in…',
@@ -178,6 +179,7 @@ const STRINGS = {
 
     sign_in:                 'Entrar',
     sign_out:                'Sair',
+    change_password:         'Alterar senha',
     email:                   'Endereço de e-mail',
     password:                'Senha',
     signing_in:              'Entrando…',

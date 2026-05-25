@@ -82,7 +82,9 @@ export function toast(message, type = 'success') {
 // Tracks the active Escape-key handler so it can be removed on close.
 let _escHandler = null;
 
-export function openModal(id) {
+// openModal(id)              — standard: Escape closes immediately
+// openModal(id, shouldClose) — guarded:  Escape calls shouldClose(); only closes if it returns true
+export function openModal(id, shouldClose = null) {
   const m = document.getElementById(id);
   if (!m) return;
   m.classList.add('modal--open');
@@ -94,12 +96,14 @@ export function openModal(id) {
     if (first) first.focus();
   }, 50);
 
-  // Register an Escape-only keydown handler.
-  // Guard: bail immediately on ANY modifier key so Cmd+V, Cmd+C, etc. never close the modal.
+  // Escape-only keydown handler.
+  // IMPORTANT: bail on ANY modifier key — Cmd+V, Cmd+C, Ctrl+Z, etc. must NEVER close the modal.
   if (_escHandler) document.removeEventListener('keydown', _escHandler);
   _escHandler = (e) => {
-    if (e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) return; // modifier → ignore completely
-    if (e.key === 'Escape') closeModal(id);
+    if (e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) return; // bare keys only
+    if (e.key !== 'Escape') return;
+    if (shouldClose && !shouldClose()) return;  // dirty-check veto
+    closeModal(id);
   };
   document.addEventListener('keydown', _escHandler);
 }
