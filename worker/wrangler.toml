@@ -30,3 +30,6 @@ bucket_name = "resonate-logos"
 [vars]
 FIREBASE_PROJECT_ID = "resonate-portal"
 CORS_ORIGIN         = "https://farfromtimnah-hue.github.io"
+# Set this to your R2 bucket's public URL base (enable public access in Cloudflare dashboard first)
+# e.g. "https://pub-abc123def456.r2.dev"
+BUCKET_PUBLIC_URL   = "https://pub-CONFIGURE_ME.r2.dev"

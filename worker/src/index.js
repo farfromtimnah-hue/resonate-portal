@@ -326,6 +326,7 @@ async function buildClientPortalResponse(client, env) {
     whatsapp: client.whatsapp,
     email: client.email,
     website: client.website,
+    logo_url: client.logo_url ?? null,
     updated_at: client.updated_at
   };
 
@@ -861,8 +862,8 @@ async function handleUploadLogo(request, env) {
     httpMetadata: { contentType: file.type || 'image/png' }
   });
 
-  // R2 public URL — requires the bucket to have public access enabled
-  const logoUrl = `https://pub-${env.BUCKET_PUBLIC_ID ?? 'YOUR_PUBLIC_ID'}.r2.dev/${key}`;
+  // R2 public URL — set BUCKET_PUBLIC_URL in wrangler.toml [vars] to e.g. https://pub-abc123.r2.dev
+  const logoUrl = `${env.BUCKET_PUBLIC_URL ?? 'https://pub-CONFIGURE_ME.r2.dev'}/${key}`;
 
   await env.DB.prepare(
     'UPDATE clients SET logo_url = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
@@ -910,7 +911,9 @@ async function authenticate(request, env) {
     client_id:            dbUser.client_id,
     language_preference:  dbUser.language_preference,
     must_change_password: dbUser.must_change_password === 1,
-    db_id:                dbUser.id
+    db_id:                dbUser.id,
+    first_name:           dbUser.first_name  ?? null,
+    last_name:            dbUser.last_name   ?? null,
   };
 }
 

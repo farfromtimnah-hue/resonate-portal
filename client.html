@@ -35,7 +35,7 @@
     }
   </script>
 
-  <link rel="stylesheet" href="css/app.css?v=2">
+  <link rel="stylesheet" href="css/app.css?v=3">
 
   <style>
     body { font-family: 'Plus Jakarta Sans', sans-serif; background: #0f1115; color: #c1c7d1; }
@@ -122,11 +122,28 @@
     <!-- Client header -->
     <div class="mb-8">
       <div class="flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <h1 id="client-name"
-              class="text-[30px] font-bold text-primary-fixed-dim tracking-tight"
-              style="letter-spacing:-0.02em;"></h1>
-          <div id="client-business" class="text-outline-variant text-[15px] mt-1"></div>
+        <div class="flex items-start gap-4">
+          <!-- Logo preview + upload trigger -->
+          <div class="logo-upload-area">
+            <div id="client-logo-preview" class="logo-preview" title="Click to upload logo">
+              <span class="logo-preview__initials" id="client-logo-initials">?</span>
+            </div>
+            <div class="logo-upload-meta">
+              <button id="upload-logo-btn"
+                      class="btn btn--sm btn--ghost"
+                      style="font-size:10px; padding:4px 10px;">
+                Upload Logo
+              </button>
+              <span class="logo-upload-meta__hint">PNG, JPG, SVG · max 5 MB</span>
+            </div>
+            <input id="logo-file-input" type="file" accept="image/*" style="display:none">
+          </div>
+          <div>
+            <h1 id="client-name"
+                class="text-[30px] font-bold text-primary-fixed-dim tracking-tight"
+                style="letter-spacing:-0.02em;"></h1>
+            <div id="client-business" class="text-outline-variant text-[15px] mt-1"></div>
+          </div>
         </div>
         <div class="flex items-center gap-2 flex-wrap pt-1">
           <button id="edit-client-btn"
@@ -434,6 +451,6 @@
     }
   });
 </script>
-<script type="module" src="js/client-page.js?v=10"></script>
+<script type="module" src="js/client-page.js?v=11"></script>
 </body>
 </html>

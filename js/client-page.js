@@ -36,6 +36,37 @@ async function init() {
   });
 
   // Buttons
+  // Logo upload
+  const logoPreviewEl  = document.getElementById('client-logo-preview');
+  const logoFileInput  = document.getElementById('logo-file-input');
+  const uploadLogoBtn  = document.getElementById('upload-logo-btn');
+
+  // Both the preview box and the button trigger the file picker
+  logoPreviewEl.addEventListener('click', () => logoFileInput.click());
+  uploadLogoBtn.addEventListener('click', (e) => { e.stopPropagation(); logoFileInput.click(); });
+
+  logoFileInput.addEventListener('change', async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) { toast('Please select an image file.', 'error'); return; }
+    if (file.size > 5 * 1024 * 1024)    { toast('Image must be under 5 MB.', 'error'); return; }
+
+    uploadLogoBtn.disabled = true;
+    uploadLogoBtn.textContent = 'Uploading…';
+    try {
+      const res = await api.uploadLogo(_clientId, file);
+      if (_data) _data.client.logo_url = res.logo_url;
+      renderLogoPreview(_data?.client);
+      toast('Logo uploaded!');
+    } catch (err) {
+      toast(err.message || 'Upload failed.', 'error');
+    } finally {
+      uploadLogoBtn.disabled = false;
+      uploadLogoBtn.textContent = 'Upload Logo';
+      e.target.value = '';  // allow re-upload of same file
+    }
+  });
+
   document.getElementById('edit-client-btn').addEventListener('click', openEditClient);
   document.getElementById('archive-btn').addEventListener('click', archiveClient);
   document.getElementById('archive-now-btn')?.addEventListener('click', archiveClient);
@@ -101,6 +132,9 @@ function render() {
 
   document.title = `${client.name} — Resonate`;
 
+  // Logo
+  renderLogoPreview(client);
+
   // Header
   document.getElementById('client-name').textContent     = client.name;
   document.getElementById('client-business').textContent = client.business_name || '';
@@ -151,6 +185,21 @@ function render() {
 
   // History
   renderHistory(history);
+}
+
+// ---- Logo preview (admin) ----
+
+function renderLogoPreview(client) {
+  const el = document.getElementById('client-logo-preview');
+  if (!el) return;
+  if (client?.logo_url) {
+    el.innerHTML = `<img src="${esc(client.logo_url)}" alt="Logo" style="width:100%; height:100%; object-fit:contain;">`;
+  } else {
+    // Show business initials
+    const text  = client?.business_name || client?.name || '?';
+    const initials = text.trim().split(/\s+/).slice(0, 2).map(w => w[0]).join('').toUpperCase();
+    el.innerHTML = `<span class="logo-preview__initials">${esc(initials)}</span>`;
+  }
 }
 
 // ---- Contact ----

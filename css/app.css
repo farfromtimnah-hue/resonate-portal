@@ -796,3 +796,128 @@ html.dark .banner--info    { background: rgba(0,91,150,0.12); color: #9ccaff; bo
   .contact-actions { flex-direction: column; }
   .contact-actions .btn { justify-content: center; }
 }
+
+/* ============================================================
+   PORTAL IDENTITY — logo, wordmark, greeting
+   ============================================================ */
+
+.portal-logo-img {
+  max-height: 72px;
+  max-width: 260px;
+  object-fit: contain;
+  display: block;
+}
+.portal-wordmark {
+  font-family: 'Newsreader', serif;
+  font-size: 34px;
+  font-weight: 700;
+  color: #001d35;
+  letter-spacing: -0.025em;
+  line-height: 1.1;
+}
+.portal-greeting {
+  font-family: var(--font);
+  font-size: 15px;
+  color: var(--text-3);
+  margin-top: 6px;
+  font-style: italic;
+}
+
+/* ============================================================
+   PORTAL TAB NAVIGATION
+   ============================================================ */
+
+.portal-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+}
+.portal-tab {
+  font-family: var(--font);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  background: none;
+  border: none;
+  padding: 14px 16px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+.portal-tab:hover { color: var(--text-2); }
+.portal-tab--active {
+  color: var(--brand);
+  border-bottom-color: var(--brand);
+}
+
+/* ============================================================
+   VISION TAB CONTENT
+   ============================================================ */
+
+.vision-copy {
+  font-family: var(--font);
+  font-size: 15px;
+  line-height: 1.85;
+  color: var(--text-2);
+  max-width: 620px;
+}
+.vision-copy-signature {
+  font-family: 'Newsreader', serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: #001d35;
+  margin-top: 28px;
+  letter-spacing: -0.01em;
+}
+
+/* ============================================================
+   ADMIN LOGO UPLOAD (client.html)
+   ============================================================ */
+
+.logo-upload-area {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.logo-preview {
+  width: 60px;
+  height: 60px;
+  border-radius: 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--border-strong);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: border-color 0.15s, opacity 0.15s;
+}
+.logo-preview:hover { border-color: var(--brand); opacity: 0.85; }
+.logo-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.logo-preview__initials {
+  font-family: 'Newsreader', serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-3);
+  user-select: none;
+}
+.logo-upload-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.logo-upload-meta__hint {
+  font-family: var(--font);
+  font-size: 11px;
+  color: var(--text-3);
+}

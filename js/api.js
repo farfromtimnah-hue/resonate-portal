@@ -72,4 +72,21 @@ export const api = {
   addLink:       (clientId, d)   => req('POST',   `/api/clients/${clientId}/links`, d),
   updateLink:    (clientId, id, d) => req('PUT',  `/api/clients/${clientId}/links/${id}`, d),
   deleteLink:    (clientId, id)  => req('DELETE', `/api/clients/${clientId}/links/${id}`),
+
+  // Logo upload (multipart/form-data — bypasses the JSON req() helper)
+  uploadLogo: async (clientId, file) => {
+    const token = await getToken();
+    const body  = new FormData();
+    body.append('file', file);
+    body.append('client_id', String(clientId));
+    const res  = await fetch(`${API_BASE}/api/upload-logo`, {
+      method: 'POST',
+      cache:  'no-store',
+      headers: { 'Authorization': `Bearer ${token}` },
+      body,
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+    return data;
+  },
 };

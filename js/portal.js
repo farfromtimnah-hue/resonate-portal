@@ -12,6 +12,11 @@ let _data    = null;
 let _lang    = 'en';
 let _profile = null;
 
+// Tab state — 'projects' | 'vision'
+// _tabManuallySet prevents auto-switching after user explicitly picks a tab
+let _activeTab      = 'projects';
+let _tabManuallySet = false;
+
 async function init() {
   _profile = await requireAuth('client');
   if (!_profile) return;
@@ -29,6 +34,16 @@ async function init() {
   document.getElementById('lang-en').addEventListener('click', () => switchLang('en'));
   document.getElementById('lang-pt').addEventListener('click', () => switchLang('pt'));
   document.getElementById('portal-send-btn').addEventListener('click', sendComment);
+
+  // Tab navigation
+  document.getElementById('tab-btn-projects').addEventListener('click', () => {
+    _tabManuallySet = true;
+    switchTab('projects');
+  });
+  document.getElementById('tab-btn-vision').addEventListener('click', () => {
+    _tabManuallySet = true;
+    switchTab('vision');
+  });
 
   // Change password modal wire-up
   document.getElementById('change-password-btn').addEventListener('click', openChangePasswordModal);
@@ -65,6 +80,16 @@ async function loadData() {
   }
 }
 
+// ---- Tab switching ----
+
+function switchTab(tab) {
+  _activeTab = tab;
+  document.getElementById('tab-panel-projects').classList.toggle('hidden', tab !== 'projects');
+  document.getElementById('tab-panel-vision').classList.toggle('hidden', tab !== 'vision');
+  document.getElementById('tab-btn-projects').classList.toggle('portal-tab--active', tab === 'projects');
+  document.getElementById('tab-btn-vision').classList.toggle('portal-tab--active', tab === 'vision');
+}
+
 // ---- Language ----
 
 function switchLang(lang) {
@@ -85,32 +110,43 @@ function updateLangButtons() {
 
 function render() {
   const { client } = _data;
-  document.title = `${client.name} — Resonate Portal`;
+  document.title = `${client.business_name || client.name} — Resonate Portal`;
 
-  // Header
-  document.getElementById('portal-client-name').textContent = client.name;
-
-  const biz = document.getElementById('portal-client-business');
-  if (client.business_name) {
-    biz.textContent = client.business_name;
-    biz.classList.remove('hidden');
-  }
-
-  // Status badge in header
-  const statusEl = document.getElementById('portal-status-badge');
-  statusEl.innerHTML = `<span class="badge" style="background:rgba(255,255,255,0.2); color:#fff; border:1px solid rgba(255,255,255,0.4);">${esc(client.overall_status)}</span>`;
+  // Logo or wordmark (set once — doesn't change with language)
+  renderIdentity(client);
 
   renderContent();
+}
+
+function renderIdentity(client) {
+  const logoArea = document.getElementById('portal-logo-area');
+  if (client.logo_url) {
+    logoArea.innerHTML = `<img src="${esc(client.logo_url)}" class="portal-logo-img" alt="${esc(client.business_name || client.name)}">`;
+  } else {
+    logoArea.innerHTML = `<div class="portal-wordmark">${esc(client.business_name || client.name)}</div>`;
+  }
 }
 
 function renderContent() {
   const { client, projects, comments } = _data;
 
-  // Progress
+  // Greeting (updates on language switch)
+  renderGreeting(client);
+
+  // Progress (hidden when no projects)
   renderProgress(projects);
 
-  // Projects (links are rendered per-project inside the card)
+  // Auto-select tab based on whether projects exist (unless user manually chose)
+  if (!_tabManuallySet) {
+    const hasVisible = projects.some(p => p.is_client_visible !== 0);
+    switchTab(hasVisible ? 'projects' : 'vision');
+  }
+
+  // Projects tab content
   renderProjects(projects);
+
+  // Vision tab content
+  renderVision();
 
   // Comments
   renderComments(comments);
@@ -119,9 +155,31 @@ function renderContent() {
   renderContact(client);
 }
 
+function renderGreeting(client) {
+  // Prefer first_name from portal profile (users table), fall back to client contact name
+  const rawName   = _profile?.first_name || (client.name || '');
+  const firstName = rawName.trim().split(/\s+/)[0] || '';
+  const prefix    = t('portal_greeting');
+  document.getElementById('portal-greeting').textContent =
+    firstName ? `${prefix}, ${firstName}` : prefix;
+}
+
+function renderVision() {
+  document.getElementById('portal-vision-copy').textContent = t('vision_copy');
+}
+
 // ---- Progress ----
 
 function renderProgress(projects) {
+  const section = document.getElementById('portal-progress-section');
+
+  // Hide the progress block entirely when there are no projects yet
+  if (!projects.length) {
+    section?.classList.add('hidden');
+    return;
+  }
+  section?.classList.remove('hidden');
+
   const counts = projectCounts(projects);
   const pct    = counts.total > 0 ? Math.round((counts.completed / counts.total) * 100) : 0;
 
@@ -149,7 +207,10 @@ function renderProjects(projects) {
 
   const visible = projects.filter(p => p.is_client_visible !== 0);
   if (!visible.length) {
-    el.innerHTML = `<div class="empty-state"><div class="empty-state__text">${t('portal_no_projects')}</div></div>`;
+    el.innerHTML = `
+      <div style="padding:16px 0 8px; font-family:var(--font); font-size:14px; color:var(--text-3); line-height:1.6;">
+        ${t('portal_no_projects')}
+      </div>`;
     return;
   }
 
@@ -229,7 +290,10 @@ function linkDisplayLabel(l) {
 function renderComments(comments) {
   const el = document.getElementById('portal-comments');
   if (!comments.length) {
-    el.innerHTML = `<div class="text-muted text-sm">${t('portal_no_comments')}</div>`;
+    el.innerHTML = `
+      <div style="font-family:var(--font); font-size:14px; color:var(--text-3); line-height:1.6; padding:4px 0 12px;">
+        ${t('portal_no_comments')}
+      </div>`;
     return;
   }
 
