@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Contemporary Stonework — Build Proposal</title>
+
+  <!-- Inter loaded via cdnjs (fonts.googleapis.com is blocked in this network) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/inter-ui/4.0.2/inter.min.css" />
+
+  <style>
+    /* ------------------------------------------------------------------ */
+    /* Design tokens — use exactly as specified, no invented alternates    */
+    /* ------------------------------------------------------------------ */
+    :root {
+      /* surfaces */
+      --greige:      #EDEAE4;
+      --panel:       #E3DFD8;
+      --panel2:      #D8D4CC;
+      --divider:     #CCCAC4;
+
+      /* text */
+      --charcoal:    #1A1A1A;
+      --text2:       #5A5550;
+      --text3:       #9A9590;
+
+      /* accents */
+      --steel-blue:  #4A6B8A;
+      --blue-dark:   #2E4A62;
+      --amber:       #C8842A;  /* alerts only — do not use decoratively */
+      --gold:        #C9A427;  /* sparingly, navy areas only */
+      --stone-tan:   #C8A87A;  /* subtle divider / icon accents */
+      --success:     #1E6E5C;  /* included-feature checkmarks */
+
+      /* deep navy hero + card headers */
+      --navy-top:    #16293F;
+      --navy-bottom: #0D1F36;
+
+      /* radii */
+      --radius-card: 18px;
+      --radius-hero: 28px;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background: var(--greige);
+      color: var(--charcoal);
+      -webkit-font-smoothing: antialiased;
+      line-height: 1.5;
+    }
+
+    .wrap {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* Hero                                                                */
+    /* ------------------------------------------------------------------ */
+    .hero {
+      background: linear-gradient(155deg, var(--navy-top) 0%, var(--navy-bottom) 100%);
+      color: #F4F1EB;
+      border-radius: var(--radius-hero);
+      margin: 28px auto 0;
+      max-width: 1152px;
+      padding: 48px 44px 52px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero__eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 12px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: #B9C4D2;
+      margin: 0 0 16px;
+    }
+    /* small gold highlight detail — sparingly, in a navy area */
+    .hero__eyebrow::before {
+      content: "";
+      width: 26px;
+      height: 2px;
+      background: var(--gold);
+      border-radius: 2px;
+    }
+
+    .hero h1 {
+      margin: 0 0 14px;
+      font-size: clamp(28px, 4vw, 42px);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+    }
+
+    .hero p {
+      margin: 0;
+      max-width: 640px;
+      font-size: 16px;
+      color: #CBD3DE;
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* Phases section                                                      */
+    /* ------------------------------------------------------------------ */
+    .phases {
+      padding: 40px 0 8px;
+    }
+
+    .section-head {
+      text-align: center;
+      margin: 8px 0 32px;
+    }
+    .section-head h2 {
+      margin: 0 0 8px;
+      font-size: clamp(22px, 3vw, 30px);
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      color: var(--charcoal);
+    }
+    .section-head p {
+      margin: 0;
+      color: var(--text2);
+      font-size: 15px;
+    }
+
+    /* Responsive card grid — no fixed pixel widths */
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      align-items: stretch;
+    }
+
+    @media (max-width: 900px) {
+      .cards { grid-template-columns: 1fr; max-width: 480px; margin: 0 auto; }
+    }
+
+    /* ================================================================== */
+    /* Reusable CARD component                                             */
+    /* Anatomy: header band (navy) → media slot → body (greige) → footer   */
+    /* Footer (price + CTA) and the package name band ship in the markup   */
+    /* but stay hidden this pass via .pricing-hidden.                      */
+    /* ================================================================== */
+    .card {
+      display: flex;
+      flex-direction: column;
+      background: var(--greige);
+      border: 1px solid var(--divider);
+      border-radius: var(--radius-card);
+      overflow: hidden;
+      box-shadow: 0 1px 2px rgba(26, 26, 26, 0.04),
+                  0 8px 24px rgba(26, 26, 26, 0.06);
+    }
+
+    /* --- Header band (deep navy) --- */
+    .card__header {
+      background: linear-gradient(155deg, var(--navy-top) 0%, var(--navy-bottom) 100%);
+      color: #F4F1EB;
+      padding: 20px 22px 22px;
+    }
+
+    .card__phase-label {
+      display: block;
+      font-size: 12px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: #AEB9C7;
+      font-weight: 600;
+    }
+
+    /* small gold accent line in the navy header */
+    .card__accent {
+      width: 34px;
+      height: 3px;
+      background: var(--gold);
+      border-radius: 3px;
+      margin: 10px 0 12px;
+    }
+
+    .card__subtitle {
+      margin: 0;
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+
+    .card__timeframe {
+      display: inline-block;
+      margin-top: 8px;
+      font-size: 13px;
+      color: #C6CEDA;
+    }
+
+    /* Package-name band — reserved for the next (pricing) pass */
+    .card__package-name {
+      margin-top: 12px;
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--gold);
+    }
+
+    /* --- Media slot --- */
+    .card__media {
+      position: relative;
+      height: 500px;
+      overflow: hidden;
+      background: var(--panel2);
+      border-bottom: 1px solid var(--divider);
+    }
+    /* Dark slot for the phone-widget mockup so any letterbox bands blend
+       with the mockup's own dark gradient instead of showing white. */
+    .card__media--dark { background: #0D1F36; }
+    .card__media iframe {
+      border: 0;
+      position: absolute;
+      top: 0;
+      left: 0;
+      transform-origin: top left;
+      background: transparent;
+    }
+    /* Empty media slot fallback (used only if a mockup file is missing) */
+    .card__media--empty {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text3);
+      font-size: 13px;
+      text-align: center;
+      padding: 20px;
+    }
+
+    /* --- Body (greige) --- */
+    .card__body {
+      background: var(--greige);
+      padding: 22px 22px 24px;
+      flex: 1 1 auto;
+    }
+
+    .feature-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .feature-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 11px;
+      font-size: 14.5px;
+      color: var(--text2);
+      line-height: 1.45;
+    }
+    .feature-list .check {
+      flex: none;
+      width: 20px;
+      height: 20px;
+      margin-top: 1px;
+    }
+    .feature-list .check svg { display: block; }
+
+    /* --- Footer (price + CTA) — hidden this pass --- */
+    .card__footer {
+      padding: 0 22px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .card__price {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--charcoal);
+    }
+    .card__cta {
+      display: inline-block;
+      text-align: center;
+      background: var(--steel-blue);
+      color: #fff;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 15px;
+      padding: 13px 20px;
+      border-radius: 12px;
+      transition: background 0.15s ease;
+    }
+    .card__cta:hover { background: var(--blue-dark); }
+
+    /* Toggle: next pass simply removes this class to reveal price + CTA */
+    .pricing-hidden { display: none !important; }
+
+    /* ------------------------------------------------------------------ */
+    /* Trilingual differentiator note                                      */
+    /* ------------------------------------------------------------------ */
+    .trilingual-note {
+      text-align: center;
+      max-width: 720px;
+      margin: 34px auto 8px;
+      color: var(--text2);
+      font-size: 15px;
+    }
+    .trilingual-note strong { color: var(--charcoal); font-weight: 600; }
+
+    footer.page-foot {
+      text-align: center;
+      color: var(--text3);
+      font-size: 12px;
+      padding: 40px 0 48px;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- ================= HERO ================= -->
+  <header class="hero">
+    <p class="hero__eyebrow">Contemporary Stonework · Build Proposal</p>
+    <h1>An operations system, built in three phases.</h1>
+    <p>From back-office order control to a native app in the field — a phased rollout that ships value early and compounds with every phase.</p>
+  </header>
+
+  <main class="wrap">
+    <section class="phases">
+      <div class="section-head">
+        <h2>The three phases</h2>
+        <p>Each phase ships a working surface your team uses before the next one begins.</p>
+      </div>
+
+      <div class="cards">
+
+        <!-- ===================== CARD 1 ===================== -->
+        <article class="card">
+          <div class="card__header">
+            <span class="card__phase-label">Phase 1</span>
+            <div class="card__accent"></div>
+            <h2 class="card__subtitle">Operations Core</h2>
+            <span class="card__timeframe">4–5 weeks</span>
+            <!-- package name reserved for pricing pass -->
+            <div class="card__package-name pricing-hidden"></div>
+          </div>
+
+          <div class="card__media">
+            <iframe class="card__mockup"
+                    data-logical-width="1280"
+                    data-fit="fill"
+                    src="mockups/p1_hub_operations_en.html"
+                    title="Phase 1 — Operations Core dashboard mockup"
+                    loading="lazy"
+                    scrolling="no"></iframe>
+          </div>
+
+          <div class="card__body">
+            <ul class="feature-list">
+              <li><span class="check"></span>Automatically checks every purchase order against what was delivered and flags discrepancies so revenue doesn't leak through the cracks.</li>
+              <li><span class="check"></span>Converts West Bay's plan files into usable documents automatically.</li>
+              <li><span class="check"></span>Pulls daily order data in from SupplyPro so the office isn't working across a dozen tabs.</li>
+              <li><span class="check"></span>Prepares dispute-protection emails, ready for one-click review and send.</li>
+              <li><span class="check"></span>Includes a feedback button from day one so the team shapes the tool as they use it.</li>
+            </ul>
+          </div>
+
+          <!-- footer reserved for pricing pass -->
+          <div class="card__footer pricing-hidden">
+            <div class="card__price"></div>
+            <a class="card__cta" href="#"></a>
+          </div>
+        </article>
+
+        <!-- ===================== CARD 2 ===================== -->
+        <article class="card">
+          <div class="card__header">
+            <span class="card__phase-label">Phase 2</span>
+            <div class="card__accent"></div>
+            <h2 class="card__subtitle">Command Center</h2>
+            <span class="card__timeframe">4–5 weeks</span>
+            <div class="card__package-name pricing-hidden"></div>
+          </div>
+
+          <div class="card__media">
+            <iframe class="card__mockup"
+                    data-logical-width="1280"
+                    data-fit="fill"
+                    src="mockups/p2_dispatch_queue_builder_en.html"
+                    title="Phase 2 — Command Center dispatch queue mockup"
+                    loading="lazy"
+                    scrolling="no"></iframe>
+          </div>
+
+          <div class="card__body">
+            <ul class="feature-list">
+              <li><span class="check"></span>Watches builder schedules automatically so the team stops working off stale dates.</li>
+              <li><span class="check"></span>Coordinates driver dispatch and routing from one place.</li>
+              <li><span class="check"></span>Gives Adrian a structured photo-audit workflow instead of hunting across platforms.</li>
+              <li><span class="check"></span>Gives Marcela one clean ordering workflow.</li>
+            </ul>
+          </div>
+
+          <div class="card__footer pricing-hidden">
+            <div class="card__price"></div>
+            <a class="card__cta" href="#"></a>
+          </div>
+        </article>
+
+        <!-- ===================== CARD 3 ===================== -->
+        <article class="card">
+          <div class="card__header">
+            <span class="card__phase-label">Phase 3</span>
+            <div class="card__accent"></div>
+            <h2 class="card__subtitle">Native App</h2>
+            <span class="card__timeframe">8–10 weeks</span>
+            <div class="card__package-name pricing-hidden"></div>
+          </div>
+
+          <div class="card__media card__media--dark">
+            <iframe class="card__mockup"
+                    data-logical-width="520"
+                    data-fit="contain"
+                    data-logical-height="720"
+                    src="mockups/p3_widget_home_en.html"
+                    title="Phase 3 — Native App home-screen widget mockup"
+                    loading="lazy"
+                    scrolling="no"></iframe>
+          </div>
+
+          <div class="card__body">
+            <ul class="feature-list">
+              <li><span class="check"></span>A native iOS app with a home-screen widget so the whole system is in his pocket.</li>
+              <li><span class="check"></span>GPS tracking for crews and drivers.</li>
+              <li><span class="check"></span>Push notifications so critical alerts reach him the moment they matter.</li>
+              <li><span class="check"></span>Published to the App Store.</li>
+            </ul>
+          </div>
+
+          <div class="card__footer pricing-hidden">
+            <div class="card__price"></div>
+            <a class="card__cta" href="#"></a>
+          </div>
+        </article>
+
+      </div><!-- /.cards -->
+
+      <p class="trilingual-note">
+        A <strong>trilingual system</strong> — English in the office, Portuguese and Spanish in the field — runs through all three phases, so nothing gets lost in translation on the way from the desk to the jobsite.
+      </p>
+    </section>
+  </main>
+
+  <footer class="page-foot">
+    Contemporary Stonework · Prepared by Resonate · Proposal draft
+  </footer>
+
+  <script>
+    // Green checkmark icon (success green #1E6E5C), injected into every .check slot.
+    (function () {
+      var svg =
+        '<svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">' +
+        '<circle cx="10" cy="10" r="10" fill="#1E6E5C" fill-opacity="0.12"/>' +
+        '<path d="M5.6 10.2l2.7 2.7 6.1-6.1" stroke="#1E6E5C" stroke-width="1.9" ' +
+        'stroke-linecap="round" stroke-linejoin="round"/></svg>';
+      document.querySelectorAll('.feature-list .check').forEach(function (el) {
+        el.innerHTML = svg;
+      });
+    })();
+
+    // Fit each mockup iframe into its media slot: render at a logical desktop
+    // width, then scale to the slot width so the whole surface shows with no
+    // scrollbars.
+    //   data-fit="fill"    -> full-height dashboards: stretch to the slot, pin
+    //                         to the top, crop any overflow (default).
+    //   data-fit="contain" -> the short phone widget: render at its natural
+    //                         content height and center it vertically.
+    // Recomputed on load and resize.
+    function fitMockup(frame) {
+      var slot = frame.parentElement;
+      var logicalWidth = parseFloat(frame.dataset.logicalWidth) || 1280;
+      var slotWidth = slot.clientWidth;
+      var slotHeight = slot.clientHeight;
+      if (!slotWidth) return;
+
+      var scale = slotWidth / logicalWidth;
+      frame.style.width = logicalWidth + 'px';
+      frame.style.transform = 'scale(' + scale + ')';
+
+      if (frame.dataset.fit === 'contain') {
+        // Measure natural content height (same-origin); fall back to a hint.
+        var contentHeight = parseFloat(frame.dataset.logicalHeight) || 720;
+        try {
+          var doc = frame.contentDocument || frame.contentWindow.document;
+          if (doc && doc.body) {
+            var measured = Math.max(doc.body.scrollHeight,
+                                    doc.documentElement.scrollHeight);
+            if (measured > 40) contentHeight = measured;
+          }
+        } catch (e) { /* use the fallback hint */ }
+
+        frame.style.height = contentHeight + 'px';
+        var scaledHeight = contentHeight * scale;
+        // Center when shorter than the slot; pin to top when it overflows.
+        frame.style.top = scaledHeight < slotHeight
+          ? ((slotHeight - scaledHeight) / 2) + 'px'
+          : '0px';
+      } else {
+        // Fill: stretch tall enough to cover the slot, pin to the top.
+        frame.style.height = (slotHeight / scale) + 'px';
+        frame.style.top = '0px';
+      }
+    }
+
+    function scaleMockups() {
+      document.querySelectorAll('.card__mockup').forEach(fitMockup);
+    }
+
+    // Re-fit each frame once its own content has loaded (needed to measure height).
+    document.querySelectorAll('.card__mockup').forEach(function (frame) {
+      frame.addEventListener('load', function () { fitMockup(frame); });
+    });
+
+    window.addEventListener('load', scaleMockups);
+    window.addEventListener('resize', scaleMockups);
+    scaleMockups();
+  </script>
+</body>
+</html>
