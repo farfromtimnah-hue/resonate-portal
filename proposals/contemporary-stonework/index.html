@@ -148,7 +148,7 @@
 
     /* ================================================================== */
     /* Reusable CARD component                                             */
-    /* Anatomy: header band (navy) → media slot → body (greige) → footer   */
+    /* Anatomy: header band (navy) → body (greige) → footer                */
     /* Footer (price + CTA) and the package name band ship in the markup   */
     /* but stay hidden this pass via .pricing-hidden.                      */
     /* ================================================================== */
@@ -208,36 +208,6 @@
       font-size: 15px;
       font-weight: 600;
       color: var(--gold);
-    }
-
-    /* --- Media slot --- */
-    .card__media {
-      position: relative;
-      height: 500px;
-      overflow: hidden;
-      background: var(--panel2);
-      border-bottom: 1px solid var(--divider);
-    }
-    /* Dark slot for the phone-widget mockup so any letterbox bands blend
-       with the mockup's own dark gradient instead of showing white. */
-    .card__media--dark { background: #0D1F36; }
-    .card__media iframe {
-      border: 0;
-      position: absolute;
-      top: 0;
-      left: 0;
-      transform-origin: top left;
-      background: transparent;
-    }
-    /* Empty media slot fallback (used only if a mockup file is missing) */
-    .card__media--empty {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: var(--text3);
-      font-size: 13px;
-      text-align: center;
-      padding: 20px;
     }
 
     /* --- Body (greige) --- */
@@ -350,16 +320,6 @@
             <div class="card__package-name pricing-hidden"></div>
           </div>
 
-          <div class="card__media">
-            <iframe class="card__mockup"
-                    data-logical-width="1280"
-                    data-fit="fill"
-                    src="mockups/p1_hub_operations_en.html"
-                    title="Phase 1 — Operations Core dashboard mockup"
-                    loading="lazy"
-                    scrolling="no"></iframe>
-          </div>
-
           <div class="card__body">
             <ul class="feature-list">
               <li><span class="check"></span>Automatically checks every purchase order against what was delivered and flags discrepancies so revenue doesn't leak through the cracks.</li>
@@ -388,16 +348,6 @@
             <div class="card__package-name pricing-hidden"></div>
           </div>
 
-          <div class="card__media">
-            <iframe class="card__mockup"
-                    data-logical-width="1280"
-                    data-fit="fill"
-                    src="mockups/p2_dispatch_queue_builder_en.html"
-                    title="Phase 2 — Command Center dispatch queue mockup"
-                    loading="lazy"
-                    scrolling="no"></iframe>
-          </div>
-
           <div class="card__body">
             <ul class="feature-list">
               <li><span class="check"></span>Watches builder schedules automatically so the team stops working off stale dates.</li>
@@ -422,17 +372,6 @@
             <!-- <h2 class="card__subtitle">Native App</h2> -->
             <!-- <span class="card__timeframe">8–10 weeks</span> -->
             <div class="card__package-name pricing-hidden"></div>
-          </div>
-
-          <div class="card__media card__media--dark">
-            <iframe class="card__mockup"
-                    data-logical-width="520"
-                    data-fit="contain"
-                    data-logical-height="720"
-                    src="mockups/p3_widget_home_en.html"
-                    title="Phase 3 — Native App home-screen widget mockup"
-                    loading="lazy"
-                    scrolling="no"></iframe>
           </div>
 
           <div class="card__body">
@@ -474,63 +413,6 @@
         el.innerHTML = svg;
       });
     })();
-
-    // Fit each mockup iframe into its media slot: render at a logical desktop
-    // width, then scale to the slot width so the whole surface shows with no
-    // scrollbars.
-    //   data-fit="fill"    -> full-height dashboards: stretch to the slot, pin
-    //                         to the top, crop any overflow (default).
-    //   data-fit="contain" -> the short phone widget: render at its natural
-    //                         content height and center it vertically.
-    // Recomputed on load and resize.
-    function fitMockup(frame) {
-      var slot = frame.parentElement;
-      var logicalWidth = parseFloat(frame.dataset.logicalWidth) || 1280;
-      var slotWidth = slot.clientWidth;
-      var slotHeight = slot.clientHeight;
-      if (!slotWidth) return;
-
-      var scale = slotWidth / logicalWidth;
-      frame.style.width = logicalWidth + 'px';
-      frame.style.transform = 'scale(' + scale + ')';
-
-      if (frame.dataset.fit === 'contain') {
-        // Measure natural content height (same-origin); fall back to a hint.
-        var contentHeight = parseFloat(frame.dataset.logicalHeight) || 720;
-        try {
-          var doc = frame.contentDocument || frame.contentWindow.document;
-          if (doc && doc.body) {
-            var measured = Math.max(doc.body.scrollHeight,
-                                    doc.documentElement.scrollHeight);
-            if (measured > 40) contentHeight = measured;
-          }
-        } catch (e) { /* use the fallback hint */ }
-
-        frame.style.height = contentHeight + 'px';
-        var scaledHeight = contentHeight * scale;
-        // Center when shorter than the slot; pin to top when it overflows.
-        frame.style.top = scaledHeight < slotHeight
-          ? ((slotHeight - scaledHeight) / 2) + 'px'
-          : '0px';
-      } else {
-        // Fill: stretch tall enough to cover the slot, pin to the top.
-        frame.style.height = (slotHeight / scale) + 'px';
-        frame.style.top = '0px';
-      }
-    }
-
-    function scaleMockups() {
-      document.querySelectorAll('.card__mockup').forEach(fitMockup);
-    }
-
-    // Re-fit each frame once its own content has loaded (needed to measure height).
-    document.querySelectorAll('.card__mockup').forEach(function (frame) {
-      frame.addEventListener('load', function () { fitMockup(frame); });
-    });
-
-    window.addEventListener('load', scaleMockups);
-    window.addEventListener('resize', scaleMockups);
-    scaleMockups();
   </script>
 </body>
 </html>
