@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Resonate — Project Hub</title>
+
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Resonate" />
+<meta name="theme-color" content="#0a1628" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='24' fill='%230a1628'/%3E%3Cg fill='none' stroke='%239ccaff' stroke-width='4' stroke-linecap='round'%3E%3Cpath d='M50 20v60'/%3E%3Cpath d='M35 32v36'/%3E%3Cpath d='M65 32v36'/%3E%3Cpath d='M20 42v16'/%3E%3Cpath d='M80 42v16'/%3E%3C/g%3E%3C/svg%3E" />
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='24' fill='%230a1628'/%3E%3Cg fill='none' stroke='%239ccaff' stroke-width='4' stroke-linecap='round'%3E%3Cpath d='M50 20v60'/%3E%3Cpath d='M35 32v36'/%3E%3Cpath d='M65 32v36'/%3E%3Cpath d='M20 42v16'/%3E%3Cpath d='M80 42v16'/%3E%3C/g%3E%3C/svg%3E" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+<style>
+  :root{
+    --navy:#0a1628;
+    --navy-soft:#0f1f36;
+    --card:#12233d;
+    --card-hover:#16294a;
+    --line:#25395a;
+    --ink:#F8F7F4;
+    --muted:#9fb2cc;
+    --muted-dim:#63748f;
+    --accent:#005b96;
+    --accent-light:#9ccaff;
+    --gold:#e8c87e;
+    --radius:20px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--navy);
+    color:var(--ink);
+    font-family:"Plus Jakarta Sans",system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+    padding:
+      calc(env(safe-area-inset-top) + 40px)
+      calc(env(safe-area-inset-right) + 22px)
+      calc(env(safe-area-inset-bottom) + 48px)
+      calc(env(safe-area-inset-left) + 22px);
+  }
+  .wrap{max-width:560px;margin:0 auto;}
+  header{position:relative;text-align:center;padding:26px 0 34px;}
+  .rings{
+    position:absolute;top:8px;left:50%;transform:translateX(-50%);
+    width:220px;height:220px;pointer-events:none;z-index:0;
+  }
+  .rings span{
+    position:absolute;inset:0;margin:auto;border-radius:50%;
+    border:1px solid var(--accent-light);opacity:0;
+    animation:ripple 5.5s ease-out infinite;
+  }
+  .rings span:nth-child(2){animation-delay:1.8s;}
+  .rings span:nth-child(3){animation-delay:3.6s;}
+  @keyframes ripple{
+    0%{transform:scale(.2);opacity:.55;}
+    80%{opacity:.06;}
+    100%{transform:scale(1);opacity:0;}
+  }
+  .brand{position:relative;z-index:1;}
+  .wordmark{
+    font-family:"Newsreader",Georgia,serif;
+    font-weight:600;font-size:2.7rem;letter-spacing:.5px;
+    margin:0;line-height:1.05;
+  }
+  .wordmark .dot{color:var(--accent-light);}
+  .tag{
+    margin:10px 0 0;color:var(--muted);
+    font-size:.95rem;font-weight:500;letter-spacing:.2px;
+  }
+  .verse{
+    margin:16px auto 0;max-width:360px;
+    font-family:"Newsreader",Georgia,serif;font-style:italic;
+    font-size:1rem;line-height:1.5;color:var(--gold);opacity:.92;
+  }
+  .verse cite{display:block;font-style:normal;font-family:"Plus Jakarta Sans",sans-serif;
+    font-size:.72rem;letter-spacing:1.5px;text-transform:uppercase;
+    color:var(--muted-dim);margin-top:8px;}
+  .eyebrow{
+    font-size:.72rem;letter-spacing:2px;text-transform:uppercase;
+    color:var(--muted-dim);font-weight:600;
+    margin:30px 4px 12px;
+  }
+  .tiles{display:flex;flex-direction:column;gap:12px;}
+  a.tile,button.tile,div.tile{
+    display:flex;align-items:center;gap:16px;
+    background:var(--card);border:1px solid var(--line);
+    border-radius:var(--radius);padding:18px 18px;
+    text-decoration:none;color:var(--ink);
+    transition:background .18s ease,transform .12s ease,border-color .18s ease;
+  }
+  button.tile{width:100%;font:inherit;text-align:left;cursor:pointer;}
+  a.tile:hover,a.tile:focus-visible,
+  button.tile:hover,button.tile:focus-visible{
+    background:var(--card-hover);border-color:var(--accent);
+    transform:translateY(-1px);outline:none;
+  }
+  a.tile:focus-visible,button.tile:focus-visible{box-shadow:0 0 0 3px var(--accent-light);}
+  a.tile:active,button.tile:active{transform:translateY(0) scale(.995);}
+  .badge{
+    flex:0 0 auto;width:44px;height:44px;border-radius:13px;
+    display:grid;place-items:center;
+    background:rgba(0,91,150,.22);border:1px solid rgba(156,202,255,.25);
+    font-family:"Newsreader",serif;font-weight:600;font-size:1.35rem;
+    color:var(--accent-light);
+  }
+  .tile-body{flex:1 1 auto;min-width:0;}
+  .tile-name{
+    font-family:"Newsreader",Georgia,serif;font-weight:600;
+    font-size:1.22rem;line-height:1.2;margin:0;
+  }
+  .tile-desc{
+    margin:3px 0 0;color:var(--muted);font-size:.9rem;
+    line-height:1.35;font-weight:400;
+  }
+  .arrow{flex:0 0 auto;color:var(--muted-dim);font-size:1.3rem;transition:color .18s ease,transform .18s ease;}
+  a.tile:hover .arrow{color:var(--accent-light);transform:translateX(3px);}
+  .count{
+    flex:0 0 auto;font-size:.66rem;letter-spacing:1.1px;text-transform:uppercase;
+    font-weight:600;color:var(--accent-light);
+    border:1px solid rgba(156,202,255,.3);border-radius:999px;padding:4px 10px;
+  }
+  div.tile.soon{opacity:.5;cursor:default;}
+  div.tile.soon .badge{background:rgba(255,255,255,.04);border-color:var(--line);color:var(--muted-dim);}
+  .chip{
+    flex:0 0 auto;font-size:.66rem;letter-spacing:1.2px;text-transform:uppercase;
+    font-weight:600;color:var(--muted-dim);
+    border:1px solid var(--line);border-radius:999px;padding:4px 10px;
+  }
+  footer{text-align:center;margin-top:40px;color:var(--muted-dim);font-size:.78rem;line-height:1.6;}
+  footer .add{color:var(--muted);}
+
+  .modal-backdrop{
+    position:fixed;inset:0;background:rgba(4,9,18,.72);
+    -webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);
+    display:none;align-items:center;justify-content:center;
+    padding:22px;z-index:50;
+  }
+  .modal-backdrop.open{display:flex;}
+  .modal{
+    background:var(--navy-soft);border:1px solid var(--line);
+    border-radius:22px;width:100%;max-width:440px;max-height:84vh;
+    overflow:auto;padding:20px 20px 22px;box-shadow:0 20px 60px rgba(0,0,0,.5);
+  }
+  .modal-head{display:flex;align-items:center;justify-content:space-between;gap:12px;}
+  .modal-title{font-family:"Newsreader",serif;font-weight:600;font-size:1.5rem;margin:0;}
+  .modal-close{
+    background:none;border:none;color:var(--muted);font-size:1.7rem;line-height:1;
+    cursor:pointer;padding:2px 8px;border-radius:8px;
+  }
+  .modal-close:hover,.modal-close:focus-visible{color:var(--ink);outline:none;background:rgba(255,255,255,.06);}
+  .modal-sub{margin:2px 0 14px;color:var(--muted-dim);font-size:.82rem;}
+  .modal-list{display:flex;flex-direction:column;gap:9px;}
+  a.page{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+    background:var(--card);border:1px solid var(--line);border-radius:14px;
+    padding:14px 15px;text-decoration:none;color:var(--ink);
+    font-weight:500;font-size:1rem;transition:background .16s ease,border-color .16s ease;
+  }
+  a.page:hover,a.page:focus-visible{background:var(--card-hover);border-color:var(--accent);outline:none;}
+  a.page .arrow{color:var(--muted-dim);}
+  a.page:hover .arrow{color:var(--accent-light);}
+
+  @media (prefers-reduced-motion:reduce){
+    .rings span{animation:none;opacity:.12;}
+    a.tile,button.tile,a.page{transition:none;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="rings" aria-hidden="true"><span></span><span></span><span></span></div>
+    <div class="brand">
+      <h1 class="wordmark">Resonate<span class="dot">.</span></h1>
+      <p class="tag">Nicole's project hub — everything in one tap</p>
+      <p class="verse">
+        Commit your work to the Lord, and your plans will be established.
+        <cite>Proverbs 16:3</cite>
+      </p>
+    </div>
+  </header>
+
+  <p class="eyebrow">Live projects</p>
+  <div class="tiles" id="liveTiles"></div>
+
+  <p class="eyebrow">Coming soon</p>
+  <div class="tiles" id="soonTiles"></div>
+
+  <footer>
+    Saved to your home screen? Tap the icon anytime.<br />
+    <span class="add">To install: Share -&gt; Add to Home Screen.</span>
+  </footer>
+</div>
+
+<div class="modal-backdrop" id="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+  <div class="modal">
+    <div class="modal-head">
+      <h2 class="modal-title" id="modalTitle"></h2>
+      <button class="modal-close" id="modalClose" type="button" aria-label="Close">&times;</button>
+    </div>
+    <p class="modal-sub">Pick a page to open</p>
+    <div class="modal-list" id="modalList"></div>
+  </div>
+</div>
+
+<script>
+  var PROJECTS = [
+    { name:"Music-Practice",      desc:"Student music-theory & practice app",           url:"https://farfromtimnah-hue.github.io/Music-Practice/",  badge:"M" },
+    { name:"Resonate Portal",     desc:"Client portal & Resonate Business Systems home", url:"https://farfromtimnah-hue.github.io/resonate-portal/", badge:"R" },
+    { name:"LTC Dashboard",       desc:"Ministry volunteers, scheduling & attendance",   url:"https://farfromtimnah-hue.github.io/ltc-dashboard/",   badge:"L" },
+    { name:"LTC Assessment",      desc:"Gifting & DISC assessment form",                 url:"https://farfromtimnah-hue.github.io/ministry-gifting/",badge:"L" },
+    { name:"Alice Prata",         desc:"Insurance tools, guides & CRM",                  badge:"A", pages:[
+        { label:"Insurance Landing",      url:"https://farfromtimnah-hue.github.io/Alice-Prata/landing-insurance.html" },
+        { label:"Resources Landing",      url:"https://farfromtimnah-hue.github.io/Alice-Prata/landing-resources.html" },
+        { label:"Will Kit",               url:"https://farfromtimnah-hue.github.io/Alice-Prata/will-kit.html" },
+        { label:"Family Emergency Guide", url:"https://farfromtimnah-hue.github.io/Alice-Prata/family-emergency-guide.html" },
+        { label:"State Licensing",        url:"https://farfromtimnah-hue.github.io/Alice-Prata/state-licensing.html" },
+        { label:"Carrier Reference",      url:"https://farfromtimnah-hue.github.io/Alice-Prata/carrier-reference.html" },
+        { label:"CRM (sign-in)",          url:"https://farfromtimnah-hue.github.io/Alice-Prata/crm/" }
+    ] },
+    { name:"ResonateBrasil",      desc:"Brazilian-American Etsy shop",                   url:"https://www.etsy.com/shop/ResonateBrasil", badge:"B" },
+    { name:"Insurance Agent App", desc:"Goal tracker — in planning",                     url:"", badge:"I" },
+    { name:"Personal OS",         desc:"Life & devotional dashboard",                    url:"", badge:"P" }
+  ];
+
+  function tileAnchor(p){
+    return '<a class="tile" href="' + p.url + '" target="_blank" rel="noopener">' +
+      '<span class="badge">' + p.badge + '</span>' +
+      '<span class="tile-body"><span class="tile-name">' + p.name + '</span>' +
+      '<span class="tile-desc">' + p.desc + '</span></span>' +
+      '<span class="arrow" aria-hidden="true">&rarr;</span></a>';
+  }
+  function tileGroup(p, i){
+    return '<button class="tile" type="button" data-idx="' + i + '" aria-haspopup="dialog">' +
+      '<span class="badge">' + p.badge + '</span>' +
+      '<span class="tile-body"><span class="tile-name">' + p.name + '</span>' +
+      '<span class="tile-desc">' + p.desc + '</span></span>' +
+      '<span class="count">' + p.pages.length + ' pages</span></button>';
+  }
+  function tileSoon(p){
+    return '<div class="tile soon">' +
+      '<span class="badge">' + p.badge + '</span>' +
+      '<span class="tile-body"><span class="tile-name">' + p.name + '</span>' +
+      '<span class="tile-desc">' + p.desc + '</span></span>' +
+      '<span class="chip">Soon</span></div>';
+  }
+
+  var liveHtml = "";
+  var soonHtml = "";
+  PROJECTS.forEach(function(p, i){
+    if (p.url) { liveHtml += tileAnchor(p); }
+    else if (p.pages) { liveHtml += tileGroup(p, i); }
+    else { soonHtml += tileSoon(p); }
+  });
+  document.getElementById("liveTiles").innerHTML = liveHtml;
+  document.getElementById("soonTiles").innerHTML = soonHtml;
+
+  var modal = document.getElementById("modal");
+  var modalTitle = document.getElementById("modalTitle");
+  var modalList = document.getElementById("modalList");
+  var modalClose = document.getElementById("modalClose");
+  var lastFocus = null;
+
+  function openModal(i){
+    var p = PROJECTS[i];
+    modalTitle.textContent = p.name;
+    modalList.innerHTML = p.pages.map(function(pg){
+      return '<a class="page" href="' + pg.url + '" target="_blank" rel="noopener">' +
+        '<span>' + pg.label + '</span>' +
+        '<span class="arrow" aria-hidden="true">&rarr;</span></a>';
+    }).join("");
+    lastFocus = document.activeElement;
+    modal.classList.add("open");
+    document.body.style.overflow = "hidden";
+    modalClose.focus();
+  }
+  function closeModal(){
+    modal.classList.remove("open");
+    document.body.style.overflow = "";
+    if (lastFocus) { lastFocus.focus(); }
+  }
+
+  Array.prototype.forEach.call(document.querySelectorAll("button.tile[data-idx]"), function(btn){
+    btn.addEventListener("click", function(){
+      openModal(parseInt(btn.getAttribute("data-idx"), 10));
+    });
+  });
+  modalClose.addEventListener("click", closeModal);
+  modal.addEventListener("click", function(e){ if (e.target === modal) { closeModal(); } });
+  document.addEventListener("keydown", function(e){
+    if (e.key === "Escape" && modal.classList.contains("open")) { closeModal(); }
+  });
+</script>
+</body>
+</html>

@@ -165,3 +165,4 @@
 - After implementing Item 12 (Google Sign In): whitelist farfromtimnah-hue.github.io in Firebase Console → Authentication → Authorized domains; enable Google provider
 - Run `wrangler deploy` after each worker change
 - Run D1 ALTER TABLE migrations for Items 9/10 (comment_type, is_edited, admin_translation columns)
+2026-07-05 — Added standalone project hub page at hub/index.html. No existing files touched.
