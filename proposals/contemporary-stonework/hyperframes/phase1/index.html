@@ -1,0 +1,517 @@
+<!doctype html>
+<html lang="en" data-resolution="landscape">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+
+      /* ---- LOCKED PROJECT DESIGN TOKENS ---- */
+      :root {
+        --greige: #EDEAE4;   /* background */
+        --navy-1: #16293F;   /* header gradient start */
+        --navy-2: #0D1F36;   /* header gradient end */
+        --gold:   #C9A427;   /* accent / overlay text */
+        --steel:  #4A6B8A;   /* steel blue */
+        --green:  #1E6E5C;   /* green */
+
+        /* dashboard chrome tones derived from the real mockup */
+        --panel:  #E3DFD8;
+        --panel2: #D8D4CC;
+        --text:   #1A1A1A;
+        --text2:  #5A5550;
+        --text3:  #9A9590;
+        --divider:#CCCAC4;
+      }
+
+      html, body {
+        width: 1920px; height: 1080px; overflow: hidden;
+        background: var(--navy-2);
+        font-family: "Inter", system-ui, sans-serif;
+      }
+      .monospace, .tbl-mono, .cap-pct, .prog-pct { font-family: "DM Mono", monospace; }
+
+      /* ===================================================================
+         STAGE — the full dashboard is centered on the 1920x1080 canvas above
+         a bottom band reserved for the per-beat text overlay.
+         =================================================================== */
+      #stage {
+        position: absolute; inset: 0;
+      }
+      /* The whole dashboard is shown at all times, fully above the text-overlay
+         band — no vertical scrolling — so nothing is ever clipped or occluded.
+         Attention is directed purely by the gold focus ring (and a gentle zoom
+         on the ringed element), which is how a real product demo highlights UI. */
+      #dash-viewport {
+        position: absolute; top: 40px; left: 50%;
+        transform: translateX(-50%);
+        width: 1300px; height: 862px;
+        border-radius: 14px; overflow: hidden;
+        box-shadow: 0 40px 120px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.04);
+        background: var(--greige);
+      }
+      #dash {
+        width: 1300px; height: 862px;
+        display: flex; position: relative;
+        background: var(--greige);
+        transform-origin: top center;
+      }
+
+      /* ---- SIDEBAR ---- */
+      .sidebar { width: 210px; flex-shrink: 0; position: relative; overflow: hidden; }
+      .sb-gradient {
+        position: absolute; inset: 0;
+        background: linear-gradient(to bottom, #EDEAE3 0%, #DEDAD2 30%, var(--steel) 58%, var(--navy-1) 80%, var(--navy-2) 100%);
+      }
+      .sb-inner { position: relative; z-index: 1; display: flex; flex-direction: column; height: 100%; padding-bottom: 8px; }
+      .greeting { padding: 16px 14px 14px; border-bottom: 1px solid rgba(0,0,0,0.1); display: flex; gap: 10px; }
+      .g-avatar { width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg,#3D5A72,var(--steel)); display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:600; color:#fff; flex-shrink:0; border:1.5px solid rgba(255,255,255,0.15); }
+      .g-name { font-size: 13px; font-weight: 600; color: var(--text); }
+      .g-quote { font-size: 10px; color: #6B6560; font-style: italic; line-height: 1.4; margin-top: 3px; }
+      .nav { flex: 1; padding: 8px 0; }
+      .nav-item { display:flex; align-items:center; gap:10px; padding:8px 14px; font-size:13px; color:#2A2A2A; border-left:2px solid transparent; }
+      .nav-item.active { color: var(--steel); border-left-color: var(--steel); font-weight:600; }
+      .n-icon { width:16px; text-align:center; font-size:13px; opacity:0.7; }
+      .sb-footer { padding: 10px 14px 4px; }
+      .sb-role { font-size: 8px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(180,205,255,0.4); margin-bottom: 2px; }
+      .sb-name { font-size: 10px; font-weight: 600; color: rgba(210,225,255,0.8); }
+
+      /* ---- MAIN ---- */
+      .main { flex: 1; min-width: 0; display: flex; flex-direction: column; background: var(--greige); }
+      /* topbar uses the LOCKED navy header gradient */
+      .topbar {
+        height: 54px; flex-shrink: 0;
+        background: linear-gradient(90deg, var(--navy-1), var(--navy-2));
+        display: flex; align-items: center; padding: 0 18px; gap: 14px;
+      }
+      .tb-title { font-size: 16px; font-weight: 600; color: #F4F1EB; letter-spacing:-0.01em; }
+      .tb-date { font-size: 11px; color: rgba(240,240,240,0.55); }
+      .tb-tabs { display: flex; gap: 4px; flex: 1; }
+      .tb-tab { font-size: 12px; color: rgba(240,240,240,0.55); padding: 5px 10px; border-radius: 6px; }
+      .tb-tab.active { color: #fff; background: rgba(255,255,255,0.1); font-weight: 500; }
+      .tb-right { display: flex; align-items: center; gap: 12px; }
+      .tb-search { font-size: 11px; color: rgba(240,240,240,0.5); background: rgba(255,255,255,0.08); padding: 6px 12px; border-radius: 7px; }
+      .tb-avatar { width: 30px; height: 30px; border-radius: 50%; background: var(--steel); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:600; color:#fff; }
+
+      .scroll { flex: 1; padding: 14px 16px 10px; overflow: hidden; display: flex; flex-direction: column; gap: 12px; }
+
+      /* hero stat cards */
+      .hero-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+      .h-card { background: var(--panel); border: 1px solid var(--divider); border-radius: 10px; padding: 14px 16px; position: relative; }
+      .h-card.claims { }
+      .h-label { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text2); }
+      .h-value { font-size: 30px; font-weight: 700; color: var(--text); margin-top: 4px; }
+      .h-unit { font-size: 12px; font-weight: 500; color: var(--text3); margin-left: 5px; }
+      .h-divider { height: 1px; background: var(--divider); margin: 10px 0 8px; }
+      .h-sub { font-size: 11px; color: var(--text2); }
+      .h-tag { background: rgba(200,132,42,0.16); color: #9A6316; font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 5px; }
+
+      .content { display: grid; grid-template-columns: 1fr; gap: 14px; }
+
+      /* dispatch queue */
+      .panel { background: var(--panel); border: 1px solid var(--divider); border-radius: 10px; padding: 12px 16px; }
+      .panel-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+      .panel-title { font-size: 14px; font-weight: 600; color: var(--text); }
+      .panel-actions { display: flex; gap: 8px; }
+      .btn-ghost { font-size: 11px; padding: 5px 10px; border-radius: 6px; border: 1px solid var(--divider); background: transparent; color: var(--text2); }
+      .btn-solid { font-size: 11px; padding: 5px 10px; border-radius: 6px; border: none; background: var(--steel); color: #fff; font-weight: 500; }
+      .tbl-head, .tbl-row { display: grid; grid-template-columns: 1.4fr 1fr 1fr 1.4fr 1fr; align-items: center; gap: 8px; padding: 6px 6px; }
+      .tbl-head { font-size: 9px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text3); border-bottom: 1px solid var(--divider); }
+      .tbl-row { border-bottom: 1px solid rgba(204,202,196,0.5); font-size: 12px; color: var(--text); }
+      .tbl-row:last-child { border-bottom: none; }
+      .tbl-name { font-weight: 600; }
+      .tbl-mono { font-size: 11px; color: var(--text2); }
+      .badge { font-size: 9.5px; font-weight: 600; padding: 3px 8px; border-radius: 5px; }
+      .b-prog { background: rgba(74,107,138,0.16); color: var(--steel); }
+      .b-audit { background: rgba(200,132,42,0.16); color: #9A6316; }
+      .b-sched { background: rgba(30,110,92,0.16); color: var(--green); }
+      .b-weather { background: rgba(150,60,60,0.14); color: #9A4444; }
+      .b-draft { background: rgba(90,85,80,0.14); color: var(--text2); }
+      .prog-wrap { display: flex; align-items: center; gap: 8px; }
+      .prog-bar { flex: 1; height: 5px; border-radius: 3px; background: var(--panel2); overflow: hidden; }
+      .prog-fill { height: 100%; background: var(--steel); border-radius: 3px; }
+      .prog-pct { font-size: 10px; color: var(--text2); width: 30px; text-align: right; }
+
+      .two-col { display: grid; grid-template-columns: 1.3fr 1fr; gap: 12px; }
+      .chart-panel, .cap-panel, .feed-panel, .map-panel { background: var(--panel); border: 1px solid var(--divider); border-radius: 10px; padding: 12px 16px; }
+      .chart-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; }
+      .chart-title { font-size: 13px; font-weight: 600; color: var(--text); }
+      .chart-period { font-size: 10px; color: var(--text3); }
+      .chart-bars { display: flex; align-items: flex-end; gap: 12px; height: 92px; }
+      .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; gap: 6px; }
+      .bar-fill { width: 100%; background: linear-gradient(to top, var(--steel), #6A8BAA); border-radius: 4px 4px 0 0; }
+      .bar-lbl { font-size: 8px; font-weight: 600; letter-spacing: 0.05em; color: var(--text3); }
+
+      .cap-title { font-size: 13px; font-weight: 600; color: var(--text); }
+      .cap-sub { font-size: 10px; color: var(--text3); margin-top: 2px; margin-bottom: 12px; }
+      .cap-row { margin-bottom: 10px; }
+      .cap-lbl-row { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px; }
+      .cap-lbl { color: var(--text2); }
+      .cap-pct { color: var(--text); font-weight: 500; }
+      .cap-bar { height: 6px; background: var(--panel2); border-radius: 3px; overflow: hidden; }
+      .cap-fill { height: 100%; background: var(--green); border-radius: 3px; }
+
+      .bottom-col { display: grid; grid-template-columns: 1.3fr 1fr; gap: 14px; }
+      .feed-title { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+      .feed-item { display: flex; gap: 12px; padding: 5px 0; border-bottom: 1px solid rgba(204,202,196,0.5); position: relative; border-radius: 6px; }
+      .feed-item:last-child { border-bottom: none; }
+      .feed-time { font-size: 10px; color: var(--text3); font-family: "DM Mono", monospace; padding-top: 1px; width: 36px; flex-shrink: 0; }
+      .feed-event { font-size: 12px; font-weight: 600; color: var(--text); }
+      .feed-detail { font-size: 10.5px; color: var(--text2); margin-top: 1px; }
+
+      .map-panel { position: relative; overflow: hidden; padding: 0; }
+      .map-bg { position: absolute; inset: 0; background: linear-gradient(135deg, #DDE4E2, #CBD6D2); }
+      .map-road-h { position: absolute; left: 0; right: 0; height: 2px; background: rgba(255,255,255,0.6); }
+      .map-road-v { position: absolute; top: 0; bottom: 0; width: 2px; background: rgba(255,255,255,0.6); }
+      .map-pin { position: absolute; width: 12px; height: 12px; border-radius: 50%; box-shadow: 0 0 0 4px rgba(255,255,255,0.35); }
+      .map-label { position: absolute; left: 14px; bottom: 12px; z-index: 2; }
+      .map-label-title { font-size: 10px; font-weight: 600; color: var(--text2); }
+      .map-label-value { font-size: 14px; font-weight: 700; color: var(--text); }
+
+      /* footer */
+      .foot { height: 30px; flex-shrink: 0; border-top: 1px solid var(--divider); display: flex; align-items: center; justify-content: space-between; padding: 0 18px; font-size: 10px; color: var(--text2); }
+      .foot-right { display: flex; gap: 16px; }
+      #supplypro-tag { padding: 2px 6px; border-radius: 5px; }
+      .sync-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--green); margin-right: 6px; }
+
+      /* ===================================================================
+         HIGHLIGHT RING — a gold focus ring the runtime moves between the
+         real dashboard element being demoed in each beat.
+         =================================================================== */
+      #focus-ring {
+        position: absolute; border: 2.5px solid var(--gold);
+        border-radius: 10px; pointer-events: none;
+        box-shadow: 0 0 0 4px rgba(201,164,39,0.18), 0 0 22px rgba(201,164,39,0.35);
+        opacity: 0;
+      }
+
+      /* ===================================================================
+         TEXT OVERLAYS — one per beat, styled with locked tokens.
+         Positioned along the bottom of the canvas, clear of the dashboard.
+         =================================================================== */
+      .overlay {
+        position: absolute; left: 50%; bottom: 30px;
+        transform: translateX(-50%);
+        width: 1500px; max-width: 1500px;
+        display: flex; align-items: center; gap: 20px;
+        padding: 18px 34px;
+        background: linear-gradient(90deg, rgba(13,31,54,0.94), rgba(22,41,63,0.92));
+        border: 1px solid rgba(201,164,39,0.4);
+        border-left: 4px solid var(--gold);
+        border-radius: 12px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.45);
+        opacity: 0;
+      }
+      .overlay-num {
+        flex-shrink: 0; width: 46px; height: 46px; border-radius: 50%;
+        border: 2px solid var(--gold); color: var(--gold);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 20px; font-weight: 700;
+      }
+      .overlay-text { font-size: 25px; font-weight: 500; line-height: 1.25; color: #F6F2E8; letter-spacing: -0.01em; white-space: nowrap; }
+      .overlay-text b { color: var(--gold); font-weight: 700; }
+
+      /* progress rail at very bottom */
+      #rail { position: absolute; left: 0; bottom: 0; height: 4px; background: var(--gold); width: 0; opacity: 0.85; }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="main"
+      data-start="0"
+      data-duration="13"
+      data-width="1920"
+      data-height="1080"
+    >
+      <!-- ============ THE DASHBOARD (real mockup, faithfully rebuilt) ============ -->
+      <div id="stage" class="clip" data-start="0" data-duration="13" data-track-index="0">
+       <div id="dash-viewport">
+        <div id="dash">
+          <!-- SIDEBAR -->
+          <div class="sidebar">
+            <div class="sb-gradient"></div>
+            <div class="sb-inner">
+              <div class="greeting">
+                <div class="g-avatar">JA</div>
+                <div>
+                  <div class="g-name">Bom dia, Junio!</div>
+                  <div class="g-quote">"The secret of getting ahead is getting started."</div>
+                </div>
+              </div>
+              <div class="nav">
+                <div class="nav-item active"><span class="n-icon">⊞</span><span>Overview</span></div>
+                <div class="nav-item"><span class="n-icon">◫</span><span>Jobs</span></div>
+                <div class="nav-item"><span class="n-icon">⚑</span><span>Claims</span></div>
+                <div class="nav-item"><span class="n-icon">◻</span><span>Materials</span></div>
+                <div class="nav-item"><span class="n-icon">⊕</span><span>Field Ops</span></div>
+                <div class="nav-item"><span class="n-icon">⇄</span><span>Dispatch</span></div>
+                <div class="nav-item"><span class="n-icon">⊘</span><span>Reports</span></div>
+              </div>
+              <div class="sb-footer">
+                <div class="sb-role">Current Operator</div>
+                <div class="sb-name">JUNIO ALVES · OWNER</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- MAIN -->
+          <div class="main">
+            <div class="topbar">
+              <div class="tb-title">Operations</div>
+              <div class="tb-date">📅 Jun 22, 2026</div>
+              <div class="tb-tabs">
+                <div class="tb-tab active">Active Sites</div>
+                <div class="tb-tab">Pending Prep</div>
+                <div class="tb-tab">Resource Map</div>
+              </div>
+              <div class="tb-right">
+                <div class="tb-search">⌕ Search project or claim...</div>
+                <div class="tb-avatar">JA</div>
+              </div>
+            </div>
+
+            <div class="scroll">
+              <!-- HERO STAT CARDS -->
+              <div class="hero-cards">
+                <div class="h-card claims" id="card-claims">
+                  <div class="h-label">Open Claims</div>
+                  <div class="h-value"><span id="claims-count">$0</span><span class="h-unit">USD</span></div>
+                  <div class="h-divider"></div>
+                  <div class="h-sub">📋 7 jobs &nbsp;·&nbsp; 🏗 3 builders</div>
+                </div>
+                <div class="h-card">
+                  <div class="h-label">Due This Week</div>
+                  <div class="h-value">14<span class="h-unit">JOBS</span></div>
+                  <div class="h-divider"></div>
+                  <div class="h-sub"><span class="h-tag">4 Need Photo Audit</span></div>
+                </div>
+                <div class="h-card">
+                  <div class="h-label">Weather Alerts</div>
+                  <div class="h-value">2<span class="h-unit">SITES</span></div>
+                  <div class="h-divider"></div>
+                  <div class="h-sub">🌧 Rain Forecast: Jun 25–26</div>
+                </div>
+              </div>
+
+              <!-- DISPATCH QUEUE -->
+              <div class="content">
+                <div class="panel">
+                  <div class="panel-head">
+                    <div class="panel-title">Site Dispatch Queue</div>
+                    <div class="panel-actions">
+                      <button class="btn-ghost">Export CSV</button>
+                      <button class="btn-solid">+ New Job</button>
+                    </div>
+                  </div>
+                  <div class="tbl-head">
+                    <div>Location</div><div>Status</div><div>Crew</div><div>Progress</div><div>Est. Completion</div>
+                  </div>
+                  <div class="tbl-row"><div class="tbl-name">Bexley</div><div><span class="badge b-prog">In Progress</span></div><div class="tbl-mono">C-Alpha-09</div><div class="prog-wrap"><div class="prog-bar"><div class="prog-fill" style="width:65%"></div></div><span class="prog-pct">65%</span></div><div class="tbl-mono">Jun 28</div></div>
+                  <div class="tbl-row"><div class="tbl-name">Epperson</div><div><span class="badge b-audit">Pending Audit</span></div><div class="tbl-mono">C-Beta-02</div><div class="prog-wrap"><div class="prog-bar"><div class="prog-fill" style="width:100%"></div></div><span class="prog-pct">100%</span></div><div class="tbl-mono">Jun 23</div></div>
+                  <div class="tbl-row"><div class="tbl-name">Mirada</div><div><span class="badge b-sched">On Schedule</span></div><div class="tbl-mono">C-Gamma-11</div><div class="prog-wrap"><div class="prog-bar"><div class="prog-fill" style="width:42%"></div></div><span class="prog-pct">42%</span></div><div class="tbl-mono">Jul 02</div></div>
+                  <div class="tbl-row"><div class="tbl-name">Waterset</div><div><span class="badge b-weather">Delayed: Weather</span></div><div class="tbl-mono">C-Alpha-04</div><div class="prog-wrap"><div class="prog-bar"><div class="prog-fill" style="width:15%"></div></div><span class="prog-pct">15%</span></div><div class="tbl-mono">Jul 12</div></div>
+                  <div class="tbl-row" id="row-unionpark"><div class="tbl-name">Union Park</div><div><span class="badge b-draft">Drafting</span></div><div class="tbl-mono">N/A</div><div class="prog-wrap"><div class="prog-bar"><div class="prog-fill" style="width:0%"></div></div><span class="prog-pct">0%</span></div><div class="tbl-mono">Jul 20</div></div>
+                </div>
+
+                <div class="two-col">
+                  <!-- MATERIAL INVENTORY FORECAST (SupplyPro data) -->
+                  <div class="chart-panel" id="panel-inventory">
+                    <div class="chart-head"><div class="chart-title">Material Inventory Forecast</div><div class="chart-period">Q3 2026</div></div>
+                    <div class="chart-bars">
+                      <div class="bar-col"><div class="bar-fill" data-h="72" style="height:72%"></div><div class="bar-lbl">GRANITE</div></div>
+                      <div class="bar-col"><div class="bar-fill" data-h="55" style="height:55%"></div><div class="bar-lbl">MARBLE</div></div>
+                      <div class="bar-col"><div class="bar-fill" data-h="88" style="height:88%"></div><div class="bar-lbl">SLATE</div></div>
+                      <div class="bar-col"><div class="bar-fill" data-h="38" style="height:38%"></div><div class="bar-lbl">QUARTZ</div></div>
+                      <div class="bar-col"><div class="bar-fill" data-h="60" style="height:60%"></div><div class="bar-lbl">TRAVER</div></div>
+                      <div class="bar-col"><div class="bar-fill" data-h="80" style="height:80%"></div><div class="bar-lbl">LIMEST</div></div>
+                      <div class="bar-col"><div class="bar-fill" data-h="45" style="height:45%"></div><div class="bar-lbl">SANDST</div></div>
+                    </div>
+                  </div>
+                  <div class="cap-panel">
+                    <div><div class="cap-title">Team Capacity</div><div class="cap-sub">Resource allocation across active districts</div></div>
+                    <div class="cap-row"><div class="cap-lbl-row"><span class="cap-lbl">Field Crews</span><span class="cap-pct">92%</span></div><div class="cap-bar"><div class="cap-fill" style="width:92%"></div></div></div>
+                    <div class="cap-row"><div class="cap-lbl-row"><span class="cap-lbl">Logistics</span><span class="cap-pct">45%</span></div><div class="cap-bar"><div class="cap-fill" style="width:45%"></div></div></div>
+                    <div class="cap-row"><div class="cap-lbl-row"><span class="cap-lbl">Drafting</span><span class="cap-pct">78%</span></div><div class="cap-bar"><div class="cap-fill" style="width:78%"></div></div></div>
+                  </div>
+                </div>
+
+                <!-- LOGISTICS FEED + LIVE MAP -->
+                <div class="bottom-col">
+                  <div class="feed-panel">
+                    <div class="feed-title">Logistics Feed</div>
+                    <div class="feed-item">
+                      <div class="feed-time">08:15</div>
+                      <div><div class="feed-event">Crew 04 Arrived</div><div class="feed-detail">Willow Creek Lot 402-B. Stone delivery confirmed.</div></div>
+                    </div>
+                    <div class="feed-item">
+                      <div class="feed-time">09:42</div>
+                      <div><div class="feed-event">Equipment Check</div><div class="feed-detail">Forklift #12 maintenance required. Scheduled for 2PM.</div></div>
+                    </div>
+                    <div class="feed-item" id="feed-westbay">
+                      <div class="feed-time">10:05</div>
+                      <div><div class="feed-event">PO Received — West Bay</div><div class="feed-detail">Waterset Lot 33. Quantity mismatch flagged — claim drafted.</div></div>
+                    </div>
+                    <div class="feed-item">
+                      <div class="feed-time">11:18</div>
+                      <div><div class="feed-event">Driver En Route</div><div class="feed-detail">Bexley Lot 142. ETA approx. 12:30PM.</div></div>
+                    </div>
+                  </div>
+
+                  <div class="map-panel">
+                    <div class="map-bg"></div>
+                    <div class="map-road-h" style="top: 38%"></div>
+                    <div class="map-road-h" style="top: 68%"></div>
+                    <div class="map-road-v" style="left: 28%"></div>
+                    <div class="map-road-v" style="left: 62%"></div>
+                    <div class="map-pin" style="background:var(--steel); top:18%; left:24%;"></div>
+                    <div class="map-pin" style="background:var(--steel); top:12%; left:58%;"></div>
+                    <div class="map-pin" style="background:var(--gold); top:46%; left:40%;"></div>
+                    <div class="map-pin" style="background:var(--steel); top:55%; left:72%;"></div>
+                    <div class="map-pin" style="background:#7A6840; top:70%; left:18%;"></div>
+                    <div class="map-pin" style="background:var(--steel); top:74%; left:55%;"></div>
+                    <div class="map-label">
+                      <div class="map-label-title">Live Field Map</div>
+                      <div class="map-label-value">6 Active Zones</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="foot">
+              <span><span class="sync-dot"></span>Sync Status: Active</span>
+              <div class="foot-right"><span id="supplypro-tag">SupplyPro: Connected</span><span>© 2026 Contemporary Stonework</span></div>
+            </div>
+          </div>
+          <!-- gold focus ring lives inside #dash so it pans with the content -->
+          <div id="focus-ring"></div>
+        </div>
+       </div>
+      </div>
+
+      <!-- ============ TEXT OVERLAYS — one per beat, no overlap ============ -->
+      <div class="overlay clip" id="ov1" data-start="0.7" data-duration="2.3" data-track-index="5">
+        <div class="overlay-num">1</div>
+        <div class="overlay-text">Automatically checks every <b>purchase order</b> against what was delivered and flags discrepancies.</div>
+      </div>
+
+      <div class="overlay clip" id="ov2" data-start="3.1" data-duration="2.3" data-track-index="5">
+        <div class="overlay-num">2</div>
+        <div class="overlay-text">Converts West Bay's <b>plan files</b> into usable documents automatically.</div>
+      </div>
+
+      <div class="overlay clip" id="ov3" data-start="5.5" data-duration="2.3" data-track-index="5">
+        <div class="overlay-num">3</div>
+        <div class="overlay-text">Pulls <b>daily order data</b> in automatically so the office isn't working across a dozen tabs.</div>
+      </div>
+
+      <div class="overlay clip" id="ov4" data-start="7.9" data-duration="2.3" data-track-index="5">
+        <div class="overlay-num">4</div>
+        <div class="overlay-text">Prepares <b>dispute protection emails</b> ready for one click review and send.</div>
+      </div>
+
+      <div class="overlay clip" id="ov5" data-start="10.3" data-duration="2.6" data-track-index="5">
+        <div class="overlay-num">5</div>
+        <div class="overlay-text">Includes a <b>feedback button</b> from day one so the team shapes the tool as they use it.</div>
+      </div>
+
+      <!-- progress rail -->
+      <div id="rail" class="clip" data-start="0" data-duration="13" data-track-index="6"></div>
+    </div>
+
+    <script>
+      window.__timelines = window.__timelines || {};
+      const tl = gsap.timeline({ paused: true });
+
+      /* ---- helper: frame the gold focus ring over a real dashboard element,
+             measured relative to #dash (the ring's positioned parent). The whole
+             dashboard is always fully visible, so no panning is needed — the ring
+             (plus a gentle emphasis pulse) is what directs the eye. ---- */
+      function ringRect(sel, pad) {
+        const dash = document.getElementById("dash");
+        const el = document.querySelector(sel);
+        const d = dash.getBoundingClientRect();
+        const b = el.getBoundingClientRect();
+        const p = pad || 8;
+        return {
+          left: b.left - d.left - p,
+          top: b.top - d.top - p,
+          width: b.width + p * 2,
+          height: b.height + p * 2,
+        };
+      }
+      function ringTo(sel, pad, at, dur) {
+        const r = ringRect(sel, pad);
+        tl.to("#focus-ring", {
+          duration: dur, ease: "power2.inOut",
+          left: r.left + "px", top: r.top + "px",
+          width: r.width + "px", height: r.height + "px",
+        }, at);
+      }
+
+      /* ===== 0.0–0.5s : dashboard establishes ===== */
+      tl.from("#dash-viewport", { opacity: 0, duration: 0.5, ease: "power2.out" }, 0);
+
+      /* ===== progress rail sweeps the full 13s ===== */
+      tl.fromTo("#rail", { width: 0 }, { width: 1920, duration: 13, ease: "none" }, 0);
+
+      /* ring starts on the claims tile, hidden ===== */
+      tl.set("#focus-ring", { ...ringRect("#card-claims", 10), opacity: 0 }, 0);
+
+      /* ===================== BEAT 1 : Open Claims / PO discrepancy =====================
+         focus moves to the Open Claims tile, dollar figure counts into view. */
+      const claims = { v: 0 };
+      const claimsEl = document.getElementById("claims-count");
+      ringTo("#card-claims", 10, 0.6, 0.4);
+      tl.to("#focus-ring", { opacity: 1, duration: 0.3 }, 0.6);
+      tl.to(claims, {
+        v: 12440, duration: 1.3, ease: "power1.out",
+        onUpdate: () => { if (claimsEl) claimsEl.textContent = "$" + Math.round(claims.v).toLocaleString("en-US"); }
+      }, 0.7);
+      tl.to("#card-claims", { scale: 1.03, duration: 0.4, yoyo: true, repeat: 1, ease: "power1.inOut", transformOrigin: "center" }, 0.7);
+      tl.fromTo("#ov1", { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" }, 0.7);
+      tl.to("#ov1", { opacity: 0, y: 16, duration: 0.35, ease: "power2.in" }, 2.65);
+
+      /* ===================== BEAT 2 : plan files → documents (Union Park drafting) ===== */
+      ringTo("#row-unionpark", 6, 3.0, 0.45);
+      tl.fromTo("#row-unionpark", { backgroundColor: "rgba(201,164,39,0)" },
+                { backgroundColor: "rgba(201,164,39,0.16)", duration: 0.5, yoyo: true, repeat: 1, ease: "power1.inOut" }, 3.1);
+      tl.to("#row-unionpark .prog-fill", { width: "34%", duration: 1.1, ease: "power2.out" }, 3.2);
+      tl.to("#row-unionpark .prog-pct", { duration: 1.1, ease: "none",
+        onUpdate: function () { const el = this.targets()[0]; el.textContent = Math.round(this.progress() * 34) + "%"; } }, 3.2);
+      tl.fromTo("#ov2", { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" }, 3.1);
+      tl.to("#ov2", { opacity: 0, y: 16, duration: 0.35, ease: "power2.in" }, 5.05);
+
+      /* ===================== BEAT 3 : SupplyPro daily order data → inventory chart ===== */
+      ringTo("#panel-inventory", 8, 5.4, 0.45);
+      document.querySelectorAll("#panel-inventory .bar-fill").forEach((bar, i) => {
+        const h = bar.getAttribute("data-h") + "%";
+        tl.fromTo(bar, { height: "0%" }, { height: h, duration: 0.7, ease: "power2.out" }, 5.5 + i * 0.07);
+      });
+      tl.fromTo("#supplypro-tag", { backgroundColor: "rgba(30,110,92,0)", color: "#5A5550" },
+                { backgroundColor: "rgba(30,110,92,0.18)", color: "#1E6E5C", duration: 0.5, yoyo: true, repeat: 1, ease: "power1.inOut" }, 5.6);
+      tl.fromTo("#ov3", { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" }, 5.5);
+      tl.to("#ov3", { opacity: 0, y: 16, duration: 0.35, ease: "power2.in" }, 7.45);
+
+      /* ===================== BEAT 4 : dispute protection email (West Bay PO feed) ===== */
+      ringTo("#feed-westbay", 6, 7.8, 0.45);
+      tl.fromTo("#feed-westbay", { backgroundColor: "rgba(201,164,39,0)" },
+                { backgroundColor: "rgba(201,164,39,0.16)", duration: 0.5, yoyo: true, repeat: 1, ease: "power1.inOut" }, 8.0);
+      tl.fromTo("#ov4", { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" }, 7.9);
+      tl.to("#ov4", { opacity: 0, y: 16, duration: 0.35, ease: "power2.in" }, 9.85);
+
+      /* ===================== BEAT 5 : full dashboard wide view + feedback ===== */
+      tl.to("#focus-ring", { opacity: 0, duration: 0.4, ease: "power2.in" }, 10.2);
+      tl.fromTo("#ov5", { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" }, 10.4);
+      tl.to("#ov5", { opacity: 0, y: 16, duration: 0.35, ease: "power2.in" }, 12.6);
+
+      window.__timelines["main"] = tl;
+    </script>
+  </body>
+</html>

@@ -1,0 +1,5 @@
+# HyperFrames build artifacts — the final MP4 lives in ../../videos/
+renders/
+snapshots/
+node_modules/
+.debug/
