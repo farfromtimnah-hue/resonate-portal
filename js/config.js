@@ -12,3 +12,9 @@ export const FIREBASE_CONFIG = {
 };
 
 export const API_BASE = "https://resonate-portal-api.farfromtimnah.workers.dev";
+
+// Whisper voice-input server (WebSocket). The actual server is set up
+// separately outside this repo, on Nicole's own machine. Leave empty
+// until it exists — the intake interview silently falls back to
+// text-only input whenever this is empty or unreachable.
+export const WHISPER_WS_URL = "";

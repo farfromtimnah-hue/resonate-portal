@@ -7,6 +7,8 @@
 
 import { requireAuth } from './auth.js';
 import { api } from './api.js';
+import { WHISPER_WS_URL } from './config.js';
+import { probeVoiceServer, createVoiceRecorder } from './voice.js';
 
 // ---- state ----
 var _session   = null;
@@ -17,6 +19,8 @@ var _mode      = 'task';   // 'task' | 'problem' | 'future'
 var _entryId   = null;
 var _autoSpeak = false;
 var _sending   = false;
+var _voiceAvailable = false;
+var _voiceRecorder  = null;
 
 // ---- bilingual strings for this flow (en / pt only) ----
 var I18N = {
@@ -168,6 +172,7 @@ async function init() {
   if (!profile) return;
 
   wireStaticButtons();
+  initVoice();
 
   try {
     var current = await api.interviewCurrent();
@@ -214,6 +219,57 @@ function wireStaticButtons() {
   if (proceedBtn) proceedBtn.addEventListener('click', proceedToFuture);
   var skipBtn = document.getElementById('future-skip-btn');
   if (skipBtn) skipBtn.addEventListener('click', skipFuture);
+}
+
+// ---- voice input (Whisper WebSocket stub — silent fallback to text) ----
+async function initVoice() {
+  if (!WHISPER_WS_URL) return; // not configured yet: text-only, no error shown
+
+  var available = await probeVoiceServer(WHISPER_WS_URL, 4000);
+  if (!available) return; // unreachable: silently keep the voice button hidden
+
+  _voiceAvailable = true;
+  var voiceBtn = document.getElementById('voice-btn');
+  if (!voiceBtn) return;
+  voiceBtn.classList.remove('hidden');
+  voiceBtn.addEventListener('click', toggleVoice);
+}
+
+function hideVoice() {
+  _voiceAvailable = false;
+  var voiceBtn = document.getElementById('voice-btn');
+  if (voiceBtn) {
+    voiceBtn.classList.add('hidden');
+    voiceBtn.classList.remove('intake-icon-btn--recording');
+  }
+}
+
+async function toggleVoice() {
+  if (!_voiceAvailable) return;
+  var voiceBtn = document.getElementById('voice-btn');
+
+  if (_voiceRecorder && _voiceRecorder.isRecording()) {
+    _voiceRecorder.stop();
+    if (voiceBtn) voiceBtn.classList.remove('intake-icon-btn--recording');
+    return;
+  }
+
+  _voiceRecorder = createVoiceRecorder({
+    url: WHISPER_WS_URL,
+    language: _lang,
+    onTranscript: function (text, isFinal) {
+      var input = document.getElementById('chat-input');
+      if (!input || !text) return;
+      input.value = input.value ? input.value + ' ' + text : text;
+    },
+    onUnavailable: function () {
+      // Any mid-recording failure: fail silently, typing remains available
+      hideVoice();
+    }
+  });
+
+  var started = await _voiceRecorder.start();
+  if (started && voiceBtn) voiceBtn.classList.add('intake-icon-btn--recording');
 }
 
 // ---- resume an in-progress session ----
