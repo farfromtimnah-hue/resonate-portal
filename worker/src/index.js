@@ -5,6 +5,8 @@
 // reads/writes from Cloudflare D1.
 // ============================================================
 
+import { routeInterview } from './interview.js';
+
 export default {
   async fetch(request, env, ctx) {
     // CORS preflight
@@ -167,6 +169,10 @@ async function router(request, env, user, url, method, path) {
     if (method === 'PUT')    { requireAdmin(user); return handleUpdateLink(params.id, params.lid, request, env); }
     if (method === 'DELETE') { requireAdmin(user); return handleDeleteLink(params.id, params.lid, env); }
   }
+
+  // ---- AI INTAKE INTERVIEW (adaptive interview engine) ----
+  var interviewResponse = await routeInterview(request, env, user, url, method, path);
+  if (interviewResponse) return interviewResponse;
 
   // ---- INTAKE RESPONSES ----
   if (method === 'POST' && path === '/api/intake') {
@@ -1169,7 +1175,7 @@ function b64UrlDecodeBytes(str) {
 // HELPERS
 // ============================================================
 
-class ApiError extends Error {
+export class ApiError extends Error {
   constructor(message, status = 500) {
     super(message);
     this.status = status;
@@ -1180,7 +1186,7 @@ function requireAdmin(user) {
   if (user.role !== 'admin') throw new ApiError('Forbidden — admin only', 403);
 }
 
-function match(pattern, path) {
+export function match(pattern, path) {
   const pp = pattern.split('/');
   const cp = path.split('/');
   if (pp.length !== cp.length) return null;
@@ -1195,7 +1201,7 @@ function match(pattern, path) {
   return params;
 }
 
-function jsonResponse(data, status, env) {
+export function jsonResponse(data, status, env) {
   const corsOrigin = env?.CORS_ORIGIN ?? '*';
   return new Response(JSON.stringify(data), {
     status,
