@@ -41,6 +41,10 @@ const STRINGS = {
     language_en:             'English',
     language_pt:             'Portuguese',
 
+    // AI intake interview (portal card)
+    intake_card_title:       'Tell us about your business',
+    intake_card_copy:        'A guided interview about your day-to-day work. Start, pause, and continue any time.',
+
     // Client detail — sections
     section_contact:         'Contact',
     section_progress:        'Progress Overview',
@@ -218,6 +222,10 @@ const STRINGS = {
     completed_projects:      'concluído',
     language_en:             'Inglês',
     language_pt:             'Português',
+
+    // AI intake interview (portal card)
+    intake_card_title:       'Conte-nos sobre o seu negócio',
+    intake_card_copy:        'Uma entrevista guiada sobre o seu dia a dia. Comece, pause e continue quando quiser.',
 
     section_contact:         'Contato',
     section_progress:        'Visão Geral do Progresso',

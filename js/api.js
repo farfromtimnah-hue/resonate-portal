@@ -78,6 +78,17 @@ export const api = {
   upsertFeedback:(clientId, d)         => req('PUT', `/api/clients/${clientId}/feedback`, d),
   saveFeedbackTranslation: (clientId, d) => req('PUT', `/api/clients/${clientId}/feedback/translation`, d),
 
+  // AI intake interview (adaptive interview engine)
+  interviewCurrent:       ()          => req('GET',  '/api/interview/current'),
+  interviewCreateSession: (d)         => req('POST', '/api/interview/sessions', d),
+  interviewUpdateSession: (sid, d)    => req('PUT',  `/api/interview/sessions/${sid}`, d),
+  interviewSavePrefs:     (sid, d)    => req('PUT',  `/api/interview/sessions/${sid}/preferences`, d),
+  interviewStartSection:  (sid, d)    => req('POST', `/api/interview/sessions/${sid}/start`, d),
+  interviewAnswer:        (sid, d)    => req('POST', `/api/interview/sessions/${sid}/answer`, d),
+  interviewFuture:        (sid, d)    => req('POST', `/api/interview/sessions/${sid}/future`, d),
+  interviewFutureSkip:    (sid)       => req('POST', `/api/interview/sessions/${sid}/future/skip`, {}),
+  interviewExport:        (clientId)  => req('GET',  `/api/interview/clients/${clientId}/export`),
+
   // Logo upload (multipart/form-data — bypasses the JSON req() helper)
   uploadLogo: async (clientId, file) => {
     const token = await getToken();

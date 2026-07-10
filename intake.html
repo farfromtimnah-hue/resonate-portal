@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <title>Intake Interview — Resonate</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700&family=Newsreader:opsz,wght@6..72,700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+
+  <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          borderRadius: { "full": "9999px", "DEFAULT": "1rem", "lg": "2rem" },
+          fontFamily: { "jakarta": ["Plus Jakarta Sans","sans-serif"], "newsreader": ["Newsreader","serif"] },
+        }
+      }
+    }
+  </script>
+
+  <link rel="stylesheet" href="css/app.css?v=4">
+
+  <style>
+    body { font-family: 'Plus Jakarta Sans', sans-serif; background: #F8F7F4; color: #414750; }
+  </style>
+</head>
+<body class="min-h-screen antialiased">
+
+<!-- Header -->
+<header class="sticky top-0 z-50 bg-white/90 backdrop-blur-sm border-b border-black/5">
+  <div class="max-w-[720px] mx-auto px-6 h-16 flex items-center justify-between">
+    <span class="font-newsreader font-bold text-[20px] text-[#001d35]"
+          style="font-family:'Newsreader',serif; letter-spacing:-0.02em;">
+      Resonate
+    </span>
+    <a id="back-to-portal" href="portal.html"
+       style="font-family:'Plus Jakarta Sans',sans-serif; font-size:11px; font-weight:600;
+              letter-spacing:0.06em; text-transform:uppercase; color:#717781; text-decoration:none;
+              padding:4px 8px;">
+      Portal
+    </a>
+  </div>
+</header>
+
+<main class="max-w-[720px] mx-auto px-6 py-8">
+
+  <div id="loading" class="loading">Loading…</div>
+
+  <!-- ── Section 0: language selection (static, never AI-generated) ── -->
+  <div id="screen-language" class="hidden">
+    <div class="bg-white rounded-lg border border-black/5 p-8 shadow-sm text-center">
+      <p class="font-newsreader text-[26px] text-[#001d35] mb-2" style="font-family:'Newsreader',serif;">
+        Bem-vinda / Welcome
+      </p>
+      <p class="text-[#717781] text-[14px] mb-8">Em que idioma prefere conversar?<br>Which language would you like to use?</p>
+      <div class="flex flex-col sm:flex-row gap-3 justify-center">
+        <button id="lang-choice-pt" class="btn btn--primary intake-lang-btn">Portugu&ecirc;s</button>
+        <button id="lang-choice-en" class="btn btn--primary intake-lang-btn">English</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Section 1: preference questions (one per screen, tap only) ── -->
+  <div id="screen-preferences" class="hidden">
+    <div class="bg-white rounded-lg border border-black/5 p-8 shadow-sm">
+      <p id="pref-progress" class="text-[#717781] text-[11px] uppercase font-semibold tracking-widest mb-4"></p>
+      <p id="pref-question" class="font-newsreader text-[22px] text-[#001d35] mb-6" style="font-family:'Newsreader',serif;"></p>
+      <div id="pref-options" class="flex flex-col gap-3"></div>
+    </div>
+  </div>
+
+  <!-- ── Sections 2/3/4: conversational interview ── -->
+  <div id="screen-chat" class="hidden">
+    <p id="chat-section-label" class="text-[#717781] text-[11px] uppercase font-semibold tracking-widest mb-3"></p>
+    <div class="bg-white rounded-lg border border-black/5 p-6 shadow-sm mb-4">
+      <div class="flex items-start gap-3">
+        <p id="chat-question" class="font-newsreader text-[20px] text-[#001d35] flex-1" style="font-family:'Newsreader',serif; line-height:1.4;"></p>
+        <button id="listen-btn" class="intake-icon-btn" title="Listen" aria-label="Listen">
+          <span class="material-symbols-outlined">volume_up</span>
+        </button>
+      </div>
+    </div>
+    <div class="bg-white rounded-lg border border-black/5 p-5 shadow-sm">
+      <textarea id="chat-input" class="form-control" rows="4"></textarea>
+      <div class="flex items-center justify-between mt-3">
+        <button id="voice-btn" class="intake-icon-btn hidden" title="Speak" aria-label="Speak">
+          <span class="material-symbols-outlined">mic</span>
+        </button>
+        <span class="flex-1"></span>
+        <button id="chat-send-btn" class="btn btn--primary"><span id="chat-send-label">Send</span></button>
+      </div>
+    </div>
+    <p id="chat-status" class="text-[#717781] text-[12px] mt-3 text-center"></p>
+  </div>
+
+  <!-- ── Section 4 gate: click-to-skip for Future/Vision ── -->
+  <div id="screen-future-gate" class="hidden">
+    <div class="bg-white rounded-lg border border-black/5 p-8 shadow-sm text-center">
+      <p id="future-gate-title" class="font-newsreader text-[22px] text-[#001d35] mb-3" style="font-family:'Newsreader',serif;"></p>
+      <p id="future-gate-copy" class="text-[#717781] text-[14px] mb-8"></p>
+      <div class="flex flex-col sm:flex-row gap-3 justify-center">
+        <button id="future-proceed-btn" class="btn btn--primary intake-lang-btn"></button>
+        <button id="future-skip-btn" class="btn btn--secondary intake-lang-btn"></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Completion ── -->
+  <div id="screen-done" class="hidden">
+    <div class="bg-white rounded-lg border border-black/5 p-8 shadow-sm text-center">
+      <span class="material-symbols-outlined" style="font-size:44px; color:#005b96;">check_circle</span>
+      <p id="done-title" class="font-newsreader text-[24px] text-[#001d35] mt-3 mb-2" style="font-family:'Newsreader',serif;"></p>
+      <p id="done-copy" class="text-[#717781] text-[14px] mb-6"></p>
+      <a href="portal.html" class="btn btn--primary" id="done-back-btn"></a>
+    </div>
+  </div>
+
+</main>
+
+<script type="module" src="js/intake.js?v=1"></script>
+</body>
+</html>
