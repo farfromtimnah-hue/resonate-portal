@@ -426,6 +426,7 @@ async function buildClientPortalResponse(client, env) {
     email: client.email,
     website: client.website,
     logo_url: client.logo_url ?? null,
+    intake_enabled: !!client.intake_enabled,
     updated_at: client.updated_at
   };
 
@@ -488,7 +489,7 @@ async function handleUpdateClient(id, request, env, user) {
   const {
     name, business_name, business_display_name, legal_name,
     overall_status, language_preference,
-    brand_color_primary, brand_color_secondary, intake_complete,
+    brand_color_primary, brand_color_secondary, intake_complete, intake_enabled,
     phone, whatsapp, email, website, address, contact_notes
   } = body;
 
@@ -510,6 +511,7 @@ async function handleUpdateClient(id, request, env, user) {
       brand_color_primary   = ?,
       brand_color_secondary = ?,
       intake_complete       = ?,
+      intake_enabled        = ?,
       phone                 = ?,
       whatsapp              = ?,
       email                 = ?,
@@ -528,6 +530,7 @@ async function handleUpdateClient(id, request, env, user) {
     brand_color_primary   !== undefined ? brand_color_primary   : client.brand_color_primary,
     brand_color_secondary !== undefined ? brand_color_secondary : client.brand_color_secondary,
     intake_complete     !== undefined ? (intake_complete ? 1 : 0) : client.intake_complete,
+    intake_enabled      !== undefined ? (intake_enabled ? 1 : 0) : client.intake_enabled,
     phone               ?? client.phone,
     whatsapp            ?? client.whatsapp,
     email               ?? client.email,

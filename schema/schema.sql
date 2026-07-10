@@ -54,6 +54,7 @@ CREATE TABLE clients (
   brand_color_primary   TEXT,
   brand_color_secondary TEXT,
   intake_complete       INTEGER  NOT NULL DEFAULT 0,
+  intake_enabled        INTEGER  NOT NULL DEFAULT 0,
 
   -- Legacy identity fields (referenced by existing frontend JS)
   name                  TEXT     NOT NULL DEFAULT '',   -- contact person name

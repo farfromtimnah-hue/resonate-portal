@@ -184,6 +184,9 @@ function renderContent() {
 
   // Contact actions
   renderContact(client);
+
+  // AI intake interview card — only for clients with intake explicitly enabled
+  document.getElementById('portal-intake-card')?.classList.toggle('hidden', !client.intake_enabled);
 }
 
 function renderWelcomeMessage() {

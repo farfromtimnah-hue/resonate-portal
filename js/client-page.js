@@ -194,6 +194,9 @@ function render() {
   // Portal access
   renderPortalAccess(linked_user, client);
 
+  // Intake interview toggle
+  renderIntakeToggle(client);
+
   // History
   renderHistory(history);
 }
@@ -969,6 +972,36 @@ async function savePortalAccess() {
     toast('Portal access added.');
   } catch (err) { toast(err.message, 'error'); }
   finally { btn.disabled = false; btn.textContent = 'Save Access'; }
+}
+
+// ---- Intake interview toggle ----
+
+function renderIntakeToggle(client) {
+  const el = document.getElementById('intake-toggle-block');
+  let isEnabled = !!client.intake_enabled;
+
+  el.innerHTML = `
+    <label class="form-check">
+      <input id="intake-enabled-toggle" type="checkbox" ${isEnabled ? 'checked' : ''}>
+      <span>Intake interview enabled</span>
+    </label>`;
+
+  const checkbox = document.getElementById('intake-enabled-toggle');
+  checkbox.addEventListener('change', async () => {
+    const next = checkbox.checked;
+    checkbox.disabled = true;
+    try {
+      const updated = await api.updateClient(_clientId, { intake_enabled: next });
+      isEnabled = !!updated.intake_enabled;
+      _data.client.intake_enabled = isEnabled;
+      checkbox.checked = isEnabled;
+    } catch (err) {
+      checkbox.checked = isEnabled; // revert on error
+      toast(err.message, 'error');
+    } finally {
+      checkbox.disabled = false;
+    }
+  });
 }
 
 // ---- Status history ----
