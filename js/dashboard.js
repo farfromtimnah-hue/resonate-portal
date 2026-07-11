@@ -37,6 +37,81 @@ async function init() {
   document.getElementById('filter-lang').addEventListener('change',   loadClients);
 
   await loadClients();
+  initZohoCard();
+}
+
+// ---- Zoho Invoice integration card ----
+async function initZohoCard() {
+  const statusText    = document.getElementById('zoho-status-text');
+  const connectBtn    = document.getElementById('zoho-connect-btn');
+  const disconnectBtn = document.getElementById('zoho-disconnect-btn');
+  if (!statusText) return;
+
+  // Result of an OAuth round-trip (the Worker callback redirects back here)
+  const params = new URLSearchParams(window.location.search);
+  const result = params.get('zoho');
+  if (result) {
+    const messages = {
+      connected:             'Zoho Invoice connected successfully.',
+      connected_no_org:      'Zoho connected, but no organization found — contact support.',
+      denied:                'Zoho authorization was cancelled.',
+      state_mismatch:        'Zoho authorization failed a security check. Please try again.',
+      token_exchange_failed: 'Zoho did not accept the authorization. Please try again.',
+      error:                 'Zoho connection failed. Please try again.',
+    };
+    toast(messages[result] || messages.error, result.startsWith('connected') ? 'success' : 'error');
+    params.delete('zoho');
+    const qs = params.toString();
+    history.replaceState(null, '', window.location.pathname + (qs ? '?' + qs : ''));
+  }
+
+  async function refresh() {
+    try {
+      const s = await api.zohoStatus();
+      connectBtn.classList.add('hidden');
+      disconnectBtn.classList.add('hidden');
+      if (!s.configured) {
+        statusText.textContent = 'Awaiting Zoho API credentials (Worker secrets not set yet).';
+      } else if (s.connected) {
+        statusText.textContent = 'Connected' +
+          (s.organization_id ? ` · organization ${s.organization_id}` : '') +
+          (s.connected_at ? ` · since ${formatDate(s.connected_at)}` : '');
+        disconnectBtn.classList.remove('hidden');
+      } else {
+        statusText.textContent = 'Not connected. Invoices will appear here once you authorize Zoho.';
+        connectBtn.classList.remove('hidden');
+        connectBtn.classList.add('flex');
+      }
+    } catch (err) {
+      statusText.textContent = 'Connection status unavailable right now.';
+    }
+  }
+
+  connectBtn.addEventListener('click', async () => {
+    connectBtn.disabled = true;
+    try {
+      const { url } = await api.zohoOAuthStart();
+      window.location.href = url;   // off to Zoho's hosted consent screen
+    } catch (err) {
+      toast(err.status === 409
+        ? 'Zoho credentials are not set on the server yet.'
+        : 'Could not start Zoho authorization.', 'error');
+      connectBtn.disabled = false;
+    }
+  });
+
+  disconnectBtn.addEventListener('click', async () => {
+    if (!confirm('Disconnect Zoho Invoice? Invoice sync will stop until you reconnect.')) return;
+    try {
+      await api.zohoDisconnect();
+      toast('Zoho Invoice disconnected.', 'success');
+    } catch (err) {
+      toast('Could not disconnect Zoho.', 'error');
+    }
+    refresh();
+  });
+
+  await refresh();
 }
 
 function showSkeletons(grid, count = 5) {

@@ -6,14 +6,18 @@
 // ============================================================
 
 import { routeInterview } from './interview.js';
+import { routeZoho, handleZohoOAuthCallback } from './zoho.js';
 
 export default {
   async fetch(request, env, ctx) {
-    const response = await this.handle(request, env, ctx);
+    let response = await this.handle(request, env, ctx);
     // CORS_ORIGIN may be a comma-separated allowlist (GitHub Pages + custom domain).
     // Echo back the request's Origin when it is on the list; fall back to the first entry.
-    response.headers.set('Access-Control-Allow-Origin', resolveCorsOrigin(request, env));
-    response.headers.append('Vary', 'Origin');
+    if (response.headers.get('Access-Control-Allow-Origin') !== null) {
+      response = new Response(response.body, response);   // some responses have immutable headers
+      response.headers.set('Access-Control-Allow-Origin', resolveCorsOrigin(request, env));
+      response.headers.append('Vary', 'Origin');
+    }
     return response;
   },
 
@@ -43,6 +47,11 @@ export default {
       const publicParams = match('/api/public/projects/:id', path);
       if (publicParams && method === 'GET') {
         return handlePublicProject(publicParams.id, env);
+      }
+
+      // GET /api/zoho/oauth/callback — hit by Zoho's browser redirect (no Firebase token)
+      if (method === 'GET' && path === '/api/zoho/oauth/callback') {
+        return handleZohoOAuthCallback(url, env);
       }
 
       // All other routes require a valid Firebase token
@@ -178,6 +187,10 @@ async function router(request, env, user, url, method, path) {
     if (method === 'PUT')    { requireAdmin(user); return handleUpdateLink(params.id, params.lid, request, env); }
     if (method === 'DELETE') { requireAdmin(user); return handleDeleteLink(params.id, params.lid, env); }
   }
+
+  // ---- ZOHO INVOICE INTEGRATION ----
+  var zohoResponse = await routeZoho(request, env, user, url, method, path);
+  if (zohoResponse) return zohoResponse;
 
   // ---- AI INTAKE INTERVIEW (adaptive interview engine) ----
   var interviewResponse = await routeInterview(request, env, user, url, method, path);

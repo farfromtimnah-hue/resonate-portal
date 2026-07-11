@@ -163,6 +163,27 @@
     <div class="loading">Loading…</div>
   </div>
 
+  <!-- Integrations -->
+  <section id="integrations-section" class="pt-4">
+    <h2 class="text-[12px] uppercase tracking-widest text-outline-variant mb-4">Integrations</h2>
+    <div class="rounded-2xl border border-white/5 bg-white/[0.02] p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div>
+        <p class="text-primary-fixed-dim font-semibold text-[15px]">Zoho Invoice</p>
+        <p id="zoho-status-text" class="text-outline-variant text-[13px] mt-1">Checking connection…</p>
+      </div>
+      <div class="flex items-center gap-3">
+        <button id="zoho-connect-btn"
+                class="hidden bg-primary-container text-white px-6 py-2 rounded-full text-[12px] font-semibold uppercase tracking-widest hover:opacity-90 transition-opacity items-center gap-2">
+          Connect Zoho Invoice
+        </button>
+        <button id="zoho-disconnect-btn"
+                class="hidden text-outline-variant hover:text-primary-fixed-dim text-[12px] uppercase tracking-widest transition-colors px-4 py-2 rounded-full border border-white/10">
+          Disconnect
+        </button>
+      </div>
+    </div>
+  </section>
+
   <!-- Archive footer link -->
   <footer class="flex justify-center pt-8 border-t border-white/5">
     <a href="/resonate-portal/archive.html"

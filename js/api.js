@@ -89,6 +89,11 @@ export const api = {
   interviewFutureSkip:    (sid)       => req('POST', `/api/interview/sessions/${sid}/future/skip`, {}),
   interviewExport:        (clientId)  => req('GET',  `/api/interview/clients/${clientId}/export`),
 
+  // Zoho Invoice integration (admin)
+  zohoStatus:     () => req('GET',  '/api/zoho/status'),
+  zohoOAuthStart: () => req('GET',  '/api/zoho/oauth/start'),
+  zohoDisconnect: () => req('POST', '/api/zoho/disconnect'),
+
   // Logo upload (multipart/form-data — bypasses the JSON req() helper)
   uploadLogo: async (clientId, file) => {
     const token = await getToken();
