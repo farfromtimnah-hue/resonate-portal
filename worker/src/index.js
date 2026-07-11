@@ -9,6 +9,15 @@ import { routeInterview } from './interview.js';
 
 export default {
   async fetch(request, env, ctx) {
+    const response = await this.handle(request, env, ctx);
+    // CORS_ORIGIN may be a comma-separated allowlist (GitHub Pages + custom domain).
+    // Echo back the request's Origin when it is on the list; fall back to the first entry.
+    response.headers.set('Access-Control-Allow-Origin', resolveCorsOrigin(request, env));
+    response.headers.append('Vary', 'Origin');
+    return response;
+  },
+
+  async handle(request, env, ctx) {
     // CORS preflight
     if (request.method === 'OPTIONS') {
       return corsPreflightResponse(env);
@@ -1202,6 +1211,13 @@ export function match(pattern, path) {
     }
   }
   return params;
+}
+
+export function resolveCorsOrigin(request, env) {
+  const configured = (env?.CORS_ORIGIN ?? '*').split(',').map(s => s.trim()).filter(Boolean);
+  const requestOrigin = request.headers.get('Origin');
+  if (requestOrigin && configured.includes(requestOrigin)) return requestOrigin;
+  return configured[0] ?? '*';
 }
 
 export function jsonResponse(data, status, env) {

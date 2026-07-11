@@ -29,7 +29,8 @@ bucket_name = "resonate-logos"
 # ----------------------------------------------------------
 [vars]
 FIREBASE_PROJECT_ID = "resonate-portal"
-CORS_ORIGIN         = "https://farfromtimnah-hue.github.io"
+# Comma-separated allowlist; the Worker echoes the matching request Origin
+CORS_ORIGIN         = "https://farfromtimnah-hue.github.io,https://portal.resonateai.online"
 BUCKET_PUBLIC_URL   = "https://pub-cec1d75467e245eb85ad5c1a9955a3e2.r2.dev"
 # Firebase Web API key — found in Firebase Console → Project Settings → General → Web API Key
 # Required for automatic Firebase account creation in Add Client flow (Item 11)
