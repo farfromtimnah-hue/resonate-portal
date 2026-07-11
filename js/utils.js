@@ -45,6 +45,21 @@ export function statusClass(status) {
   return map[status] || 'status--gray';
 }
 
+// Get CSS class for a Zoho invoice status (matches project badge convention)
+export function invoiceStatusClass(status) {
+  const map = {
+    draft:          'status--gray',
+    sent:           'status--blue',
+    viewed:         'status--blue',
+    unpaid:         'status--blue',
+    partially_paid: 'status--cyan',
+    overdue:        'status--amber',
+    paid:           'status--green',
+    void:           'status--gray',
+  };
+  return map[status] || 'status--gray';
+}
+
 // Escape HTML to prevent XSS
 export function esc(str) {
   if (str == null) return '';

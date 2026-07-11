@@ -4,16 +4,17 @@
 
 import { requireAuth, signOut } from './auth.js';
 import { api }                   from './api.js';
-import { statusLabel, STATUS_OPTIONS } from './t.js';
+import { statusLabel, invoiceStatusLabel, STATUS_OPTIONS } from './t.js';
 import { esc, nl2br, formatDate, formatDateTime, formatDateFull,
          toast, openModal, closeModal, qp, telLink, waLink, projectCounts,
-         statusClass } from './utils.js?v=2';
+         statusClass, invoiceStatusClass } from './utils.js?v=2';
 
 let _clientId = null;
 let _data     = null;          // { client, projects, comments, notes, links, linked_user, history }
 let _adminFeedback = {};       // keyed by `${projectId}_${comment_type}` → row
 let _editingProjectId = null;
 let _editingNoteId    = null;
+let _invoices = [];
 
 async function init() {
   const profile = await requireAuth('admin');
@@ -100,7 +101,58 @@ async function init() {
     if (e.target === e.currentTarget) maybeCloseProjectModal();
   });
 
+  document.getElementById('sync-invoices-btn')?.addEventListener('click', syncInvoices);
+
   await loadData();
+}
+
+// ---- Invoices (Zoho) ----
+
+async function syncInvoices() {
+  const btn = document.getElementById('sync-invoices-btn');
+  btn.disabled = true;
+  try {
+    const res = await api.zohoSyncInvoices(_clientId);
+    _invoices = res.invoices || [];
+    renderInvoices(_invoices);
+    toast(`Synced ${res.synced} invoice${res.synced === 1 ? '' : 's'} from Zoho.`, 'success');
+  } catch (err) {
+    const messages = {
+      zoho_not_connected:               'Zoho is not connected yet — use Connect Zoho Invoice on the dashboard first.',
+      zoho_customer_not_found:          'No Zoho customer matches this client’s email.',
+      client_has_no_email_for_zoho_match: 'Add an email to this client first so it can be matched to a Zoho customer.',
+      zoho_organization_missing:        'Zoho connection has no organization — reconnect from the dashboard.',
+    };
+    toast(messages[err.message] || 'Invoice sync failed. Please try again.', 'error');
+  }
+  btn.disabled = false;
+}
+
+function renderInvoices(invoices) {
+  const list  = document.getElementById('invoices-list');
+  const empty = document.getElementById('invoices-empty');
+  if (!list) return;
+
+  empty.classList.toggle('hidden', invoices.length > 0);
+  list.innerHTML = invoices.map(inv => {
+    const money = inv.amount != null
+      ? new Intl.NumberFormat('en-US', { style: 'currency', currency: inv.currency_code || 'USD' }).format(inv.amount)
+      : '';
+    return `
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
+        <div style="min-width:0;">
+          <div class="flex items-center gap-2 flex-wrap">
+            <span class="text-primary-fixed-dim text-[13px] font-semibold">${esc(inv.invoice_number || inv.zoho_invoice_id)}</span>
+            <span class="badge ${invoiceStatusClass(inv.status)}">${esc(invoiceStatusLabel(inv.status))}</span>
+          </div>
+          <div class="text-outline-variant text-[12px] mt-1">
+            ${esc(money)}${inv.due_date ? ` · due ${esc(inv.due_date)}` : ''}${inv.last_synced_at ? ` · synced ${formatDate(inv.last_synced_at)}` : ''}
+          </div>
+        </div>
+        ${inv.payment_url ? `<a href="${esc(inv.payment_url)}" target="_blank" rel="noopener"
+            class="text-outline-variant hover:text-primary-fixed-dim text-[11px] uppercase tracking-widest px-3 py-1.5 rounded-full border border-white/10 whitespace-nowrap">View</a>` : ''}
+      </div>`;
+  }).join('');
 }
 
 // ---- Data loading ----
@@ -111,6 +163,8 @@ async function loadData() {
 
   try {
     _data = await api.getClient(_clientId);
+
+    try { _invoices = await api.invoices(_clientId); } catch { _invoices = []; } // non-fatal
 
     // Pre-load client feedback for all projects
     _adminFeedback = {};
@@ -182,6 +236,9 @@ function render() {
 
   // Projects
   renderProjects(projects);
+
+  // Invoices (Zoho sync cache)
+  renderInvoices(_invoices);
 
   // Comments
   renderComments(comments);

@@ -205,6 +205,20 @@
           </div>
         </div>
 
+        <!-- Invoices (Zoho) -->
+        <div class="bg-inverse-surface rounded-lg border border-white/5 p-6">
+          <div class="flex items-center justify-between mb-4">
+            <p class="text-outline-variant text-[11px] uppercase font-semibold tracking-widest">Invoices</p>
+            <button id="sync-invoices-btn"
+                    class="flex items-center gap-1 text-outline-variant hover:text-primary-fixed-dim text-[11px] uppercase tracking-widest transition-colors px-3 py-1.5 rounded-full border border-white/10">
+              <span class="material-symbols-outlined text-[13px]">sync</span>
+              Sync from Zoho
+            </button>
+          </div>
+          <div id="invoices-list" class="flex flex-col"></div>
+          <div id="invoices-empty" class="text-outline-variant text-[12px] hidden">No invoices synced yet.</div>
+        </div>
+
         <!-- Messages -->
         <div class="bg-inverse-surface rounded-lg border border-white/5 p-6">
           <p class="text-outline-variant text-[11px] uppercase font-semibold tracking-widest mb-4">Messages</p>

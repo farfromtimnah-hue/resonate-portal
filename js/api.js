@@ -93,6 +93,8 @@ export const api = {
   zohoStatus:     () => req('GET',  '/api/zoho/status'),
   zohoOAuthStart: () => req('GET',  '/api/zoho/oauth/start'),
   zohoDisconnect: () => req('POST', '/api/zoho/disconnect'),
+  zohoSyncInvoices: (clientId) => req('POST', `/api/zoho/sync/${clientId}`),
+  invoices:         (clientId) => req('GET',  `/api/clients/${clientId}/invoices`),
 
   // Logo upload (multipart/form-data — bypasses the JSON req() helper)
   uploadLogo: async (clientId, file) => {

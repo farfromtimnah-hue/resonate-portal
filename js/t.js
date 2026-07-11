@@ -190,6 +190,20 @@ const STRINGS = {
     all_complete_notice:      'All projects are complete. Ready to archive?',
     loading:                  'Loading…',
     error_generic:            'Something went wrong. Please try again.',
+
+    // Invoices (Zoho)
+    section_invoices:         'Invoices',
+    invoice_pay_now:          'Pay Now',
+    invoice_view:             'View Invoice',
+    invoice_due:              'Due',
+    invoice_status_draft:          'Draft',
+    invoice_status_sent:           'Sent',
+    invoice_status_viewed:         'Viewed',
+    invoice_status_unpaid:         'Unpaid',
+    invoice_status_partially_paid: 'Partially Paid',
+    invoice_status_overdue:        'Overdue',
+    invoice_status_paid:           'Paid',
+    invoice_status_void:           'Void',
   },
 
   pt: {
@@ -359,6 +373,20 @@ const STRINGS = {
     all_complete_notice:      'Todos os projetos estão concluídos. Pronto para arquivar?',
     loading:                  'Carregando…',
     error_generic:            'Algo deu errado. Tente novamente.',
+
+    // Invoices (Zoho)
+    section_invoices:         'Faturas',
+    invoice_pay_now:          'Pagar Agora',
+    invoice_view:             'Ver Fatura',
+    invoice_due:              'Vencimento',
+    invoice_status_draft:          'Rascunho',
+    invoice_status_sent:           'Enviada',
+    invoice_status_viewed:         'Visualizada',
+    invoice_status_unpaid:         'Em aberto',
+    invoice_status_partially_paid: 'Parcialmente paga',
+    invoice_status_overdue:        'Vencida',
+    invoice_status_paid:           'Paga',
+    invoice_status_void:           'Anulada',
   }
 };
 
@@ -397,6 +425,11 @@ export function statusLabel(status) {
     completed:          t('status_completed'),
   };
   return map[status] || status;
+}
+
+export function invoiceStatusLabel(status) {
+  const key = `invoice_status_${status}`;
+  return t(key) !== key ? t(key) : status;
 }
 
 export function linkTypeLabel(type) {

@@ -4,11 +4,12 @@
 
 import { requireAuth, signOut, changePassword, setInitialPassword } from './auth.js';
 import { api }                   from './api.js';
-import { t, setLang, getLang, statusLabel } from './t.js';
+import { t, setLang, getLang, statusLabel, invoiceStatusLabel } from './t.js';
 import { esc, nl2br, formatDate, formatDateTime, toast, telLink, waLink, projectCounts,
-         statusClass, openModal, closeModal } from './utils.js?v=2';
+         statusClass, invoiceStatusClass, openModal, closeModal } from './utils.js?v=2';
 
 let _data     = null;
+let _invoices = [];
 let _feedback = {};   // keyed by `${projectId}_${comment_type}` → row
 let _lang     = 'en';
 let _profile  = null;
@@ -89,6 +90,8 @@ async function loadData() {
 
   try {
     _data = await api.getClient(_profile.client_id);
+
+    try { _invoices = await api.invoices(_profile.client_id); } catch { _invoices = []; } // non-fatal
 
     // Pre-load feedback for all visible projects
     _feedback = {};
@@ -179,6 +182,9 @@ function renderContent() {
   // Vision tab content
   renderVision();
 
+  // Invoices (hidden when none synced)
+  renderInvoices(_invoices);
+
   // Comments
   renderComments(comments);
 
@@ -187,6 +193,48 @@ function renderContent() {
 
   // AI intake interview card — only for clients with intake explicitly enabled
   document.getElementById('portal-intake-card')?.classList.toggle('hidden', !client.intake_enabled);
+}
+
+// ---- Invoices ----
+
+function renderInvoices(invoices) {
+  const section = document.getElementById('portal-invoices-section');
+  const list    = document.getElementById('portal-invoices');
+  if (!section || !list) return;
+
+  // Drafts and voided invoices are internal — clients only see actionable ones
+  const visible = (invoices || []).filter(inv => inv.status !== 'draft' && inv.status !== 'void');
+  section.classList.toggle('hidden', visible.length === 0);
+  if (visible.length === 0) return;
+
+  const locale = _lang === 'pt' ? 'pt-BR' : 'en-US';
+  list.innerHTML = visible.map(inv => {
+    const money = inv.amount != null
+      ? new Intl.NumberFormat(locale, { style: 'currency', currency: inv.currency_code || 'USD' }).format(inv.amount)
+      : '';
+    const due = inv.due_date
+      ? `${t('invoice_due')}: ${new Date(inv.due_date + 'T00:00:00').toLocaleDateString(locale, { day: 'numeric', month: 'short', year: 'numeric' })}`
+      : '';
+    // Pay Now only for payable invoices with a synced hosted-payment URL;
+    // paid ones keep a quiet view link, no URL → no button at all
+    let action = '';
+    if (inv.payment_url) {
+      action = inv.status === 'paid'
+        ? `<a href="${esc(inv.payment_url)}" target="_blank" rel="noopener" class="text-[12px] text-[#005b96] underline whitespace-nowrap">${esc(t('invoice_view'))}</a>`
+        : `<a href="${esc(inv.payment_url)}" target="_blank" rel="noopener" class="btn btn--primary btn--sm whitespace-nowrap">${esc(t('invoice_pay_now'))}</a>`;
+    }
+    return `
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid rgba(0,0,0,0.05);">
+        <div style="min-width:0;">
+          <div class="flex items-center gap-2 flex-wrap">
+            <span class="text-[14px] font-semibold text-[#1a1d26]">${esc(inv.invoice_number || '')}</span>
+            <span class="badge ${invoiceStatusClass(inv.status)}">${esc(invoiceStatusLabel(inv.status))}</span>
+          </div>
+          <div class="text-[#717781] text-[12px] mt-1">${esc(money)}${due ? ` · ${esc(due)}` : ''}</div>
+        </div>
+        ${action}
+      </div>`;
+  }).join('');
 }
 
 function renderWelcomeMessage() {

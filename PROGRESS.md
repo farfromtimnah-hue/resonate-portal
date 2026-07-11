@@ -166,3 +166,41 @@
 - Run `wrangler deploy` after each worker change
 - Run D1 ALTER TABLE migrations for Items 9/10 (comment_type, is_edited, admin_translation columns)
 2026-07-05 — Added standalone project hub page at hub/index.html. No existing files touched.
+
+## Session 2026-07-11 — Custom domain + Zoho Invoice integration
+
+### Phase 1 — portal.resonateai.online
+- CNAME file at repo root (portal.resonateai.online); GitHub Pages picked it up automatically
+- Worker CORS_ORIGIN is now a comma-separated allowlist (GitHub Pages + custom domain);
+  Worker echoes the matching request Origin and adds Vary: Origin
+- HTTPS enforcement pending GitHub cert provisioning (retry in Settings → Pages)
+- wrangler.toml PORTAL_URL var = where the Zoho OAuth callback redirects back to;
+  UPDATE IT to https://portal.resonateai.online once the domain is verified live
+
+### Phase 2 — Zoho Invoice OAuth connect flow (worker/src/zoho.js)
+- GET  /api/zoho/oauth/start     (admin) — returns Zoho consent-screen URL; frontend navigates there
+- GET  /api/zoho/oauth/callback  (unauthenticated, Zoho browser redirect) — exchanges code,
+  stores refresh token + org id in D1 zoho_connection, redirects back to dashboard ?zoho=<result>
+- GET  /api/zoho/status          (admin) — configured / connected state
+- POST /api/zoho/disconnect      (admin)
+- D1: zoho_connection single-row table (schema/zoho.sql, applied remotely)
+- Access token cached in D1 (~3600s, 2-min margin) — Zoho hard-limits 10 token requests/10 min
+- Auth header is `Zoho-oauthtoken {token}`; organization_id sent as query param AND
+  X-com-zoho-invoice-organizationid header on every call
+- Dashboard: Integrations card with Connect Zoho Invoice / Disconnect + graceful states
+- NICOLE TODO: register a Server-based Application in Zoho API Console with redirect URI
+  https://resonate-portal-api.farfromtimnah.workers.dev/api/zoho/oauth/callback
+  then: cd worker && wrangler secret put ZOHO_CLIENT_ID && wrangler secret put ZOHO_CLIENT_SECRET
+  then click Connect Zoho Invoice on the dashboard
+
+### Phase 3 — Invoice sync + Pay Now
+- D1: client_invoices table + clients.zoho_customer_id column (schema/invoices.sql, applied remotely)
+- POST /api/zoho/sync/:client_id (admin) — auto-matches Zoho customer by client email
+  (stores zoho_customer_id), pulls invoices, upserts cache incl. hosted invoice_url
+- GET  /api/clients/:id/invoices — cached list, admin or own client only
+- Admin client page: Invoices card with "Sync from Zoho" button, status badges
+  (draft/void=gray, sent/viewed/unpaid=blue, partially_paid=cyan, overdue=amber, paid=green)
+- Client portal: bilingual Invoices section (hidden when empty; drafts/void filtered out);
+  "Pay Now" opens Zoho hosted payment page in new tab, hidden when no URL synced
+- Tested with mock Zoho API responses (documented v3 schema) — token caching, upsert,
+  email matching, access control, graceful not-connected states all covered
