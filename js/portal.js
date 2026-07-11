@@ -30,7 +30,7 @@ async function init() {
 
   // Sign out (header button)
   document.getElementById('signout-btn').addEventListener('click', async () => {
-    await signOut(); window.location.href = '/resonate-portal/index.html';
+    await signOut(); window.location.href = 'index.html';
   });
 
   document.getElementById('lang-en').addEventListener('click', () => switchLang('en'));

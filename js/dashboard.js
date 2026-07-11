@@ -15,7 +15,7 @@ async function init() {
   if (!profile) return;
 
   document.getElementById('signout-btn').addEventListener('click', async () => {
-    await signOut(); window.location.href = '/resonate-portal/index.html';
+    await signOut(); window.location.href = 'index.html';
   });
 
   // Modal close buttons
@@ -216,7 +216,7 @@ function clientCardHTML(c) {
   const email    = c.email    ? `<a href="mailto:${esc(c.email)}" class="btn btn--sm btn-email contact-btn" title="Email">✉ Email</a>` : '';
 
   return `
-    <a href="/resonate-portal/client.html?id=${c.id}" class="client-card">
+    <a href="client.html?id=${c.id}" class="client-card">
       <div class="client-card__header">
         <div style="flex:1; min-width:0;">
           <div class="client-card__name">${esc(c.name)}</div>
@@ -292,7 +292,7 @@ async function createClient() {
       showTempPasswordModal(res.temp_password, client, data.email, data.whatsapp, data.language_preference);
     } else {
       toast('Client created.');
-      window.location.href = `/resonate-portal/client.html?id=${client.id}`;
+      window.location.href = `client.html?id=${client.id}`;
     }
   } catch (err) {
     toast(err.message, 'error');
@@ -329,7 +329,7 @@ function showTempPasswordModal(tempPw, client, email, whatsapp, lang) {
 function showSendWelcomeModal(client, email, whatsapp, lang, tempPw) {
   const name      = client.name || 'there';
   const firstName = name.trim().split(/\s+/)[0];
-  const portalUrl = `https://farfromtimnah-hue.github.io/resonate-portal/portal.html`;
+  const portalUrl = new URL('portal.html', window.location.href).href;
 
   const msgEn = `Hi ${firstName}! We're so glad you're here. Your Resonate portal is ready and waiting for you. Log in here: ${portalUrl} — Email: ${email || ''} / Temporary password: ${tempPw}. Can't wait to get started together!`;
   const msgPt = `Oi ${firstName}! Tudo bem? Que alegria ter você aqui! Seu portal Resonate está prontinho te esperando. Acesse aqui: ${portalUrl} — E-mail: ${email || ''} / Senha temporária: ${tempPw}. Mal podemos esperar para começar essa jornada juntos!`;
@@ -367,7 +367,7 @@ function showSendWelcomeModal(client, email, whatsapp, lang, tempPw) {
 
   // After closing: navigate to client page
   const closeHandler = () => {
-    window.location.href = `/resonate-portal/client.html?id=${client.id}`;
+    window.location.href = `client.html?id=${client.id}`;
   };
   document.getElementById('modal-send-welcome').addEventListener('click', e => {
     if (e.target === e.currentTarget) closeHandler();

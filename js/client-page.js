@@ -21,10 +21,10 @@ async function init() {
   if (!profile) return;
 
   _clientId = qp('id');
-  if (!_clientId) { window.location.href = '/resonate-portal/dashboard.html'; return; }
+  if (!_clientId) { window.location.href = 'dashboard.html'; return; }
 
   document.getElementById('signout-btn').addEventListener('click', async () => {
-    await signOut(); window.location.href = '/resonate-portal/index.html';
+    await signOut(); window.location.href = 'index.html';
   });
 
   // Modal close buttons — project modal handled separately (dirty-check on add-project flow)
@@ -969,7 +969,7 @@ async function archiveClient() {
     } else {
       await api.archiveClient(_clientId);
       toast('Client archived.');
-      setTimeout(() => { window.location.href = '/resonate-portal/dashboard.html'; }, 1000);
+      setTimeout(() => { window.location.href = 'dashboard.html'; }, 1000);
       return;
     }
     await loadData();
