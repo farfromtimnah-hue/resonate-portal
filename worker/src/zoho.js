@@ -149,6 +149,20 @@ export function mapZohoInvoice(z) {
     currency_code:   z.currency_code ?? null,
     due_date:        z.due_date ?? null,
     payment_url:     z.invoice_url || null,
+    sub_total:       z.sub_total ?? null,
+    line_items:      Array.isArray(z.line_items) ? JSON.stringify(z.line_items.map(mapZohoLineItem)) : null,
+  };
+}
+
+// Only the fields the portal needs — the raw Zoho line item carries dozens.
+export function mapZohoLineItem(li) {
+  return {
+    line_item_id: li.line_item_id != null ? String(li.line_item_id) : null,
+    name:         li.name ?? '',
+    description:  li.description ?? '',
+    quantity:     li.quantity ?? 1,
+    rate:         li.rate ?? 0,
+    amount:       li.item_total ?? li.amount ?? ((li.quantity ?? 1) * (li.rate ?? 0)),
   };
 }
 
@@ -196,35 +210,43 @@ async function syncClientInvoices(client, access, env) {
 
   var now = new Date().toISOString();
   for (var z of invoices.slice(0, 100)) {
-    // The list payload usually carries invoice_url; fall back to the
-    // detail endpoint when it does not.
-    if (!z.invoice_url) {
-      try {
-        var detail = await zohoGet(access, `/invoices/${z.invoice_id}`);
-        if (detail?.invoice) z = { ...z, invoice_url: detail.invoice.invoice_url };
-      } catch (e) { /* keep row without payment_url; button stays hidden */ }
-    }
-    var row = mapZohoInvoice(z);
-    await env.DB.prepare(
-      `INSERT INTO client_invoices
-         (client_id, zoho_invoice_id, invoice_number, status, amount, balance,
-          currency_code, due_date, payment_url, last_synced_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-       ON CONFLICT(zoho_invoice_id) DO UPDATE SET
-         invoice_number = excluded.invoice_number,
-         status         = excluded.status,
-         amount         = excluded.amount,
-         balance        = excluded.balance,
-         currency_code  = excluded.currency_code,
-         due_date       = excluded.due_date,
-         payment_url    = COALESCE(excluded.payment_url, client_invoices.payment_url),
-         last_synced_at = excluded.last_synced_at`
-    ).bind(
-      client.id, row.zoho_invoice_id, row.invoice_number, row.status, row.amount,
-      row.balance, row.currency_code, row.due_date, row.payment_url, now
-    ).run();
+    // The list payload has no line_items (and sometimes no invoice_url) —
+    // pull the detail record for the full picture. Non-fatal on failure:
+    // the row is still cached from the list fields.
+    try {
+      var detail = await zohoGet(access, `/invoices/${z.invoice_id}`);
+      if (detail?.invoice) z = { ...detail.invoice, invoice_url: detail.invoice.invoice_url || z.invoice_url };
+    } catch (e) { /* keep list-level row; line_items stays null */ }
+    await upsertCachedInvoice(client.id, z, env, now);
   }
   return invoices.length;
+}
+
+// Shared writer — used by the sync loop and by invoice create/edit re-caching.
+export async function upsertCachedInvoice(clientId, zohoInvoice, env, now = new Date().toISOString()) {
+  var row = mapZohoInvoice(zohoInvoice);
+  await env.DB.prepare(
+    `INSERT INTO client_invoices
+       (client_id, zoho_invoice_id, invoice_number, status, amount, balance,
+        currency_code, due_date, payment_url, sub_total, line_items, last_synced_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+     ON CONFLICT(zoho_invoice_id) DO UPDATE SET
+       invoice_number = excluded.invoice_number,
+       status         = excluded.status,
+       amount         = excluded.amount,
+       balance        = excluded.balance,
+       currency_code  = excluded.currency_code,
+       due_date       = excluded.due_date,
+       payment_url    = COALESCE(excluded.payment_url, client_invoices.payment_url),
+       sub_total      = COALESCE(excluded.sub_total, client_invoices.sub_total),
+       line_items     = COALESCE(excluded.line_items, client_invoices.line_items),
+       last_synced_at = excluded.last_synced_at`
+  ).bind(
+    clientId, row.zoho_invoice_id, row.invoice_number, row.status, row.amount,
+    row.balance, row.currency_code, row.due_date, row.payment_url,
+    row.sub_total, row.line_items, now
+  ).run();
+  return row;
 }
 
 async function handleSyncInvoices(clientId, env) {
