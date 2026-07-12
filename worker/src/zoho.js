@@ -121,6 +121,27 @@ export async function routeZoho(request, env, user, url, method, path) {
       : handleUpdateInvoiceItems(params.id, request, env);
   }
 
+  // POST /api/zoho/invoices/:id/finalize — draft → unpaid via Zoho mark-as-sent.
+  // Strictly separate from any send action: no email, no WhatsApp, no navigation.
+  params = match('/api/zoho/invoices/:id/finalize', path);
+  if (params && method === 'POST') {
+    requireAdminRole(user);
+    return handleFinalizeInvoice(params.id, env);
+  }
+
+  // POST /api/zoho/invoices/:id/archive|restore — local D1 flag only,
+  // never a Zoho status change.
+  params = match('/api/zoho/invoices/:id/archive', path);
+  if (params && method === 'POST') {
+    requireAdminRole(user);
+    return handleSetInvoiceArchived(params.id, 1, env);
+  }
+  params = match('/api/zoho/invoices/:id/restore', path);
+  if (params && method === 'POST') {
+    requireAdminRole(user);
+    return handleSetInvoiceArchived(params.id, 0, env);
+  }
+
   // POST /api/zoho/sync — best-effort sync for every client that can be matched to Zoho
   if (method === 'POST' && path === '/api/zoho/sync') {
     requireAdminRole(user);
@@ -412,6 +433,41 @@ async function handleUpdateInvoiceItems(id, request, env) {
 
   await upsertCachedInvoice(row.client_id, updatedInvoice, env);
 
+  var fresh = await env.DB.prepare('SELECT * FROM client_invoices WHERE id = ?').bind(row.id).first();
+  return jsonResponse(fresh, 200, env);
+}
+
+// ------------------------------------------------------------
+// Lifecycle (Books Phase 5) — finalize is Zoho's mark-as-sent;
+// archive/restore is only the local is_archived flag.
+// ------------------------------------------------------------
+
+async function handleFinalizeInvoice(id, env) {
+  var row    = await loadCachedInvoiceRow(id, env);
+  var access = await getZohoAccess(env);
+  if (!access.organizationId) throw new ApiError('zoho_organization_missing', 409);
+
+  // Verify against the real Zoho record — only drafts can be finalized
+  var detail  = await zohoGet(access, `/invoices/${row.zoho_invoice_id}`);
+  var invoice = detail?.invoice;
+  if (!invoice) throw new ApiError('zoho_invoice_not_found', 404);
+  if (invoice.status !== 'draft') throw new ApiError('invoice_not_draft', 409);
+
+  await zohoPost(access, `/invoices/${row.zoho_invoice_id}/status/sent`);
+
+  // Re-read so the cache carries Zoho's post-finalize state (status, urls)
+  var after = await zohoGet(access, `/invoices/${row.zoho_invoice_id}`);
+  if (after?.invoice) await upsertCachedInvoice(row.client_id, after.invoice, env);
+
+  var fresh = await env.DB.prepare('SELECT * FROM client_invoices WHERE id = ?').bind(row.id).first();
+  return jsonResponse(fresh, 200, env);
+}
+
+async function handleSetInvoiceArchived(id, flag, env) {
+  var row = await loadCachedInvoiceRow(id, env);
+  await env.DB.prepare(
+    'UPDATE client_invoices SET is_archived = ? WHERE id = ?'
+  ).bind(flag, row.id).run();
   var fresh = await env.DB.prepare('SELECT * FROM client_invoices WHERE id = ?').bind(row.id).first();
   return jsonResponse(fresh, 200, env);
 }

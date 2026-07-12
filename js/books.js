@@ -151,11 +151,15 @@ function rowActionsHTML(inv) {
       ${label}
     </button>`;
 
-  if (inv.is_archived === 1) return '';
-  if (inv.status === 'draft') {
-    return actionBtn('edit', esc(t('inv_edit')));
+  if (inv.is_archived === 1) {
+    return actionBtn('restore', esc(t('inv_restore')));
   }
-  return '';
+  if (inv.status === 'draft') {
+    return actionBtn('edit', esc(t('inv_edit'))) +
+           actionBtn('finalize', esc(t('inv_finalize')), true);
+  }
+  // Unpaid tab (sent / overdue / partially paid / paid awaiting archive)
+  return actionBtn('archive', esc(t('inv_archive')));
 }
 
 async function onRowAction(e) {
@@ -164,7 +168,51 @@ async function onRowAction(e) {
   const inv = _invoices.find(i => i.id === +btn.dataset.id);
   if (!inv) return;
 
-  if (btn.dataset.action === 'edit') return openEditInvoice(inv, btn);
+  if (btn.dataset.action === 'edit')     return openEditInvoice(inv, btn);
+  if (btn.dataset.action === 'finalize') return finalizeInvoice(inv, btn);
+  if (btn.dataset.action === 'archive')  return setArchived(inv, btn, true);
+  if (btn.dataset.action === 'restore')  return setArchived(inv, btn, false);
+}
+
+// ---- Lifecycle actions ----
+
+function mergeInvoiceRow(fresh) {
+  const idx = _invoices.findIndex(i => i.id === fresh.id);
+  if (idx >= 0) _invoices[idx] = { ..._invoices[idx], ...fresh };
+  renderTabs();
+  renderList();
+}
+
+// Finalize = Zoho mark-as-sent ONLY. It never opens anything and never
+// sends anything — Send (WhatsApp/Email) is a separate action.
+async function finalizeInvoice(inv, btn) {
+  if (!confirm(t('inv_finalize_confirm'))) return;
+  btn.disabled = true;
+  try {
+    const fresh = await api.zohoFinalizeInvoice(inv.id);
+    mergeInvoiceRow(fresh);
+    toast('Invoice finalized — now unpaid in Zoho.', 'success');
+  } catch (err) {
+    const messages = {
+      invoice_not_draft: 'This invoice is no longer a draft in Zoho — refresh the list.',
+      zoho_api_error:    'Zoho rejected the request. Please try again.',
+    };
+    toast(messages[err.message] || err.message, 'error');
+    btn.disabled = false;
+  }
+}
+
+// Archive/Restore only flips the local is_archived flag — Zoho status untouched.
+async function setArchived(inv, btn, flag) {
+  btn.disabled = true;
+  try {
+    const fresh = await (flag ? api.zohoArchiveInvoice(inv.id) : api.zohoRestoreInvoice(inv.id));
+    mergeInvoiceRow(fresh);
+    toast(flag ? 'Invoice archived.' : 'Invoice restored.', 'success');
+  } catch (err) {
+    toast(err.message, 'error');
+    btn.disabled = false;
+  }
 }
 
 // ---- New Invoice (Nova Fatura) — always created as a Zoho DRAFT ----

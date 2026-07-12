@@ -223,6 +223,10 @@ const STRINGS = {
     inv_edit:                 'Edit',
     inv_edit_title:           'Edit Draft Invoice',
     inv_save_items:           'Save Changes',
+    inv_finalize:             'Finalize',
+    inv_finalize_confirm:     'Finalize this draft? It moves to Unpaid in Zoho. Sending it to the client is a separate action.',
+    inv_archive:              'Archive',
+    inv_restore:              'Restore',
 
     // Invoices (Zoho)
     section_invoices:         'Invoices',
@@ -439,6 +443,10 @@ const STRINGS = {
     inv_edit:                 'Editar',
     inv_edit_title:           'Editar Fatura em Rascunho',
     inv_save_items:           'Salvar Alterações',
+    inv_finalize:             'Finalizar',
+    inv_finalize_confirm:     'Finalizar este rascunho? Ele passa a Não Paga no Zoho. Enviar ao cliente é uma ação separada.',
+    inv_archive:              'Arquivar',
+    inv_restore:              'Restaurar',
 
     // Invoices (Zoho)
     section_invoices:         'Faturas',
