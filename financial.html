@@ -38,7 +38,19 @@
 
   <style>
     body { font-family: 'Plus Jakarta Sans', sans-serif; background: #0f1115; color: #c1c7d1; }
-    .glass-header { background: rgba(26,29,38,0.85); backdrop-filter: blur(12px); }
+    /* Header stacking — same treatment dashboard.html gets from its utility
+       classes (sticky top-0 z-50), stated explicitly here so the nav row
+       always paints above the fixed bg-glow layers. */
+    .glass-header { background: rgba(26,29,38,0.85); backdrop-filter: blur(12px); position: sticky; top: 0; z-index: 50; }
+    .glass-header > div { position: relative; z-index: 1; }
+    /* app.css declares `.hidden { display: none !important }` (used for the
+       loading/content toggles), which also killed the nav's `hidden md:flex`
+       idiom at every width — only the wordmark rendered. Restore the desktop
+       state with an equally-important, more specific rule. */
+    @media (min-width: 768px) {
+      .glass-header nav.hidden { display: flex !important; }
+      .glass-header button.hidden { display: block !important; }
+    }
     .bg-glow-1 { position:fixed; top:-10%; right:-10%; width:500px; height:500px; background:#004370; border-radius:9999px; filter:blur(120px); opacity:0.18; pointer-events:none; z-index:0; }
     .bg-glow-2 { position:fixed; bottom:-10%; left:-10%; width:400px; height:400px; background:#663300; border-radius:9999px; filter:blur(100px); opacity:0.12; pointer-events:none; z-index:0; }
     .aging-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
