@@ -99,6 +99,14 @@ export const api = {
   zohoInvoiceItems:       (id)       => req('GET', `/api/zoho/invoices/${id}/items`),
   zohoUpdateInvoiceItems: (id, data) => req('PUT', `/api/zoho/invoices/${id}/items`, data),
   zohoFinalizeInvoice:    (id)       => req('POST', `/api/zoho/invoices/${id}/finalize`),
+
+  // Bank reconciliation (admin)
+  bankTransactions: ()        => req('GET',  '/api/bank/transactions'),
+  bankImport:       (rows)    => req('POST', '/api/bank/transactions', { transactions: rows }),
+  bankMatch:        (id, invoiceId) => req('POST', `/api/bank/transactions/${id}/match`, { invoice_id: invoiceId }),
+  bankUnmatch:      (id)      => req('POST', `/api/bank/transactions/${id}/unmatch`),
+  bankExclude:      (id)      => req('POST', `/api/bank/transactions/${id}/exclude`),
+  bankRestore:      (id)      => req('POST', `/api/bank/transactions/${id}/restore`),
   zohoArchiveInvoice:     (id)       => req('POST', `/api/zoho/invoices/${id}/archive`),
   zohoRestoreInvoice:     (id)       => req('POST', `/api/zoho/invoices/${id}/restore`),
   zohoAllInvoices:  ()         => req('GET',  '/api/zoho/invoices'),

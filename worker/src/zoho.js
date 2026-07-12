@@ -169,7 +169,106 @@ export async function routeZoho(request, env, user, url, method, path) {
     return jsonResponse(results, 200, env);
   }
 
+  // ---- Bank reconciliation (Books Phase 9) — admin only ----
+
+  // GET /api/bank/transactions — all imported rows with matched-invoice info
+  if (method === 'GET' && path === '/api/bank/transactions') {
+    requireAdminRole(user);
+    var { results } = await env.DB.prepare(
+      `SELECT b.*, i.invoice_number AS matched_invoice_number,
+              i.zoho_invoice_id AS matched_zoho_invoice_id,
+              c.business_name AS matched_client_business_name, c.name AS matched_client_name
+       FROM bank_transactions b
+       LEFT JOIN client_invoices i ON i.id = b.matched_invoice_id
+       LEFT JOIN clients c ON c.id = i.client_id
+       ORDER BY b.txn_date DESC, b.id DESC`
+    ).all();
+    return jsonResponse(results, 200, env);
+  }
+
+  // POST /api/bank/transactions — bulk import parsed CSV rows
+  if (method === 'POST' && path === '/api/bank/transactions') {
+    requireAdminRole(user);
+    return handleImportBankTransactions(request, env);
+  }
+
+  // POST /api/bank/transactions/:id/{match|unmatch|exclude|restore}
+  params = match('/api/bank/transactions/:id/match', path);
+  if (params && method === 'POST') {
+    requireAdminRole(user);
+    return handleMatchBankTransaction(params.id, request, env);
+  }
+  params = match('/api/bank/transactions/:id/unmatch', path);
+  if (params && method === 'POST') {
+    requireAdminRole(user);
+    return handleSetBankTransactionStatus(params.id, 'unmatched', env, /* clearMatch */ true);
+  }
+  params = match('/api/bank/transactions/:id/exclude', path);
+  if (params && method === 'POST') {
+    requireAdminRole(user);
+    return handleSetBankTransactionStatus(params.id, 'excluded', env);
+  }
+  params = match('/api/bank/transactions/:id/restore', path);
+  if (params && method === 'POST') {
+    requireAdminRole(user);
+    return handleSetBankTransactionStatus(params.id, 'unmatched', env);
+  }
+
   return null;
+}
+
+// ------------------------------------------------------------
+// Bank reconciliation handlers
+// ------------------------------------------------------------
+
+async function handleImportBankTransactions(request, env) {
+  var body = await request.json();
+  var rows = body?.transactions;
+  if (!Array.isArray(rows) || rows.length === 0) throw new ApiError('transactions required', 400);
+  if (rows.length > 1000) throw new ApiError('too many rows (max 1000 per upload)', 400);
+
+  var inserted = 0;
+  for (var r of rows) {
+    if (r.amount == null || isNaN(Number(r.amount))) continue;
+    await env.DB.prepare(
+      'INSERT INTO bank_transactions (txn_date, description, amount, source) VALUES (?, ?, ?, ?)'
+    ).bind(r.date ?? null, r.description ?? null, Number(r.amount), 'csv').run();
+    inserted++;
+  }
+  return jsonResponse({ inserted }, 201, env);
+}
+
+async function loadBankTransaction(id, env) {
+  var row = await env.DB.prepare('SELECT * FROM bank_transactions WHERE id = ?').bind(id).first();
+  if (!row) throw new ApiError('Transaction not found', 404);
+  return row;
+}
+
+async function handleMatchBankTransaction(id, request, env) {
+  var txn = await loadBankTransaction(id, env);
+  var body = await request.json();
+  var invoiceId = body?.invoice_id;
+  if (!invoiceId) throw new ApiError('invoice_id required', 400);
+
+  var invoice = await env.DB.prepare('SELECT id FROM client_invoices WHERE id = ?').bind(invoiceId).first();
+  if (!invoice) throw new ApiError('Invoice not found', 404);
+
+  await env.DB.prepare(
+    "UPDATE bank_transactions SET status = 'matched', matched_invoice_id = ? WHERE id = ?"
+  ).bind(invoice.id, txn.id).run();
+  var fresh = await env.DB.prepare('SELECT * FROM bank_transactions WHERE id = ?').bind(txn.id).first();
+  return jsonResponse(fresh, 200, env);
+}
+
+async function handleSetBankTransactionStatus(id, status, env, clearMatch = false) {
+  var txn = await loadBankTransaction(id, env);
+  await env.DB.prepare(
+    clearMatch
+      ? 'UPDATE bank_transactions SET status = ?, matched_invoice_id = NULL WHERE id = ?'
+      : 'UPDATE bank_transactions SET status = ? WHERE id = ?'
+  ).bind(status, txn.id).run();
+  var fresh = await env.DB.prepare('SELECT * FROM bank_transactions WHERE id = ?').bind(txn.id).first();
+  return jsonResponse(fresh, 200, env);
 }
 
 // ------------------------------------------------------------

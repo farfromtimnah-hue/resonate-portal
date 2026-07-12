@@ -245,6 +245,26 @@ const STRINGS = {
     fin_tax_collected:        'Sales tax collected',
     fin_tax_owed:             'Sales tax owed',
 
+    // Bank reconciliation
+    recon_title:              'Bank Reconciliation',
+    recon_upload:             'Upload CSV',
+    recon_upload_hint:        'CSV columns: date, description, amount',
+    recon_tab_unmatched:      'Unmatched',
+    recon_tab_matched:        'Matched',
+    recon_tab_excluded:       'Excluded',
+    recon_col_date:           'Date',
+    recon_col_description:    'Description',
+    recon_col_amount:         'Amount',
+    recon_col_match:          'Matched To',
+    recon_match:              'Match',
+    recon_unmatch:            'Unmatch',
+    recon_exclude:            'Exclude',
+    recon_restore:            'Restore',
+    recon_empty:              'No transactions here yet.',
+    recon_match_title:        'Match Transaction',
+    recon_match_pick:         'Match to invoice',
+    recon_suggested:          'suggested — same amount',
+
     // Invoices (Zoho)
     section_invoices:         'Invoices',
     invoice_pay_now:          'Pay Now',
@@ -481,6 +501,26 @@ const STRINGS = {
     fin_tax_copy:             'Nenhum imposto sobre vendas é cobrado em nenhuma fatura.',
     fin_tax_collected:        'Impostos coletados',
     fin_tax_owed:             'Impostos devidos',
+
+    // Bank reconciliation
+    recon_title:              'Conciliação Bancária',
+    recon_upload:             'Enviar CSV',
+    recon_upload_hint:        'Colunas do CSV: data, descrição, valor',
+    recon_tab_unmatched:      'Não Conciliadas',
+    recon_tab_matched:        'Conciliadas',
+    recon_tab_excluded:       'Excluídas',
+    recon_col_date:           'Data',
+    recon_col_description:    'Descrição',
+    recon_col_amount:         'Valor',
+    recon_col_match:          'Conciliada Com',
+    recon_match:              'Conciliar',
+    recon_unmatch:            'Desfazer',
+    recon_exclude:            'Excluir',
+    recon_restore:            'Restaurar',
+    recon_empty:              'Nenhuma transação aqui ainda.',
+    recon_match_title:        'Conciliar Transação',
+    recon_match_pick:         'Conciliar com a fatura',
+    recon_suggested:          'sugerida — mesmo valor',
 
     // Invoices (Zoho)
     section_invoices:         'Faturas',
