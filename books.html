@@ -72,6 +72,63 @@
       .invoice-row { grid-template-columns: 1fr auto; }
       .invoice-row > .invoice-cell--optional { display: none; }
     }
+    /* Financial Health styles (merged from financial.html) */
+    .aging-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+    .aging-tile { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 1rem; padding: 18px; }
+    .aging-tile__label  { font-size: 10px; text-transform: uppercase; letter-spacing: .08em; font-weight: 600; color: #717781; margin-bottom: 8px; }
+    .aging-tile__amount { font-size: 20px; font-weight: 700; color: #9ccaff; }
+    .aging-tile__count  { font-size: 11px; color: #717781; margin-top: 4px; }
+    .aging-tile--warn .aging-tile__amount   { color: #ffb781; }
+    .aging-tile--danger .aging-tile__amount { color: #f87171; }
+    .aging-tile__amount--negative { color: #f87171; }
+    .fin-select {
+      background: #2e3135; color: #c1c7d1; border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 9999px; padding: 8px 18px; font-size: 12px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: .08em; cursor: pointer; outline: none;
+    }
+    .fin-select:focus { box-shadow: 0 0 0 1px rgba(156,202,255,0.4); }
+    .fin-legend { display: flex; gap: 18px; align-items: center; }
+    .fin-legend__item { display: flex; gap: 7px; align-items: center; font-size: 11px; color: #c1c7d1; text-transform: uppercase; letter-spacing: .08em; }
+    .fin-legend__dot { width: 9px; height: 9px; border-radius: 9999px; flex-shrink: 0; }
+    .cat-row { display: grid; grid-template-columns: minmax(120px, 200px) 1fr 90px; gap: 12px; align-items: center; padding: 7px 0; }
+    .cat-row__label  { font-size: 12px; color: #c1c7d1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .cat-row__track  { background: rgba(255,255,255,0.04); border-radius: 4px; height: 14px; overflow: hidden; }
+    .cat-row__bar    { background: #9ccaff; height: 100%; border-radius: 0 4px 4px 0; min-width: 2px; }
+    .cat-row__amount { font-size: 12px; color: #9ccaff; font-weight: 600; text-align: right; }
+    .sub-row { display: grid; grid-template-columns: 1.6fr 0.8fr 0.9fr 0.9fr auto; gap: 12px; align-items: center; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .sub-row__head { color: #717781; font-size: 10px; text-transform: uppercase; letter-spacing: .08em; font-weight: 600; border-bottom: 1px solid rgba(255,255,255,0.08); padding: 8px 0; }
+    @media (max-width: 760px) {
+      .sub-row { grid-template-columns: 1fr auto; }
+      .sub-row > .sub-cell--optional { display: none; }
+    }
+    .annual-cat-row { display: flex; justify-content: space-between; gap: 12px; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 13px; color: #c1c7d1; }
+    /* Reconciliation styles (merged from reconciliation.html) */
+    .txn-row { display: grid; grid-template-columns: 0.8fr 2fr 0.8fr 1.2fr auto; gap: 12px; align-items: center; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .txn-row__head { color: #717781; font-size: 10px; text-transform: uppercase; letter-spacing: .08em; font-weight: 600; border-bottom: 1px solid rgba(255,255,255,0.08); padding: 8px 0; }
+    @media (max-width: 760px) {
+      .txn-row { grid-template-columns: 1fr auto; }
+      .txn-row > .txn-cell--optional { display: none; }
+    }
+    /* Persistent finance pill tab bar */
+    .finance-pill-bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .finance-pill {
+      display: flex; align-items: center; gap: 6px;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 12px; font-weight: 600;
+      letter-spacing: .06em; text-transform: uppercase;
+      color: #717781; background: none;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 9999px; cursor: pointer;
+      padding: 10px 20px;
+      transition: color .15s, border-color .15s, background-color .15s;
+    }
+    .finance-pill:hover { color: #9ccaff; border-color: rgba(156,202,255,0.25); }
+    .finance-pill--active {
+      color: #9ccaff; background: rgba(0,91,150,0.15);
+      border-color: rgba(156,202,255,0.35);
+    }
+    .finance-panel { display: none; }
+    .finance-panel--active { display: block; }
   </style>
 </head>
 <body class="min-h-screen antialiased">
@@ -147,24 +204,37 @@
 <!-- ── Main Content ────────────────────────────────────────── -->
 <main class="relative z-10 max-w-[1200px] mx-auto px-6 md:px-12 py-12 space-y-8">
 
-  <!-- Page title + actions -->
+  <!-- Page title -->
   <div class="flex items-start justify-between gap-4 flex-wrap">
     <div>
       <h1 class="text-[28px] font-bold text-primary-fixed-dim tracking-tight" style="letter-spacing:-0.02em;"
           data-i18n="books_title">Books &amp; Invoicing</h1>
       <p id="books-subtitle" class="text-outline-variant text-[13px] mt-1"></p>
     </div>
-    <div class="flex items-center gap-3">
-      <a href="financial.html"
-         class="flex items-center gap-1.5 text-outline-variant hover:text-primary-fixed-dim text-[12px] uppercase tracking-widest transition-colors px-4 py-2 rounded-full border border-white/10 no-underline">
-        <span class="material-symbols-outlined text-[15px]">monitoring</span>
-        <span data-i18n="fin_title">Financial Health</span>
-      </a>
-      <a href="reconciliation.html"
-         class="flex items-center gap-1.5 text-outline-variant hover:text-primary-fixed-dim text-[12px] uppercase tracking-widest transition-colors px-4 py-2 rounded-full border border-white/10 no-underline">
-        <span class="material-symbols-outlined text-[15px]">account_balance</span>
-        <span data-i18n="recon_title">Bank Reconciliation</span>
-      </a>
+  </div>
+
+  <!-- Persistent finance pill tab bar — switches panels in place, no navigation -->
+  <nav class="finance-pill-bar" role="tablist" aria-label="Finance sections">
+    <button type="button" class="finance-pill finance-pill--active" data-finance-tab="invoices" role="tab" aria-selected="true">
+      <span class="material-symbols-outlined text-[15px]">receipt_long</span>
+      <span data-i18n="books_title">Books &amp; Invoicing</span>
+    </button>
+    <button type="button" class="finance-pill" data-finance-tab="financial" role="tab" aria-selected="false">
+      <span class="material-symbols-outlined text-[15px]">monitoring</span>
+      <span data-i18n="fin_title">Financial Health</span>
+    </button>
+    <button type="button" class="finance-pill" data-finance-tab="reconciliation" role="tab" aria-selected="false">
+      <span class="material-symbols-outlined text-[15px]">account_balance</span>
+      <span data-i18n="recon_title">Bank Reconciliation</span>
+    </button>
+  </nav>
+
+  <!-- ══════════════════════════════════════════════════════════
+       Panel: Books & Invoicing
+  ═══════════════════════════════════════════════════════════ -->
+  <div id="finance-panel-invoices" class="finance-panel finance-panel--active space-y-8">
+
+    <div class="flex items-start justify-end gap-3 flex-wrap">
       <button id="sync-all-btn"
               class="flex items-center gap-1.5 text-outline-variant hover:text-primary-fixed-dim text-[12px] uppercase tracking-widest transition-colors px-4 py-2 rounded-full border border-white/10">
         <span class="material-symbols-outlined text-[15px]">sync</span>
@@ -176,30 +246,195 @@
         <span data-i18n="books_new_invoice">New Invoice</span>
       </button>
     </div>
-  </div>
 
-  <!-- Tabs -->
-  <div class="flex items-center border-b border-white/5">
-    <button id="books-tab-draft"   class="books-tab" data-tab="draft"><span data-i18n="books_tab_draft">Draft</span> <span id="count-draft" class="opacity-60"></span></button>
-    <button id="books-tab-unpaid"  class="books-tab books-tab--active" data-tab="unpaid"><span data-i18n="books_tab_unpaid">Unpaid</span> <span id="count-unpaid" class="opacity-60"></span></button>
-    <button id="books-tab-archive" class="books-tab" data-tab="archive"><span data-i18n="books_tab_archive">Archive</span> <span id="count-archive" class="opacity-60"></span></button>
-  </div>
-
-  <!-- Invoice list -->
-  <section class="bg-inverse-surface rounded-lg border border-white/5 p-6">
-    <div class="invoice-row invoice-row__head">
-      <span data-i18n="books_col_client">Client</span>
-      <span data-i18n="books_col_invoice">Invoice</span>
-      <span data-i18n="books_col_status">Status</span>
-      <span class="invoice-cell--optional" data-i18n="books_col_amount">Amount</span>
-      <span class="invoice-cell--optional" data-i18n="books_col_balance">Balance</span>
-      <span class="invoice-cell--optional" data-i18n="books_col_due">Due Date</span>
-      <span></span>
+    <!-- Tabs -->
+    <div class="flex items-center border-b border-white/5">
+      <button id="books-tab-draft"   class="books-tab" data-tab="draft"><span data-i18n="books_tab_draft">Draft</span> <span id="count-draft" class="opacity-60"></span></button>
+      <button id="books-tab-unpaid"  class="books-tab books-tab--active" data-tab="unpaid"><span data-i18n="books_tab_unpaid">Unpaid</span> <span id="count-unpaid" class="opacity-60"></span></button>
+      <button id="books-tab-archive" class="books-tab" data-tab="archive"><span data-i18n="books_tab_archive">Archive</span> <span id="count-archive" class="opacity-60"></span></button>
     </div>
-    <div id="invoices-list"></div>
-    <div id="invoices-empty" class="text-outline-variant text-[13px] py-8 text-center hidden"></div>
-    <div id="invoices-loading" class="loading">Loading…</div>
-  </section>
+
+    <!-- Invoice list -->
+    <section class="bg-inverse-surface rounded-lg border border-white/5 p-6">
+      <div class="invoice-row invoice-row__head">
+        <span data-i18n="books_col_client">Client</span>
+        <span data-i18n="books_col_invoice">Invoice</span>
+        <span data-i18n="books_col_status">Status</span>
+        <span class="invoice-cell--optional" data-i18n="books_col_amount">Amount</span>
+        <span class="invoice-cell--optional" data-i18n="books_col_balance">Balance</span>
+        <span class="invoice-cell--optional" data-i18n="books_col_due">Due Date</span>
+        <span></span>
+      </div>
+      <div id="invoices-list"></div>
+      <div id="invoices-empty" class="text-outline-variant text-[13px] py-8 text-center hidden"></div>
+      <div id="invoices-loading" class="loading">Loading…</div>
+    </section>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       Panel: Financial Health
+  ═══════════════════════════════════════════════════════════ -->
+  <div id="finance-panel-financial" class="finance-panel space-y-8">
+    <p id="fin-subtitle" class="text-outline-variant text-[13px]"></p>
+
+    <div id="fin-loading" class="loading">Loading…</div>
+
+    <div id="fin-content" class="hidden space-y-8">
+
+      <!-- Profit & Loss overview — income/expenses live from Zoho -->
+      <section class="bg-inverse-surface rounded-lg border border-white/5 p-6">
+        <div class="flex items-baseline justify-between gap-4 flex-wrap mb-1">
+          <p class="text-outline-variant text-[11px] uppercase font-semibold tracking-widest" data-i18n="fin_pl_heading">Profit &amp; Loss</p>
+          <select id="pl-period" class="fin-select">
+            <option value="this_month" data-i18n="fin_period_this_month">This month</option>
+            <option value="last_month" data-i18n="fin_period_last_month">Last month</option>
+            <option value="quarter" data-i18n="fin_period_quarter">This quarter</option>
+            <option value="year" data-i18n="fin_period_year">This year</option>
+            <option value="6mo" data-i18n="fin_period_6mo">Last 6 months</option>
+          </select>
+        </div>
+        <p class="text-outline-variant text-[12px] mb-5" data-i18n="fin_pl_copy">Income from Zoho payments, expenses live from Zoho.</p>
+        <div class="aging-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+          <div class="aging-tile">
+            <div class="aging-tile__label" data-i18n="fin_income">Total income</div>
+            <div id="pl-income" class="aging-tile__amount">$0.00</div>
+          </div>
+          <div class="aging-tile">
+            <div class="aging-tile__label" data-i18n="fin_expenses">Total expenses</div>
+            <div id="pl-expenses" class="aging-tile__amount" style="color:#ffb781;">$0.00</div>
+          </div>
+          <div class="aging-tile">
+            <div class="aging-tile__label" data-i18n="fin_net">Net</div>
+            <div id="pl-net" class="aging-tile__amount">$0.00</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Six-month trend — income vs expenses by month -->
+      <section class="bg-inverse-surface rounded-lg border border-white/5 p-6">
+        <div class="flex items-baseline justify-between gap-4 flex-wrap mb-1">
+          <p class="text-outline-variant text-[11px] uppercase font-semibold tracking-widest" data-i18n="fin_trend_heading">Income vs Expenses — last 6 months</p>
+          <div class="fin-legend">
+            <span class="fin-legend__item"><span class="fin-legend__dot" style="background:#9ccaff;"></span><span data-i18n="fin_income">Total income</span></span>
+            <span class="fin-legend__item"><span class="fin-legend__dot" style="background:#ffb781;"></span><span data-i18n="fin_expenses">Total expenses</span></span>
+          </div>
+        </div>
+        <p class="text-outline-variant text-[12px] mb-5" data-i18n="fin_trend_copy">Monthly totals from Zoho payments and expenses.</p>
+        <div id="trend-chart" style="overflow-x:auto;"></div>
+      </section>
+
+      <!-- Expense breakdown by Zoho category -->
+      <section class="bg-inverse-surface rounded-lg border border-white/5 p-6">
+        <p class="text-outline-variant text-[11px] uppercase font-semibold tracking-widest mb-1" data-i18n="fin_cat_heading">Expenses by Category</p>
+        <p class="text-outline-variant text-[12px] mb-5" data-i18n="fin_cat_copy">Zoho expense totals grouped by category for the selected period.</p>
+        <div id="cat-list"></div>
+        <div id="cat-empty" class="text-outline-variant text-[13px] py-6 text-center hidden" data-i18n="fin_cat_empty">No expenses recorded in this period.</div>
+      </section>
+
+      <!-- Subscriptions — manual list with full CRUD -->
+      <section class="bg-inverse-surface rounded-lg border border-white/5 p-6">
+        <div class="flex items-baseline justify-between gap-4 flex-wrap mb-1">
+          <p class="text-outline-variant text-[11px] uppercase font-semibold tracking-widest" data-i18n="fin_subs_heading">Subscriptions</p>
+          <button id="sub-add-btn"
+                  class="bg-primary-container text-white px-5 py-2 rounded-full text-[11px] font-semibold uppercase tracking-widest hover:opacity-90 transition-opacity flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-[15px]">add</span>
+            <span data-i18n="fin_subs_add">Add Subscription</span>
+          </button>
+        </div>
+        <p class="text-outline-variant text-[12px] mb-4" data-i18n="fin_subs_copy">Recurring costs you track by hand — not auto-detected.</p>
+        <div class="sub-row sub-row__head">
+          <span data-i18n="fin_subs_name">Name</span>
+          <span data-i18n="fin_subs_amount">Amount</span>
+          <span class="sub-cell--optional" data-i18n="fin_subs_cycle">Billing cycle</span>
+          <span class="sub-cell--optional" data-i18n="fin_subs_next_due">Next due date</span>
+          <span></span>
+        </div>
+        <div id="subs-list"></div>
+        <div id="subs-empty" class="text-outline-variant text-[13px] py-6 text-center hidden" data-i18n="fin_subs_empty">No subscriptions yet. Add the first one.</div>
+      </section>
+
+      <!-- Annual Tax-Filing Summary — income + expenses only, for the accountant -->
+      <section class="bg-inverse-surface rounded-lg border border-white/5 p-6">
+        <div class="flex items-baseline justify-between gap-4 flex-wrap mb-1">
+          <p class="text-outline-variant text-[11px] uppercase font-semibold tracking-widest" data-i18n="fin_annual_heading">Annual Tax-Filing Summary</p>
+          <select id="annual-year" class="fin-select"></select>
+        </div>
+        <p class="text-outline-variant text-[12px] mb-5" data-i18n="fin_annual_copy">Paid-invoice income and expenses by category for the chosen year — ready to hand to your accountant.</p>
+        <div id="annual-loading" class="loading hidden">Loading…</div>
+        <div id="annual-body">
+          <div class="aging-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom: 18px;">
+            <div class="aging-tile">
+              <div class="aging-tile__label" data-i18n="fin_annual_income">Paid-invoice income</div>
+              <div id="annual-income" class="aging-tile__amount">$0.00</div>
+            </div>
+            <div class="aging-tile">
+              <div class="aging-tile__label" data-i18n="fin_annual_expenses">Total expenses</div>
+              <div id="annual-expenses" class="aging-tile__amount" style="color:#ffb781;">$0.00</div>
+            </div>
+            <div class="aging-tile">
+              <div class="aging-tile__label" data-i18n="fin_annual_net">Net</div>
+              <div id="annual-net" class="aging-tile__amount">$0.00</div>
+            </div>
+          </div>
+          <p class="text-outline-variant text-[11px] uppercase font-semibold tracking-widest mb-2" data-i18n="fin_annual_by_cat">Expenses by category</p>
+          <div id="annual-cats"></div>
+        </div>
+      </section>
+
+      <!-- AR Aging -->
+      <section class="bg-inverse-surface rounded-lg border border-white/5 p-6">
+        <div class="flex items-baseline justify-between gap-4 flex-wrap mb-1">
+          <p class="text-outline-variant text-[11px] uppercase font-semibold tracking-widest" data-i18n="fin_aging_heading">AR Aging</p>
+          <div class="flex items-baseline gap-2">
+            <span class="text-outline-variant text-[11px] uppercase tracking-widest" data-i18n="fin_total_outstanding">Total Outstanding</span>
+            <span id="aging-total" class="text-primary-fixed-dim text-[22px] font-bold">$0.00</span>
+          </div>
+        </div>
+        <p class="text-outline-variant text-[12px] mb-5" data-i18n="fin_aging_copy">Outstanding balances by days past due, from cached unpaid invoices.</p>
+        <div id="aging-grid" class="aging-grid"></div>
+      </section>
+
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       Panel: Bank Reconciliation
+  ═══════════════════════════════════════════════════════════ -->
+  <div id="finance-panel-reconciliation" class="finance-panel space-y-8">
+
+    <div class="flex items-start justify-between gap-4 flex-wrap">
+      <p id="recon-subtitle" class="text-outline-variant text-[13px]" data-i18n="recon_upload_hint">CSV columns: date, description, amount</p>
+      <div class="flex items-center gap-3">
+        <button id="upload-csv-btn"
+                class="bg-primary-container text-white px-6 py-2 rounded-full text-[12px] font-semibold uppercase tracking-widest hover:opacity-90 transition-opacity flex items-center gap-2">
+          <span class="material-symbols-outlined text-[16px]">upload_file</span>
+          <span data-i18n="recon_upload">Upload CSV</span>
+        </button>
+        <input id="csv-file-input" type="file" accept=".csv,text/csv" style="display:none">
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="flex items-center border-b border-white/5">
+      <button class="recon-tab books-tab books-tab--active" data-recon-tab="unmatched"><span data-i18n="recon_tab_unmatched">Unmatched</span> <span id="count-unmatched" class="opacity-60"></span></button>
+      <button class="recon-tab books-tab" data-recon-tab="matched"><span data-i18n="recon_tab_matched">Matched</span> <span id="count-matched" class="opacity-60"></span></button>
+      <button class="recon-tab books-tab" data-recon-tab="excluded"><span data-i18n="recon_tab_excluded">Excluded</span> <span id="count-excluded" class="opacity-60"></span></button>
+    </div>
+
+    <!-- Transaction list -->
+    <section class="bg-inverse-surface rounded-lg border border-white/5 p-6">
+      <div class="txn-row txn-row__head">
+        <span data-i18n="recon_col_date">Date</span>
+        <span data-i18n="recon_col_description">Description</span>
+        <span data-i18n="recon_col_amount">Amount</span>
+        <span class="txn-cell--optional" data-i18n="recon_col_match">Matched To</span>
+        <span></span>
+      </div>
+      <div id="txn-list"></div>
+      <div id="txn-empty" class="text-outline-variant text-[13px] py-8 text-center hidden"></div>
+      <div id="txn-loading" class="loading">Loading…</div>
+    </section>
+  </div>
 
 </main>
 
@@ -287,6 +522,69 @@
   </div>
 </div>
 
-<script type="module" src="js/books.js?v=6"></script>
+<!-- ── Subscription Modal (create + edit) ─────────────────── -->
+<div id="modal-subscription" class="modal">
+  <div class="modal__box" style="max-width:460px;">
+    <div class="modal__head">
+      <span id="sub-modal-title" class="modal__title" data-i18n="fin_subs_add">Add Subscription</span>
+      <button type="button" class="modal__close" data-close="modal-subscription">✕</button>
+    </div>
+    <div class="modal__body">
+      <div id="sub-error" style="display:none; background:#fee2e2; color:#b91c1c;
+           border-radius:.5rem; padding:.75rem 1rem; font-size:13px; margin-bottom:1rem;
+           font-family:'Plus Jakarta Sans',sans-serif;"></div>
+      <div class="form-group">
+        <label class="form-label" data-i18n="fin_subs_name">Name</label>
+        <input id="sub-name" type="text" class="form-control" placeholder="Adobe Creative Cloud">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" data-i18n="fin_subs_amount">Amount</label>
+          <input id="sub-amount" type="number" class="form-control" min="0" step="0.01" placeholder="0.00">
+        </div>
+        <div class="form-group">
+          <label class="form-label" data-i18n="fin_subs_cycle">Billing cycle</label>
+          <select id="sub-cycle" class="form-control">
+            <option value="weekly" data-i18n="fin_cycle_weekly">Weekly</option>
+            <option value="monthly" selected data-i18n="fin_cycle_monthly">Monthly</option>
+            <option value="quarterly" data-i18n="fin_cycle_quarterly">Quarterly</option>
+            <option value="yearly" data-i18n="fin_cycle_yearly">Yearly</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" data-i18n="fin_subs_next_due">Next due date</label>
+        <input id="sub-next-due" type="date" class="form-control">
+      </div>
+    </div>
+    <div class="modal__footer">
+      <button type="button" class="btn btn--secondary" data-close="modal-subscription" data-i18n="cancel">Cancel</button>
+      <button id="sub-save-btn" class="btn btn--primary" data-i18n="fin_subs_save">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Match Modal ─────────────────────────────────────────── -->
+<div id="modal-match" class="modal">
+  <div class="modal__box" style="max-width:480px;">
+    <div class="modal__head">
+      <span class="modal__title" data-i18n="recon_match_title">Match Transaction</span>
+      <button type="button" class="modal__close" data-close="modal-match">✕</button>
+    </div>
+    <div class="modal__body">
+      <div id="match-txn-summary" class="text-outline-variant text-[13px]" style="margin-bottom:14px;"></div>
+      <div class="form-group">
+        <label class="form-label" data-i18n="recon_match_pick">Match to invoice</label>
+        <select id="match-invoice" class="form-control"></select>
+      </div>
+    </div>
+    <div class="modal__footer">
+      <button type="button" class="btn btn--secondary" data-close="modal-match" data-i18n="cancel">Cancel</button>
+      <button id="match-save-btn" class="btn btn--primary" data-i18n="recon_match">Match</button>
+    </div>
+  </div>
+</div>
+
+<script type="module" src="js/books.js?v=7"></script>
 </body>
 </html>

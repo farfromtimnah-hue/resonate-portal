@@ -1,13 +1,65 @@
 // ============================================================
-// Admin books view — all Zoho invoices across clients, tabbed
-// Draft / Unpaid / Archive. Zoho is the source of truth for
-// invoice status; Archive is a local D1 flag (is_archived).
+// Finance page — single page with a persistent pill tab bar for
+// Books & Invoicing / Financial Health / Bank Reconciliation.
+// Each panel keeps its original page's logic (previously
+// books.js / financial.js / reconciliation.js), scoped into its
+// own init function. The pill bar swaps visible panels in place;
+// each panel's data loads once, on first activation.
 // ============================================================
 
 import { requireAuth, signOut } from './auth.js';
 import { api }                   from './api.js';
 import { t, invoiceStatusLabel } from './t.js';
 import { esc, toast, invoiceStatusClass, openModal, closeModal } from './utils.js';
+
+async function init() {
+  const profile = await requireAuth('admin');
+  if (!profile) return;
+
+  document.getElementById('signout-btn').addEventListener('click', async () => {
+    await signOut(); window.location.href = 'index.html';
+  });
+
+  initPillBar();
+  await initInvoices();   // default-visible panel loads immediately
+}
+
+// ---- Pill tab bar — switches panels in place, no navigation --------
+
+const PANEL_INIT = {
+  financial:      { fn: initFinancial,      started: false },
+  reconciliation: { fn: initReconciliation, started: false },
+};
+
+function initPillBar() {
+  document.querySelectorAll('.finance-pill').forEach(btn => {
+    btn.addEventListener('click', () => switchFinanceTab(btn.dataset.financeTab));
+  });
+}
+
+async function switchFinanceTab(tab) {
+  document.querySelectorAll('.finance-pill').forEach(btn => {
+    const active = btn.dataset.financeTab === tab;
+    btn.classList.toggle('finance-pill--active', active);
+    btn.setAttribute('aria-selected', String(active));
+  });
+  document.querySelectorAll('.finance-panel').forEach(panel => {
+    panel.classList.toggle('finance-panel--active', panel.id === `finance-panel-${tab}`);
+  });
+
+  const lazy = PANEL_INIT[tab];
+  if (lazy && !lazy.started) {
+    lazy.started = true;
+    await lazy.fn();
+  }
+}
+
+// ============================================================
+// Panel: Books & Invoicing (formerly books.js)
+// Admin view of all Zoho invoices across clients, tabbed
+// Draft / Unpaid / Archive. Zoho is the source of truth for
+// invoice status; Archive is a local D1 flag (is_archived).
+// ============================================================
 
 let _invoices  = [];
 let _clients   = null;       // lazy-loaded for the New Invoice client picker
@@ -18,15 +70,8 @@ let _activeTab = 'unpaid';   // 'draft' | 'unpaid' | 'archive'
 // can be archived from here — Archive is a manual, local action.
 const UNPAID_STATUSES = ['sent', 'viewed', 'unpaid', 'partially_paid', 'overdue', 'paid'];
 
-async function init() {
-  const profile = await requireAuth('admin');
-  if (!profile) return;
-
-  document.getElementById('signout-btn').addEventListener('click', async () => {
-    await signOut(); window.location.href = 'index.html';
-  });
-
-  document.querySelectorAll('.books-tab').forEach(btn => {
+async function initInvoices() {
+  document.querySelectorAll('#finance-panel-invoices .books-tab').forEach(btn => {
     btn.addEventListener('click', () => switchTab(btn.dataset.tab));
   });
 
@@ -92,7 +137,7 @@ function tabInvoices(invoices, tab) {
 
 function switchTab(tab) {
   _activeTab = tab;
-  document.querySelectorAll('.books-tab').forEach(btn => {
+  document.querySelectorAll('#finance-panel-invoices .books-tab').forEach(btn => {
     btn.classList.toggle('books-tab--active', btn.dataset.tab === tab);
   });
   renderList();
@@ -492,6 +537,707 @@ async function saveInvoiceItems() {
   } finally {
     btn.disabled = false;
     btn.textContent = t('inv_save_items');
+  }
+}
+
+// ============================================================
+// Panel: Financial Health (formerly financial.js)
+// Every money figure is pulled live from the connected Zoho
+// account (payments = income, expenses straight from
+// GET /expenses, never a local cache table), plus AR Aging from
+// cached unpaid invoices and a manual subscriptions list stored
+// in D1. No sales tax exists anywhere in the portal.
+// ============================================================
+
+// Statuses whose balances count as receivable
+const OPEN_STATUSES = ['sent', 'viewed', 'unpaid', 'partially_paid', 'overdue'];
+
+const BUCKETS = [
+  { key: 'current', labelKey: 'fin_bucket_current', min: -Infinity, max: 0,        cls: '' },
+  { key: '1_30',    labelKey: 'fin_bucket_1_30',    min: 1,         max: 30,       cls: '' },
+  { key: '31_60',   labelKey: 'fin_bucket_31_60',   min: 31,        max: 60,       cls: 'aging-tile--warn' },
+  { key: '61_90',   labelKey: 'fin_bucket_61_90',   min: 61,        max: 90,       cls: 'aging-tile--warn' },
+  { key: '90_plus', labelKey: 'fin_bucket_90_plus', min: 91,        max: Infinity, cls: 'aging-tile--danger' },
+];
+
+const INCOME_COLOR  = '#9ccaff';   // primary-fixed-dim — matches every key figure
+const EXPENSE_COLOR = '#ffb781';   // tertiary-fixed-dim — matches warning amounts
+
+let _yearData      = {};   // year → { payments: [], expenses: [] } fetched live from Zoho
+let _subscriptions = [];
+let _editingSubId  = null; // null = creating
+
+async function initFinancial() {
+  document.getElementById('pl-period').addEventListener('change', renderPeriodSections);
+  document.getElementById('annual-year').addEventListener('change', renderAnnual);
+
+  document.getElementById('sub-add-btn').addEventListener('click', () => openSubscriptionModal(null));
+  document.getElementById('sub-save-btn').addEventListener('click', saveSubscription);
+  document.getElementById('subs-list').addEventListener('click', onSubscriptionAction);
+  document.getElementById('modal-subscription').querySelectorAll('[data-close]').forEach(btn => {
+    btn.addEventListener('click', () => closeModal(btn.dataset.close));
+  });
+  document.getElementById('modal-subscription').addEventListener('click', e => {
+    if (e.target === document.getElementById('modal-subscription')) closeModal('modal-subscription');
+  });
+
+  buildYearOptions();
+
+  try {
+    const year = new Date().getFullYear();
+    // The trend + "last 6 months" period can reach into the previous year,
+    // so both years load up front, in parallel with the cached invoices
+    // (AR aging only) and the manual subscriptions list.
+    const [invoices, subs] = await Promise.all([
+      api.zohoAllInvoices(),
+      api.subscriptions(),
+      loadYear(year),
+      loadYear(year - 1),
+    ]);
+    _subscriptions = subs;
+
+    renderAging(invoices);
+    renderSubscriptions();
+    renderTrend();
+    renderPeriodSections();
+    await renderAnnual();
+
+    document.getElementById('fin-loading').classList.add('hidden');
+    document.getElementById('fin-content').classList.remove('hidden');
+  } catch (err) {
+    const messages = {
+      zoho_not_connected:        'Zoho is not connected yet — use Connect Zoho Invoice on the dashboard first.',
+      zoho_organization_missing: 'Zoho connection has no organization — reconnect from the dashboard.',
+      zoho_api_error:            'Zoho rejected the request. Please try again.',
+    };
+    document.getElementById('fin-loading').textContent = messages[err.message] || err.message;
+  }
+}
+
+// ---- Live Zoho data, one calendar year at a time ------------------
+// The date filter is passed to Zoho AND re-applied here, so totals stay
+// correct even if Zoho ignores a filter param.
+
+async function loadYear(year) {
+  if (_yearData[year]) return _yearData[year];
+  const range  = `?date_start=${year}-01-01&date_end=${year}-12-31`;
+  const within = (r) => r.date && r.date >= `${year}-01-01` && r.date <= `${year}-12-31`;
+  const [payments, expenses] = await Promise.all([
+    api.zohoPayments(range),
+    api.zohoExpenses(range),
+  ]);
+  _yearData[year] = {
+    payments: payments.filter(within),
+    expenses: expenses.filter(within),
+  };
+  return _yearData[year];
+}
+
+function loadedRecords(kind) {
+  return Object.values(_yearData).flatMap(d => d[kind]);
+}
+
+const sum = (rows, field) => rows.reduce((acc, r) => acc + (Number(r[field]) || 0), 0);
+
+// ---- Period selection ---------------------------------------------
+
+function pad2(n) { return String(n).padStart(2, '0'); }
+function monthKey(d) { return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}`; }
+function lastDayOf(year, month1) { return new Date(year, month1, 0).getDate(); }
+
+// Returns { start, end } as yyyy-mm-dd for the P&L period selector.
+function periodRange(period) {
+  const now = new Date();
+  const y = now.getFullYear(), m = now.getMonth();  // m: 0-based
+  const today = `${y}-${pad2(m + 1)}-${pad2(now.getDate())}`;
+  if (period === 'this_month') return { start: `${y}-${pad2(m + 1)}-01`, end: today };
+  if (period === 'last_month') {
+    const d = new Date(y, m - 1, 1);
+    const ly = d.getFullYear(), lm = d.getMonth() + 1;
+    return { start: `${ly}-${pad2(lm)}-01`, end: `${ly}-${pad2(lm)}-${pad2(lastDayOf(ly, lm))}` };
+  }
+  if (period === 'quarter') {
+    const qStart = Math.floor(m / 3) * 3 + 1;
+    return { start: `${y}-${pad2(qStart)}-01`, end: today };
+  }
+  if (period === 'year') return { start: `${y}-01-01`, end: today };
+  // 6mo — from the 1st of the month five months back through today
+  const d = new Date(y, m - 5, 1);
+  return { start: `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-01`, end: today };
+}
+
+function inRange(row, range) {
+  return row.date && row.date >= range.start && row.date <= range.end;
+}
+
+// P&L tiles + category breakdown follow the same period selector.
+function renderPeriodSections() {
+  const range    = periodRange(document.getElementById('pl-period').value);
+  const payments = loadedRecords('payments').filter(r => inRange(r, range));
+  const expenses = loadedRecords('expenses').filter(r => inRange(r, range));
+
+  const income = sum(payments, 'amount');
+  const spent  = sum(expenses, 'total');
+  setAmount('pl-income',   income);
+  setAmount('pl-expenses', spent);
+  setAmount('pl-net',      income - spent, /* signColor */ true);
+
+  renderCategories(expenses);
+}
+
+function setAmount(id, value, signColor = false) {
+  const el = document.getElementById(id);
+  el.textContent = money(value);
+  if (signColor) el.classList.toggle('aging-tile__amount--negative', value < 0);
+}
+
+// ---- Six-month trend chart (inline SVG, grouped bars) --------------
+
+function renderTrend() {
+  const now = new Date();
+  const months = [];
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    months.push({
+      key:   monthKey(d),
+      label: d.toLocaleDateString('en-US', { month: 'short' }),
+      income: 0, expenses: 0,
+    });
+  }
+  const byKey = Object.fromEntries(months.map(mo => [mo.key, mo]));
+  for (const p of loadedRecords('payments')) {
+    const mo = byKey[(p.date || '').slice(0, 7)];
+    if (mo) mo.income += Number(p.amount) || 0;
+  }
+  for (const e of loadedRecords('expenses')) {
+    const mo = byKey[(e.date || '').slice(0, 7)];
+    if (mo) mo.expenses += Number(e.total) || 0;
+  }
+
+  const W = 720, H = 220, padL = 8, padR = 8, padB = 24, padT = 10;
+  const plotH  = H - padT - padB;
+  const max    = Math.max(1, ...months.flatMap(mo => [mo.income, mo.expenses]));
+  const slotW  = (W - padL - padR) / 6;
+  const barW   = Math.min(34, slotW / 2 - 6);
+
+  const bars = months.map((mo, i) => {
+    const cx = padL + slotW * i + slotW / 2;
+    const bar = (value, color, dx, label) => {
+      const h = Math.round((value / max) * plotH);
+      const yTop = padT + plotH - h;
+      return `
+        <rect x="${cx + dx}" y="${yTop}" width="${barW}" height="${Math.max(h, value > 0 ? 2 : 0)}"
+              rx="3" fill="${color}">
+          <title>${esc(mo.label)} — ${esc(label)}: ${esc(money(value))}</title>
+        </rect>`;
+    };
+    return bar(mo.income, INCOME_COLOR, -barW - 2, t('fin_income')) +
+           bar(mo.expenses, EXPENSE_COLOR, 2, t('fin_expenses')) + `
+      <text x="${cx}" y="${H - 7}" text-anchor="middle"
+            font-family="Plus Jakarta Sans, sans-serif" font-size="11" fill="#717781">${esc(mo.label)}</text>`;
+  }).join('');
+
+  document.getElementById('trend-chart').innerHTML = `
+    <svg viewBox="0 0 ${W} ${H}" width="100%" style="min-width:520px; display:block;" role="img"
+         aria-label="${esc(t('fin_trend_heading'))}">
+      <line x1="${padL}" y1="${padT + plotH}" x2="${W - padR}" y2="${padT + plotH}"
+            stroke="rgba(255,255,255,0.12)" stroke-width="1"/>
+      ${bars}
+    </svg>`;
+}
+
+// ---- Expense-by-category breakdown (horizontal bars) ---------------
+
+function groupByCategory(expenses) {
+  const totals = {};
+  for (const e of expenses) {
+    const cat = e.category_name || 'Uncategorized';
+    totals[cat] = (totals[cat] || 0) + (Number(e.total) || 0);
+  }
+  return Object.entries(totals).sort((a, b) => b[1] - a[1]);
+}
+
+function renderCategories(expenses) {
+  const groups = groupByCategory(expenses);
+  const list   = document.getElementById('cat-list');
+  const empty  = document.getElementById('cat-empty');
+  empty.classList.toggle('hidden', groups.length > 0);
+
+  const max = Math.max(1, ...groups.map(([, v]) => v));
+  list.innerHTML = groups.map(([cat, total]) => `
+    <div class="cat-row" title="${esc(cat)}: ${esc(money(total))}">
+      <span class="cat-row__label">${esc(cat)}</span>
+      <div class="cat-row__track"><div class="cat-row__bar" style="width:${Math.max(1, (total / max) * 100)}%;"></div></div>
+      <span class="cat-row__amount">${esc(money(total))}</span>
+    </div>`).join('');
+}
+
+// ---- Subscriptions — manual list, full CRUD ------------------------
+
+function renderSubscriptions() {
+  const list  = document.getElementById('subs-list');
+  const empty = document.getElementById('subs-empty');
+  empty.classList.toggle('hidden', _subscriptions.length > 0);
+
+  list.innerHTML = _subscriptions.map(s => `
+    <div class="sub-row">
+      <span class="text-primary-fixed-dim text-[13px] font-semibold">${esc(s.name)}</span>
+      <span class="text-outline-variant text-[13px]">${esc(money(s.amount))}</span>
+      <span class="sub-cell--optional text-outline-variant text-[13px]">${esc(t('fin_cycle_' + s.billing_cycle))}</span>
+      <span class="sub-cell--optional text-outline-variant text-[13px]">${esc(s.next_due_date || '—')}</span>
+      <div class="flex items-center gap-2 justify-end">
+        <button data-action="edit" data-id="${s.id}"
+                class="text-outline-variant hover:text-primary-fixed-dim text-[11px] uppercase tracking-widest px-3 py-1.5 rounded-full border border-white/10 transition-colors">
+          ${esc(t('inv_edit'))}
+        </button>
+        <button data-action="delete" data-id="${s.id}"
+                class="text-outline-variant hover:text-red-400 text-[11px] uppercase tracking-widest px-3 py-1.5 rounded-full border border-white/10 transition-colors">
+          ${esc(t('delete'))}
+        </button>
+      </div>
+    </div>`).join('');
+}
+
+function subError(msg) {
+  const el = document.getElementById('sub-error');
+  el.textContent   = msg || '';
+  el.style.display = msg ? 'block' : 'none';
+}
+
+function openSubscriptionModal(sub) {
+  _editingSubId = sub?.id ?? null;
+  subError(null);
+  document.getElementById('sub-modal-title').textContent = sub ? t('inv_edit') : t('fin_subs_add');
+  document.getElementById('sub-name').value     = sub?.name ?? '';
+  document.getElementById('sub-amount').value   = sub?.amount ?? '';
+  document.getElementById('sub-cycle').value    = sub?.billing_cycle ?? 'monthly';
+  document.getElementById('sub-next-due').value = sub?.next_due_date ?? '';
+  openModal('modal-subscription');
+}
+
+async function saveSubscription() {
+  subError(null);
+  const data = {
+    name:          document.getElementById('sub-name').value.trim(),
+    amount:        parseFloat(document.getElementById('sub-amount').value),
+    billing_cycle: document.getElementById('sub-cycle').value,
+    next_due_date: document.getElementById('sub-next-due').value || null,
+  };
+  if (!data.name)                          { subError('Enter a name.'); return; }
+  if (isNaN(data.amount) || data.amount < 0) { subError('Enter a valid amount.'); return; }
+
+  const btn = document.getElementById('sub-save-btn');
+  btn.disabled = true;
+  try {
+    const row = await (_editingSubId
+      ? api.updateSubscription(_editingSubId, data)
+      : api.createSubscription(data));
+    const idx = _subscriptions.findIndex(s => s.id === row.id);
+    if (idx >= 0) _subscriptions[idx] = row; else _subscriptions.push(row);
+    renderSubscriptions();
+    closeModal('modal-subscription');
+    toast(_editingSubId ? 'Subscription updated.' : 'Subscription added.', 'success');
+  } catch (err) {
+    subError(err.message);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function onSubscriptionAction(e) {
+  const btn = e.target.closest('button[data-action]');
+  if (!btn) return;
+  const sub = _subscriptions.find(s => s.id === +btn.dataset.id);
+  if (!sub) return;
+
+  if (btn.dataset.action === 'edit') return openSubscriptionModal(sub);
+
+  if (btn.dataset.action === 'delete') {
+    if (!confirm(t('fin_subs_delete_confirm'))) return;
+    btn.disabled = true;
+    try {
+      await api.deleteSubscription(sub.id);
+      _subscriptions = _subscriptions.filter(s => s.id !== sub.id);
+      renderSubscriptions();
+      toast('Subscription deleted.', 'success');
+    } catch (err) {
+      toast(err.message, 'error');
+      btn.disabled = false;
+    }
+  }
+}
+
+// ---- Annual Tax-Filing Summary --------------------------------------
+// Strictly income + expenses for the chosen year — no tax fields exist.
+
+function buildYearOptions() {
+  const y = new Date().getFullYear();
+  const select = document.getElementById('annual-year');
+  select.innerHTML = '';
+  for (let year = y; year >= y - 4; year--) {
+    select.insertAdjacentHTML('beforeend', `<option value="${year}">${year}</option>`);
+  }
+}
+
+async function renderAnnual() {
+  const year    = parseInt(document.getElementById('annual-year').value);
+  const loading = document.getElementById('annual-loading');
+  const body    = document.getElementById('annual-body');
+
+  loading.classList.remove('hidden');
+  body.classList.add('hidden');
+  try {
+    const { payments, expenses } = await loadYear(year);
+
+    const income = sum(payments, 'amount');
+    const spent  = sum(expenses, 'total');
+    setAmount('annual-income',   income);
+    setAmount('annual-expenses', spent);
+    setAmount('annual-net',      income - spent, /* signColor */ true);
+
+    const groups = groupByCategory(expenses);
+    document.getElementById('annual-cats').innerHTML = groups.length
+      ? groups.map(([cat, total]) => `
+          <div class="annual-cat-row">
+            <span>${esc(cat)}</span>
+            <span class="text-primary-fixed-dim font-semibold">${esc(money(total))}</span>
+          </div>`).join('')
+      : `<div class="text-outline-variant text-[13px] py-4 text-center">${esc(t('fin_cat_empty'))}</div>`;
+  } catch (err) {
+    toast(err.message, 'error');
+  }
+  loading.classList.add('hidden');
+  body.classList.remove('hidden');
+}
+
+// ---- AR Aging (unchanged) -------------------------------------------
+
+// Whole days the invoice is past due as of today; <= 0 means current.
+function daysPastDue(dueDate, now = new Date()) {
+  if (!dueDate) return 0;
+  const due = new Date(dueDate + 'T00:00:00');
+  return Math.floor((now - due) / 86400000);
+}
+
+function renderAging(invoices) {
+  const open = invoices.filter(inv =>
+    inv.is_archived !== 1 && OPEN_STATUSES.includes(inv.status) && (inv.balance ?? 0) > 0
+  );
+
+  const sums   = {};
+  const counts = {};
+  BUCKETS.forEach(b => { sums[b.key] = 0; counts[b.key] = 0; });
+
+  let total = 0;
+  for (const inv of open) {
+    const days = daysPastDue(inv.due_date);
+    const bucket = BUCKETS.find(b => days >= b.min && days <= b.max) ?? BUCKETS[0];
+    sums[bucket.key]   += inv.balance;
+    counts[bucket.key] += 1;
+    total += inv.balance;
+  }
+
+  document.getElementById('aging-total').textContent = money(total);
+  document.getElementById('fin-subtitle').textContent =
+    `${open.length} open invoice${open.length !== 1 ? 's' : ''}`;
+
+  document.getElementById('aging-grid').innerHTML = BUCKETS.map(b => `
+    <div class="aging-tile ${counts[b.key] ? b.cls : ''}">
+      <div class="aging-tile__label">${esc(t(b.labelKey))}</div>
+      <div class="aging-tile__amount">${esc(money(sums[b.key]))}</div>
+      <div class="aging-tile__count">${counts[b.key]} ${esc(t('fin_invoices_count'))}</div>
+    </div>`).join('');
+}
+
+// ============================================================
+// Panel: Bank Reconciliation (formerly reconciliation.js)
+// CSV-imported bank transactions matched against cached
+// invoices. Tabs: Unmatched / Matched / Excluded. Actions:
+// Match, Unmatch, Exclude, Restore. The CSV is parsed in the
+// browser and stored via the Worker into D1.
+// ============================================================
+
+let _txns      = [];
+let _reconInvoices  = null;   // lazy-loaded for the match picker
+let _activeReconTab = 'unmatched';
+let _matchingTxnId  = null;
+
+async function initReconciliation() {
+  document.querySelectorAll('.recon-tab').forEach(btn => {
+    btn.addEventListener('click', () => switchReconTab(btn.dataset.reconTab));
+  });
+
+  // CSV upload
+  const fileInput = document.getElementById('csv-file-input');
+  document.getElementById('upload-csv-btn').addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', async (e) => {
+    const file = e.target.files?.[0];
+    if (file) await importCsv(file);
+    e.target.value = '';   // allow re-upload of the same file
+  });
+
+  // Row actions + match modal
+  document.getElementById('txn-list').addEventListener('click', onTxnRowAction);
+  document.getElementById('match-save-btn').addEventListener('click', saveMatch);
+  document.getElementById('modal-match').querySelectorAll('[data-close]').forEach(btn => {
+    btn.addEventListener('click', () => closeModal(btn.dataset.close));
+  });
+  document.getElementById('modal-match').addEventListener('click', e => {
+    if (e.target === document.getElementById('modal-match')) closeModal('modal-match');
+  });
+
+  await loadTransactions();
+}
+
+async function loadTransactions() {
+  document.getElementById('txn-loading').classList.remove('hidden');
+  try {
+    _txns = await api.bankTransactions();
+    renderReconTabs();
+    renderTxnList();
+  } catch (err) {
+    toast(err.message, 'error');
+  }
+  document.getElementById('txn-loading').classList.add('hidden');
+}
+
+// ---- CSV parsing ----
+
+// Minimal CSV parser: handles quoted fields and commas inside quotes.
+function parseCsv(text) {
+  const rows = [];
+  let row = [], field = '', inQuotes = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (inQuotes) {
+      if (ch === '"' && text[i + 1] === '"') { field += '"'; i++; }
+      else if (ch === '"') inQuotes = false;
+      else field += ch;
+    } else if (ch === '"') {
+      inQuotes = true;
+    } else if (ch === ',') {
+      row.push(field); field = '';
+    } else if (ch === '\n' || ch === '\r') {
+      if (ch === '\r' && text[i + 1] === '\n') i++;
+      row.push(field); field = '';
+      if (row.some(c => c.trim() !== '')) rows.push(row);
+      row = [];
+    } else {
+      field += ch;
+    }
+  }
+  row.push(field);
+  if (row.some(c => c.trim() !== '')) rows.push(row);
+  return rows;
+}
+
+// Normalizes 07/15/2026 or 2026-07-15 to yyyy-mm-dd; anything else passes through.
+function normalizeDate(s) {
+  s = (s || '').trim();
+  const us = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (us) return `${us[3]}-${us[1].padStart(2, '0')}-${us[2].padStart(2, '0')}`;
+  return s;
+}
+
+function parseAmount(s) {
+  const n = parseFloat(String(s ?? '').replace(/[$\s,]/g, ''));
+  return isNaN(n) ? null : n;
+}
+
+// Maps CSV rows to {date, description, amount}. A header row naming the
+// columns is used when present; otherwise columns are date, description, amount.
+function csvToTransactions(rows) {
+  if (!rows.length) return [];
+  let cols = { date: 0, description: 1, amount: 2 };
+  let start = 0;
+
+  const header = rows[0].map(c => c.trim().toLowerCase());
+  const hDate = header.findIndex(h => /^(date|data|txn.?date|transaction date)$/.test(h));
+  const hDesc = header.findIndex(h => /^(description|descrição|descricao|memo|details?)$/.test(h));
+  const hAmt  = header.findIndex(h => /^(amount|valor|value)$/.test(h));
+  if (hDate >= 0 || hDesc >= 0 || hAmt >= 0) {
+    cols = {
+      date:        hDate >= 0 ? hDate : 0,
+      description: hDesc >= 0 ? hDesc : 1,
+      amount:      hAmt  >= 0 ? hAmt  : 2,
+    };
+    start = 1;
+  }
+
+  return rows.slice(start)
+    .map(r => ({
+      date:        normalizeDate(r[cols.date]),
+      description: (r[cols.description] ?? '').trim(),
+      amount:      parseAmount(r[cols.amount]),
+    }))
+    .filter(r => r.amount !== null);
+}
+
+async function importCsv(file) {
+  const btn = document.getElementById('upload-csv-btn');
+  btn.disabled = true;
+  try {
+    const text = await file.text();
+    const txns = csvToTransactions(parseCsv(text));
+    if (!txns.length) { toast('No usable rows found in that CSV.', 'error'); return; }
+    const res = await api.bankImport(txns);
+    toast(`Imported ${res.inserted} transaction${res.inserted === 1 ? '' : 's'}.`, 'success');
+    await loadTransactions();
+  } catch (err) {
+    toast(err.message, 'error');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// ---- Tabs + list ----
+
+function tabTxns(tab) {
+  return _txns.filter(x => x.status === tab);
+}
+
+function switchReconTab(tab) {
+  _activeReconTab = tab;
+  document.querySelectorAll('.recon-tab').forEach(btn => {
+    btn.classList.toggle('books-tab--active', btn.dataset.reconTab === tab);
+  });
+  renderTxnList();
+}
+
+function renderReconTabs() {
+  ['unmatched', 'matched', 'excluded'].forEach(tab => {
+    document.getElementById(`count-${tab}`).textContent = `(${tabTxns(tab).length})`;
+  });
+}
+
+function reconMoney(v, currency = 'USD') {
+  if (v == null) return '—';
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(v);
+}
+
+function renderTxnList() {
+  const list  = document.getElementById('txn-list');
+  const empty = document.getElementById('txn-empty');
+  const rows  = tabTxns(_activeReconTab);
+
+  empty.classList.toggle('hidden', rows.length > 0);
+  empty.textContent = t('recon_empty');
+
+  list.innerHTML = rows.map(x => {
+    const matched = x.matched_invoice_number
+      ? `${x.matched_invoice_number} · ${x.matched_client_business_name || x.matched_client_name || ''}`
+      : '—';
+    return `
+      <div class="txn-row" data-txn-id="${x.id}">
+        <span class="text-outline-variant text-[13px]">${esc(x.txn_date || '—')}</span>
+        <span class="text-primary-fixed-dim text-[13px]" style="min-width:0; overflow:hidden; text-overflow:ellipsis;">${esc(x.description || '—')}</span>
+        <span class="text-outline-variant text-[13px]">${esc(reconMoney(x.amount))}</span>
+        <span class="txn-cell--optional text-outline-variant text-[12px]">${esc(matched)}</span>
+        <div class="flex items-center gap-2 justify-end">${txnActionsHTML(x)}</div>
+      </div>`;
+  }).join('');
+}
+
+function txnActionsHTML(x) {
+  const actionBtn = (action, label, primary = false) => `
+    <button data-action="${action}" data-id="${x.id}"
+            class="${primary
+              ? 'bg-primary-container text-white text-[11px] uppercase tracking-widest px-3 py-1.5 rounded-full hover:opacity-90 transition-opacity'
+              : 'text-outline-variant hover:text-primary-fixed-dim text-[11px] uppercase tracking-widest px-3 py-1.5 rounded-full border border-white/10 transition-colors'}">
+      ${label}
+    </button>`;
+
+  if (x.status === 'matched')  return actionBtn('unmatch', esc(t('recon_unmatch')));
+  if (x.status === 'excluded') return actionBtn('restore', esc(t('recon_restore')));
+  return actionBtn('exclude', esc(t('recon_exclude'))) +
+         actionBtn('match', esc(t('recon_match')), true);
+}
+
+async function onTxnRowAction(e) {
+  const btn = e.target.closest('button[data-action]');
+  if (!btn) return;
+  const txn = _txns.find(x => x.id === +btn.dataset.id);
+  if (!txn) return;
+
+  if (btn.dataset.action === 'match') return openMatchModal(txn);
+
+  btn.disabled = true;
+  try {
+    const call = { unmatch: api.bankUnmatch, exclude: api.bankExclude, restore: api.bankRestore }[btn.dataset.action];
+    const fresh = await call(txn.id);
+    // Server rows lose the join fields on writes — refresh keeps them accurate
+    Object.assign(txn, fresh);
+    if (btn.dataset.action === 'unmatch') {
+      txn.matched_invoice_number = null;
+      txn.matched_client_business_name = null;
+      txn.matched_client_name = null;
+    }
+    renderReconTabs();
+    renderTxnList();
+  } catch (err) {
+    toast(err.message, 'error');
+    btn.disabled = false;
+  }
+}
+
+// ---- Match modal ----
+
+async function openMatchModal(txn) {
+  _matchingTxnId = txn.id;
+  document.getElementById('match-txn-summary').textContent =
+    `${txn.txn_date || ''} · ${txn.description || ''} · ${reconMoney(txn.amount)}`;
+
+  const select = document.getElementById('match-invoice');
+  select.innerHTML = `<option>${esc(t('loading'))}</option>`;
+  openModal('modal-match');
+
+  if (!_reconInvoices) {
+    try { _reconInvoices = await api.zohoAllInvoices(); }
+    catch (err) { toast(err.message, 'error'); return; }
+  }
+
+  // Exact-amount matches (against balance or total) float to the top
+  const amount = Math.abs(txn.amount ?? 0);
+  const candidates = _reconInvoices
+    .filter(inv => inv.status !== 'void')
+    .map(inv => ({
+      inv,
+      suggested: Math.abs((inv.balance ?? -1) - amount) < 0.005 ||
+                 Math.abs((inv.amount  ?? -1) - amount) < 0.005,
+    }))
+    .sort((a, b) => (b.suggested - a.suggested));
+
+  select.innerHTML = candidates.map(({ inv, suggested }) => {
+    const label = `${inv.invoice_number || inv.zoho_invoice_id} · ${inv.client_business_name || inv.client_name || ''} · ${reconMoney(inv.balance ?? inv.amount, inv.currency_code)}` +
+                  (suggested ? ` (${t('recon_suggested')})` : '');
+    return `<option value="${inv.id}">${esc(label)}</option>`;
+  }).join('');
+}
+
+async function saveMatch() {
+  const invoiceId = parseInt(document.getElementById('match-invoice').value);
+  if (!invoiceId || !_matchingTxnId) return;
+
+  const btn = document.getElementById('match-save-btn');
+  btn.disabled = true;
+  try {
+    const fresh = await api.bankMatch(_matchingTxnId, invoiceId);
+    const txn = _txns.find(x => x.id === _matchingTxnId);
+    if (txn) {
+      Object.assign(txn, fresh);
+      const inv = (_reconInvoices || []).find(i => i.id === invoiceId);
+      txn.matched_invoice_number        = inv?.invoice_number ?? null;
+      txn.matched_client_business_name  = inv?.client_business_name ?? null;
+      txn.matched_client_name           = inv?.client_name ?? null;
+    }
+    renderReconTabs();
+    renderTxnList();
+    closeModal('modal-match');
+    toast('Transaction matched.', 'success');
+  } catch (err) {
+    toast(err.message, 'error');
+  } finally {
+    btn.disabled = false;
   }
 }
 
