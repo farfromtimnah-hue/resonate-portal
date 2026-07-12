@@ -169,6 +169,51 @@ export async function routeZoho(request, env, user, url, method, path) {
     return jsonResponse(results, 200, env);
   }
 
+  // ---- Financial Health (live Zoho reads) — admin only ----
+  // Always fetched straight from Zoho, never a local cache table, so
+  // expenses/payments recorded in Zoho are never missed.
+
+  // GET /api/zoho/expenses?date_start&date_end — live expense list
+  if (method === 'GET' && path === '/api/zoho/expenses') {
+    requireAdminRole(user);
+    return handleListExpenses(url, env);
+  }
+
+  // GET /api/zoho/expensecategories — live expense-category list
+  if (method === 'GET' && path === '/api/zoho/expensecategories') {
+    requireAdminRole(user);
+    return handleListExpenseCategories(env);
+  }
+
+  // GET /api/zoho/payments?date_start&date_end — live customer payments (income)
+  if (method === 'GET' && path === '/api/zoho/payments') {
+    requireAdminRole(user);
+    return handleListPayments(url, env);
+  }
+
+  // ---- Subscriptions (Financial Health) — manual list, admin only ----
+
+  if (method === 'GET' && path === '/api/subscriptions') {
+    requireAdminRole(user);
+    var { results } = await env.DB.prepare(
+      'SELECT * FROM subscriptions ORDER BY next_due_date IS NULL, next_due_date, name'
+    ).all();
+    return jsonResponse(results, 200, env);
+  }
+  if (method === 'POST' && path === '/api/subscriptions') {
+    requireAdminRole(user);
+    return handleCreateSubscription(request, env);
+  }
+  params = match('/api/subscriptions/:id', path);
+  if (params && method === 'PUT') {
+    requireAdminRole(user);
+    return handleUpdateSubscription(params.id, request, env);
+  }
+  if (params && method === 'DELETE') {
+    requireAdminRole(user);
+    return handleDeleteSubscription(params.id, env);
+  }
+
   // ---- Bank reconciliation (Books Phase 9) — admin only ----
 
   // GET /api/bank/transactions — all imported rows with matched-invoice info
@@ -215,6 +260,121 @@ export async function routeZoho(request, env, user, url, method, path) {
   }
 
   return null;
+}
+
+// ------------------------------------------------------------
+// Financial Health handlers — live Zoho reads (no cache table)
+// ------------------------------------------------------------
+
+// Walks Zoho's pagination and returns every record of a list resource.
+// listKey names the array in Zoho's response (e.g. 'expenses').
+async function zohoGetAll(access, basePathAndQuery, listKey) {
+  var sep = basePathAndQuery.includes('?') ? '&' : '?';
+  var all = [];
+  for (var page = 1; page <= 20; page++) {   // hard cap: 4000 records
+    var data = await zohoGet(access, `${basePathAndQuery}${sep}page=${page}&per_page=200`);
+    all.push(...(data?.[listKey] ?? []));
+    if (!data?.page_context?.has_more_page) break;
+  }
+  return all;
+}
+
+// Builds the optional Zoho date filter from ?date_start=&date_end= query params.
+function zohoDateFilter(url) {
+  var q = [];
+  var start = url.searchParams.get('date_start');
+  var end   = url.searchParams.get('date_end');
+  if (start) q.push(`date_start=${encodeURIComponent(start)}`);
+  if (end)   q.push(`date_end=${encodeURIComponent(end)}`);
+  return q.length ? `?${q.join('&')}` : '';
+}
+
+async function requireZohoAccess(env) {
+  var access = await getZohoAccess(env);
+  if (!access.organizationId) throw new ApiError('zoho_organization_missing', 409);
+  return access;
+}
+
+async function handleListExpenses(url, env) {
+  var access = await requireZohoAccess(env);
+  var expenses = await zohoGetAll(access, `/expenses${zohoDateFilter(url)}`, 'expenses');
+  return jsonResponse(expenses.map(e => ({
+    expense_id:    String(e.expense_id),
+    date:          e.date ?? null,
+    category_name: e.category_name || e.account_name || null,
+    category_id:   e.category_id != null ? String(e.category_id) : null,
+    description:   e.description ?? '',
+    total:         e.total ?? 0,
+    currency_code: e.currency_code ?? null,
+    status:        e.status ?? null,
+  })), 200, env);
+}
+
+async function handleListExpenseCategories(env) {
+  var access = await requireZohoAccess(env);
+  var data = await zohoGet(access, '/expensecategories');
+  var categories = data?.expense_categories ?? data?.categories ?? [];
+  return jsonResponse(categories.map(c => ({
+    category_id:   c.category_id != null ? String(c.category_id) : null,
+    category_name: c.category_name ?? c.account_name ?? '',
+  })), 200, env);
+}
+
+async function handleListPayments(url, env) {
+  var access = await requireZohoAccess(env);
+  var payments = await zohoGetAll(access, `/customerpayments${zohoDateFilter(url)}`, 'customerpayments');
+  return jsonResponse(payments.map(p => ({
+    payment_id:      String(p.payment_id),
+    date:            p.date ?? null,
+    amount:          p.amount ?? 0,
+    customer_name:   p.customer_name ?? '',
+    invoice_numbers: p.invoice_numbers ?? null,
+    payment_mode:    p.payment_mode ?? null,
+  })), 200, env);
+}
+
+// ------------------------------------------------------------
+// Subscriptions handlers — plain D1 CRUD, no Zoho involvement
+// ------------------------------------------------------------
+
+var BILLING_CYCLES = ['weekly', 'monthly', 'quarterly', 'yearly'];
+
+function readSubscriptionFields(body) {
+  var name = (body?.name ?? '').trim();
+  if (!name) throw new ApiError('name required', 400);
+  var amount = Number(body?.amount);
+  if (isNaN(amount) || amount < 0) throw new ApiError('amount must be a non-negative number', 400);
+  var cycle = body?.billing_cycle ?? 'monthly';
+  if (!BILLING_CYCLES.includes(cycle)) throw new ApiError('invalid billing_cycle', 400);
+  return { name, amount, cycle, nextDue: body?.next_due_date || null };
+}
+
+async function handleCreateSubscription(request, env) {
+  var f = readSubscriptionFields(await request.json());
+  var { meta } = await env.DB.prepare(
+    'INSERT INTO subscriptions (name, amount, billing_cycle, next_due_date) VALUES (?, ?, ?, ?)'
+  ).bind(f.name, f.amount, f.cycle, f.nextDue).run();
+  var row = await env.DB.prepare('SELECT * FROM subscriptions WHERE id = ?')
+    .bind(meta.last_row_id).first();
+  return jsonResponse(row, 201, env);
+}
+
+async function handleUpdateSubscription(id, request, env) {
+  var existing = await env.DB.prepare('SELECT id FROM subscriptions WHERE id = ?').bind(id).first();
+  if (!existing) throw new ApiError('Subscription not found', 404);
+  var f = readSubscriptionFields(await request.json());
+  await env.DB.prepare(
+    "UPDATE subscriptions SET name = ?, amount = ?, billing_cycle = ?, next_due_date = ?, updated_at = datetime('now') WHERE id = ?"
+  ).bind(f.name, f.amount, f.cycle, f.nextDue, existing.id).run();
+  var row = await env.DB.prepare('SELECT * FROM subscriptions WHERE id = ?').bind(existing.id).first();
+  return jsonResponse(row, 200, env);
+}
+
+async function handleDeleteSubscription(id, env) {
+  var existing = await env.DB.prepare('SELECT id FROM subscriptions WHERE id = ?').bind(id).first();
+  if (!existing) throw new ApiError('Subscription not found', 404);
+  await env.DB.prepare('DELETE FROM subscriptions WHERE id = ?').bind(existing.id).run();
+  return jsonResponse({ success: true }, 200, env);
 }
 
 // ------------------------------------------------------------

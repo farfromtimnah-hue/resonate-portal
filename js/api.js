@@ -100,6 +100,15 @@ export const api = {
   zohoUpdateInvoiceItems: (id, data) => req('PUT', `/api/zoho/invoices/${id}/items`, data),
   zohoFinalizeInvoice:    (id)       => req('POST', `/api/zoho/invoices/${id}/finalize`),
 
+  // Financial Health — live Zoho reads + manual subscriptions (admin)
+  zohoExpenses:          (params = '') => req('GET', `/api/zoho/expenses${params}`),
+  zohoExpenseCategories: ()            => req('GET', '/api/zoho/expensecategories'),
+  zohoPayments:          (params = '') => req('GET', `/api/zoho/payments${params}`),
+  subscriptions:         ()       => req('GET',    '/api/subscriptions'),
+  createSubscription:    (d)      => req('POST',   '/api/subscriptions', d),
+  updateSubscription:    (id, d)  => req('PUT',    `/api/subscriptions/${id}`, d),
+  deleteSubscription:    (id)     => req('DELETE', `/api/subscriptions/${id}`),
+
   // Bank reconciliation (admin)
   bankTransactions: ()        => req('GET',  '/api/bank/transactions'),
   bankImport:       (rows)    => req('POST', '/api/bank/transactions', { transactions: rows }),
