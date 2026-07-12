@@ -197,15 +197,31 @@ function renderContent() {
 
 // ---- Invoices ----
 
+// Client-side tab state — 'unpaid' | 'archive'. Drafts never show here.
+let _invoiceTab = 'unpaid';
+
 function renderInvoices(invoices) {
   const section = document.getElementById('portal-invoices-section');
   const list    = document.getElementById('portal-invoices');
   if (!section || !list) return;
 
   // Drafts and voided invoices are internal — clients only see actionable ones
-  const visible = (invoices || []).filter(inv => inv.status !== 'draft' && inv.status !== 'void');
-  section.classList.toggle('hidden', visible.length === 0);
-  if (visible.length === 0) return;
+  const all      = (invoices || []).filter(inv => inv.status !== 'draft' && inv.status !== 'void');
+  const unpaid   = all.filter(inv => inv.is_archived !== 1);
+  const archived = all.filter(inv => inv.is_archived === 1);
+  section.classList.toggle('hidden', all.length === 0);
+  if (all.length === 0) return;
+
+  // Tab buttons (wired every render — innerHTML below never touches them)
+  document.getElementById('inv-tab-btn-unpaid').onclick  = () => { _invoiceTab = 'unpaid';  renderInvoices(invoices); };
+  document.getElementById('inv-tab-btn-archive').onclick = () => { _invoiceTab = 'archive'; renderInvoices(invoices); };
+  document.getElementById('inv-tab-btn-unpaid').classList.toggle('portal-tab--active',  _invoiceTab === 'unpaid');
+  document.getElementById('inv-tab-btn-archive').classList.toggle('portal-tab--active', _invoiceTab === 'archive');
+
+  const visible = _invoiceTab === 'archive' ? archived : unpaid;
+  const emptyEl = document.getElementById('portal-invoices-empty');
+  emptyEl.classList.toggle('hidden', visible.length > 0);
+  emptyEl.textContent = t(`books_empty_${_invoiceTab}`);
 
   const locale = _lang === 'pt' ? 'pt-BR' : 'en-US';
   list.innerHTML = visible.map(inv => {

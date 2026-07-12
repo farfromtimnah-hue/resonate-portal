@@ -133,6 +133,9 @@ function renderInvoices(invoices) {
   const empty = document.getElementById('invoices-empty');
   if (!list) return;
 
+  // Archived invoices live on the Books page Archive tab, not here
+  invoices = invoices.filter(inv => inv.is_archived !== 1);
+
   empty.classList.toggle('hidden', invoices.length > 0);
   list.innerHTML = invoices.map(inv => {
     const money = inv.amount != null

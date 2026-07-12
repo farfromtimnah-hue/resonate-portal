@@ -92,6 +92,25 @@ export async function routeZoho(request, env, user, url, method, path) {
     return jsonResponse({ success: true }, 200, env);
   }
 
+  // GET /api/zoho/invoices — every cached invoice with its client, for the admin books view
+  if (method === 'GET' && path === '/api/zoho/invoices') {
+    requireAdminRole(user);
+    var { results } = await env.DB.prepare(
+      `SELECT i.*, c.name AS client_name, c.business_name AS client_business_name,
+              c.email AS client_email, c.whatsapp AS client_whatsapp
+       FROM client_invoices i
+       JOIN clients c ON c.id = i.client_id
+       ORDER BY i.due_date DESC, i.invoice_number DESC`
+    ).all();
+    return jsonResponse(results, 200, env);
+  }
+
+  // POST /api/zoho/sync — best-effort sync for every client that can be matched to Zoho
+  if (method === 'POST' && path === '/api/zoho/sync') {
+    requireAdminRole(user);
+    return handleSyncAll(env);
+  }
+
   // POST /api/zoho/sync/:client_id — pull this client's invoices from Zoho into D1
   var params = match('/api/zoho/sync/:client_id', path);
   if (params && method === 'POST') {
@@ -99,14 +118,15 @@ export async function routeZoho(request, env, user, url, method, path) {
     return handleSyncInvoices(params.client_id, env);
   }
 
-  // GET /api/clients/:id/invoices — cached invoice list (admin or the client's own)
+  // GET /api/clients/:id/invoices — cached invoice list (admin or the client's own).
+  // Archived rows are included; front-ends split them into their Archive tab.
   params = match('/api/clients/:id/invoices', path);
   if (params && method === 'GET') {
     if (user.role === 'client' && user.client_id !== parseInt(params.id)) {
       throw new ApiError('Forbidden', 403);
     }
     var { results } = await env.DB.prepare(
-      'SELECT * FROM client_invoices WHERE client_id = ? AND is_archived = 0 ORDER BY due_date DESC, invoice_number DESC'
+      'SELECT * FROM client_invoices WHERE client_id = ? ORDER BY due_date DESC, invoice_number DESC'
     ).bind(params.id).all();
     return jsonResponse(results, 200, env);
   }
@@ -167,13 +187,9 @@ async function resolveZohoCustomerId(client, access, env) {
   return String(contact.contact_id);
 }
 
-async function handleSyncInvoices(clientId, env) {
-  var access = await getZohoAccess(env);   // throws 409 zoho_not_connected when unusable
-  if (!access.organizationId) throw new ApiError('zoho_organization_missing', 409);
-
-  var client = await env.DB.prepare('SELECT * FROM clients WHERE id = ?').bind(clientId).first();
-  if (!client) throw new ApiError('Client not found', 404);
-
+// Pulls one client's invoices from Zoho and upserts them into client_invoices.
+// Returns the number of invoices synced.
+async function syncClientInvoices(client, access, env) {
   var customerId = await resolveZohoCustomerId(client, access, env);
   var list = await zohoGet(access, `/invoices?customer_id=${encodeURIComponent(customerId)}`);
   var invoices = list?.invoices ?? [];
@@ -208,11 +224,43 @@ async function handleSyncInvoices(clientId, env) {
       row.balance, row.currency_code, row.due_date, row.payment_url, now
     ).run();
   }
+  return invoices.length;
+}
+
+async function handleSyncInvoices(clientId, env) {
+  var access = await getZohoAccess(env);   // throws 409 zoho_not_connected when unusable
+  if (!access.organizationId) throw new ApiError('zoho_organization_missing', 409);
+
+  var client = await env.DB.prepare('SELECT * FROM clients WHERE id = ?').bind(clientId).first();
+  if (!client) throw new ApiError('Client not found', 404);
+
+  var synced = await syncClientInvoices(client, access, env);
 
   var { results } = await env.DB.prepare(
     'SELECT * FROM client_invoices WHERE client_id = ? AND is_archived = 0 ORDER BY due_date DESC, invoice_number DESC'
   ).bind(client.id).all();
-  return jsonResponse({ synced: invoices.length, invoices: results }, 200, env);
+  return jsonResponse({ synced, invoices: results }, 200, env);
+}
+
+// Best-effort sync across all active clients. Clients that cannot be matched
+// to a Zoho customer (no email / no contact) are skipped, never fatal.
+async function handleSyncAll(env) {
+  var access = await getZohoAccess(env);
+  if (!access.organizationId) throw new ApiError('zoho_organization_missing', 409);
+
+  var { results: clients } = await env.DB.prepare(
+    'SELECT * FROM clients WHERE zoho_customer_id IS NOT NULL OR email IS NOT NULL'
+  ).all();
+
+  var synced = 0, skipped = [];
+  for (var client of clients) {
+    try {
+      synced += await syncClientInvoices(client, access, env);
+    } catch (e) {
+      skipped.push({ client_id: client.id, reason: e.message });
+    }
+  }
+  return jsonResponse({ synced, skipped }, 200, env);
 }
 
 // ------------------------------------------------------------

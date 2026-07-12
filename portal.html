@@ -145,7 +145,14 @@
     <div id="portal-invoices-section" class="bg-white rounded-lg border border-black/5 p-6 shadow-sm mb-5 hidden">
       <p class="text-[#717781] text-[11px] uppercase font-semibold tracking-widest mb-4"
          data-i18n="section_invoices">Invoices</p>
+      <div class="portal-tabs" style="margin:-6px 0 8px;">
+        <button id="inv-tab-btn-unpaid" class="portal-tab portal-tab--active"
+                data-i18n="books_tab_unpaid">Unpaid</button>
+        <button id="inv-tab-btn-archive" class="portal-tab"
+                data-i18n="books_tab_archive">Archive</button>
+      </div>
       <div id="portal-invoices" class="flex flex-col"></div>
+      <div id="portal-invoices-empty" class="text-[#717781] text-[13px] py-4 hidden"></div>
     </div>
 
     <!-- Messages -->

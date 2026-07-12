@@ -191,6 +191,23 @@ const STRINGS = {
     loading:                  'Loading…',
     error_generic:            'Something went wrong. Please try again.',
 
+    // Books / Invoicing
+    nav_books:                'Books',
+    books_title:              'Books & Invoicing',
+    books_tab_draft:          'Draft',
+    books_tab_unpaid:         'Unpaid',
+    books_tab_archive:        'Archive',
+    books_col_client:         'Client',
+    books_col_invoice:        'Invoice',
+    books_col_status:         'Status',
+    books_col_amount:         'Amount',
+    books_col_balance:        'Balance',
+    books_col_due:            'Due Date',
+    books_sync:               'Sync from Zoho',
+    books_empty_draft:        'No draft invoices.',
+    books_empty_unpaid:       'No unpaid invoices.',
+    books_empty_archive:      'No archived invoices.',
+
     // Invoices (Zoho)
     section_invoices:         'Invoices',
     invoice_pay_now:          'Pay Now',
@@ -373,6 +390,23 @@ const STRINGS = {
     all_complete_notice:      'Todos os projetos estão concluídos. Pronto para arquivar?',
     loading:                  'Carregando…',
     error_generic:            'Algo deu errado. Tente novamente.',
+
+    // Books / Invoicing
+    nav_books:                'Faturamento',
+    books_title:              'Faturamento',
+    books_tab_draft:          'Rascunho',
+    books_tab_unpaid:         'Não Pagas',
+    books_tab_archive:        'Arquivo',
+    books_col_client:         'Cliente',
+    books_col_invoice:        'Fatura',
+    books_col_status:         'Status',
+    books_col_amount:         'Valor',
+    books_col_balance:        'Saldo',
+    books_col_due:            'Vencimento',
+    books_sync:               'Sincronizar com Zoho',
+    books_empty_draft:        'Nenhuma fatura em rascunho.',
+    books_empty_unpaid:       'Nenhuma fatura em aberto.',
+    books_empty_archive:      'Nenhuma fatura arquivada.',
 
     // Invoices (Zoho)
     section_invoices:         'Faturas',
