@@ -229,6 +229,22 @@ const STRINGS = {
     inv_restore:              'Restore',
     inv_send:                 'Send',
 
+    // Financial Health
+    fin_title:                'Financial Health',
+    fin_aging_heading:        'AR Aging',
+    fin_aging_copy:           'Outstanding balances by days past due, from cached unpaid invoices.',
+    fin_bucket_current:       'Current',
+    fin_bucket_1_30:          '1–30 days',
+    fin_bucket_31_60:         '31–60 days',
+    fin_bucket_61_90:         '61–90 days',
+    fin_bucket_90_plus:       '90+ days',
+    fin_total_outstanding:    'Total Outstanding',
+    fin_invoices_count:       'invoices',
+    fin_tax_heading:          'Tax Summary',
+    fin_tax_copy:             'No sales tax is charged on any invoice.',
+    fin_tax_collected:        'Sales tax collected',
+    fin_tax_owed:             'Sales tax owed',
+
     // Invoices (Zoho)
     section_invoices:         'Invoices',
     invoice_pay_now:          'Pay Now',
@@ -449,6 +465,22 @@ const STRINGS = {
     inv_archive:              'Arquivar',
     inv_restore:              'Restaurar',
     inv_send:                 'Enviar',
+
+    // Financial Health
+    fin_title:                'Saúde Financeira',
+    fin_aging_heading:        'Contas a Receber (Aging)',
+    fin_aging_copy:           'Saldos em aberto por dias de atraso, a partir das faturas não pagas em cache.',
+    fin_bucket_current:       'Em dia',
+    fin_bucket_1_30:          '1–30 dias',
+    fin_bucket_31_60:         '31–60 dias',
+    fin_bucket_61_90:         '61–90 dias',
+    fin_bucket_90_plus:       '90+ dias',
+    fin_total_outstanding:    'Total em Aberto',
+    fin_invoices_count:       'faturas',
+    fin_tax_heading:          'Resumo de Impostos',
+    fin_tax_copy:             'Nenhum imposto sobre vendas é cobrado em nenhuma fatura.',
+    fin_tax_collected:        'Impostos coletados',
+    fin_tax_owed:             'Impostos devidos',
 
     // Invoices (Zoho)
     section_invoices:         'Faturas',
