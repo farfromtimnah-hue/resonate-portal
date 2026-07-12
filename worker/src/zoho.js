@@ -185,6 +185,21 @@ export async function routeZoho(request, env, user, url, method, path) {
     return handleListExpenseCategories(env);
   }
 
+  // POST /api/zoho/expenses — manual expense entry (Financial Tools), admin-only.
+  // Writes straight to Zoho — no local cache — so it flows into the same
+  // Profit & Loss / Expenses-by-Category reads as every other Zoho expense.
+  if (method === 'POST' && path === '/api/zoho/expenses') {
+    requireAdminRole(user);
+    return handleCreateExpense(request, env);
+  }
+
+  // DELETE /api/zoho/expenses/:id
+  params = match('/api/zoho/expenses/:id', path);
+  if (params && method === 'DELETE') {
+    requireAdminRole(user);
+    return handleDeleteExpense(params.id, env);
+  }
+
   // GET /api/zoho/payments?date_start&date_end — live customer payments (income)
   if (method === 'GET' && path === '/api/zoho/payments') {
     requireAdminRole(user);
@@ -331,6 +346,112 @@ async function handleListPayments(url, env) {
     invoice_numbers: p.invoice_numbers ?? null,
     payment_mode:    p.payment_mode ?? null,
   })), 200, env);
+}
+
+// ------------------------------------------------------------
+// Manual expense entry (Financial Tools) — writes straight to
+// Zoho, no local cache table, so it appears in the same P&L /
+// category reads as every other Zoho expense immediately.
+// ------------------------------------------------------------
+
+// Category and "paid through" are free text in the UI but Zoho's create-expense
+// call needs account ids, so both resolve by case-insensitive name match against
+// Zoho's own lists — creating the category on the fly if it doesn't exist yet,
+// since expense categories are meant to be freely added.
+async function resolveExpenseAccountId(access, name) {
+  var data = await zohoGet(access, '/expensecategories');
+  var categories = data?.expense_categories ?? data?.categories ?? [];
+  var match = categories.find(c =>
+    (c.category_name ?? c.account_name ?? '').trim().toLowerCase() === name.trim().toLowerCase()
+  );
+  if (match) return String(match.category_id ?? match.account_id);
+
+  var created = await zohoPost(access, '/expensecategories', { category_name: name });
+  var cat = created?.expense_category ?? created?.category;
+  if (!cat?.category_id && !cat?.account_id) throw new ApiError('zoho_expense_category_create_failed', 502);
+  return String(cat.category_id ?? cat.account_id);
+}
+
+// "Paid through" accounts have no listing endpoint in the Invoice API, only
+// in Books — so this resolves by name against whatever /bankaccounts returns
+// where available, and surfaces a clear error otherwise rather than guessing.
+async function resolvePaidThroughAccountId(access, name) {
+  var data;
+  try {
+    data = await zohoGet(access, '/bankaccounts');
+  } catch (e) {
+    throw new ApiError('zoho_paid_through_lookup_unavailable', 502);
+  }
+  var accounts = data?.bankaccounts ?? data?.chartofaccounts ?? [];
+  var match = accounts.find(a =>
+    (a.account_name ?? '').trim().toLowerCase() === name.trim().toLowerCase()
+  );
+  if (!match) throw new ApiError('zoho_paid_through_account_not_found', 404);
+  return String(match.account_id);
+}
+
+async function handleCreateExpense(request, env) {
+  var access = await requireZohoAccess(env);
+  var body = await request.json();
+
+  var description = (body?.description ?? '').trim();
+  var amount       = Number(body?.amount);
+  var date         = (body?.date ?? '').trim();
+  var category     = (body?.category ?? '').trim();
+  var paidThrough  = (body?.paid_through ?? '').trim();
+
+  if (!description)              throw new ApiError('description required', 400);
+  if (isNaN(amount) || amount <= 0) throw new ApiError('amount must be a positive number', 400);
+  if (!date)                     throw new ApiError('date required', 400);
+  if (!category)                 throw new ApiError('category required', 400);
+  if (!paidThrough)              throw new ApiError('paid_through required', 400);
+
+  var [accountId, paidThroughAccountId] = await Promise.all([
+    resolveExpenseAccountId(access, category),
+    resolvePaidThroughAccountId(access, paidThrough),
+  ]);
+
+  var payload = {
+    date,
+    amount,
+    account_id: accountId,
+    paid_through_account_id: paidThroughAccountId,
+    description,
+  };
+  var data = await zohoPost(access, '/expenses', payload);
+  var expense = data?.expense;
+  if (!expense?.expense_id) throw new ApiError('zoho_expense_create_failed', 502);
+
+  return jsonResponse({
+    expense_id:    String(expense.expense_id),
+    date:          expense.date ?? date,
+    category_name: expense.category_name ?? category,
+    description:   expense.description ?? description,
+    total:         expense.total ?? amount,
+    currency_code: expense.currency_code ?? null,
+    status:        expense.status ?? null,
+  }, 201, env);
+}
+
+async function handleDeleteExpense(id, env) {
+  var access = await requireZohoAccess(env);
+  var sep = '/expenses/' + encodeURIComponent(id);
+  var res = await fetch(
+    `${access.apiDomain}/invoice/v3${sep}?organization_id=${encodeURIComponent(access.organizationId ?? '')}`,
+    {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Zoho-oauthtoken ${access.accessToken}`,
+        'X-com-zoho-invoice-organizationid': access.organizationId ?? '',
+      },
+    }
+  );
+  var data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    console.error('Zoho API error:', sep, res.status, JSON.stringify(data).slice(0, 500));
+    throw new ApiError('zoho_api_error', 502);
+  }
+  return jsonResponse({ success: true }, 200, env);
 }
 
 // ------------------------------------------------------------

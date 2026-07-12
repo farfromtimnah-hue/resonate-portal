@@ -231,6 +231,7 @@ const STRINGS = {
 
     // Financial Health
     fin_title:                'Financial Health',
+    fin_tools_title:          'Financial Tools',
     fin_aging_heading:        'AR Aging',
     fin_aging_copy:           'Outstanding balances by days past due, from cached unpaid invoices.',
     fin_bucket_current:       'Current',
@@ -275,6 +276,26 @@ const STRINGS = {
     fin_annual_expenses:      'Total expenses',
     fin_annual_net:           'Net',
     fin_annual_by_cat:        'Expenses by category',
+    fin_annual_print:         'Print',
+
+    // Financial Tools — manual expenses + client billing details
+    fin_exp_heading:          'Add Expense',
+    fin_exp_copy:             'Recorded directly in Zoho — appears in Profit & Loss and Expenses by Category immediately.',
+    fin_exp_description:      'Description',
+    fin_exp_amount:           'Amount',
+    fin_exp_date:             'Date',
+    fin_exp_category:         'Category',
+    fin_exp_paid_through:     'Paid Through',
+    fin_exp_add:              'Add Expense',
+    fin_exp_recent:           'Recently Added',
+    fin_exp_recent_empty:     'No expenses added yet this session.',
+    fin_exp_delete_confirm:   'Delete this expense?',
+    fin_billing_heading:      'Client Billing Details',
+    fin_billing_copy:         'Email, phone, and billing address used on invoices for the selected client.',
+    fin_billing_client:       'Client',
+    fin_billing_email:        'Email',
+    fin_billing_phone:        'Phone',
+    fin_billing_address:      'Billing address',
 
     // Bank reconciliation
     recon_title:              'Bank Reconciliation',
@@ -519,6 +540,7 @@ const STRINGS = {
 
     // Financial Health
     fin_title:                'Saúde Financeira',
+    fin_tools_title:          'Ferramentas Financeiras',
     fin_aging_heading:        'Contas a Receber (Aging)',
     fin_aging_copy:           'Saldos em aberto por dias de atraso, a partir das faturas não pagas em cache.',
     fin_bucket_current:       'Em dia',
@@ -563,6 +585,26 @@ const STRINGS = {
     fin_annual_expenses:      'Despesas totais',
     fin_annual_net:           'Líquido',
     fin_annual_by_cat:        'Despesas por categoria',
+    fin_annual_print:         'Imprimir',
+
+    // Financial Tools — despesas manuais + dados de faturamento do cliente
+    fin_exp_heading:          'Adicionar Despesa',
+    fin_exp_copy:             'Registrada diretamente no Zoho — aparece em Lucros e Perdas e Despesas por Categoria imediatamente.',
+    fin_exp_description:      'Descrição',
+    fin_exp_amount:           'Valor',
+    fin_exp_date:             'Data',
+    fin_exp_category:         'Categoria',
+    fin_exp_paid_through:     'Pago Através de',
+    fin_exp_add:              'Adicionar Despesa',
+    fin_exp_recent:           'Adicionadas Recentemente',
+    fin_exp_recent_empty:     'Nenhuma despesa adicionada nesta sessão.',
+    fin_exp_delete_confirm:   'Excluir esta despesa?',
+    fin_billing_heading:      'Dados de Faturamento do Cliente',
+    fin_billing_copy:         'Email, telefone e endereço de cobrança usados nas faturas do cliente selecionado.',
+    fin_billing_client:       'Cliente',
+    fin_billing_email:        'Email',
+    fin_billing_phone:        'Telefone',
+    fin_billing_address:      'Endereço de cobrança',
 
     // Bank reconciliation
     recon_title:              'Conciliação Bancária',

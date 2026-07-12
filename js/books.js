@@ -21,15 +21,23 @@ async function init() {
   });
 
   initPillBar();
-  await initInvoices();   // default-visible panel loads immediately
+  await initFinancial();   // default-visible panel (Financial Health) loads immediately
 }
 
 // ---- Pill tab bar — switches panels in place, no navigation --------
+// AR Aging and Tax Summary share Financial Health's data load (same Zoho
+// year fetches), so all three route through the one `financial` lazy init.
 
 const PANEL_INIT = {
   financial:      { fn: initFinancial,      started: false },
+  aging:          { fn: initFinancial,      started: false, sharedWith: 'financial' },
+  tax:            { fn: initFinancial,      started: false, sharedWith: 'financial' },
+  invoices:       { fn: initInvoices,       started: false },
   reconciliation: { fn: initReconciliation, started: false },
+  tools:          { fn: initTools,          started: false },
 };
+// Financial Health starts already loaded (init() calls it directly above).
+PANEL_INIT.financial.started = true;
 
 function initPillBar() {
   document.querySelectorAll('.finance-pill').forEach(btn => {
@@ -48,7 +56,10 @@ async function switchFinanceTab(tab) {
   });
 
   const lazy = PANEL_INIT[tab];
-  if (lazy && !lazy.started) {
+  if (!lazy) return;
+  const gate = lazy.sharedWith ? PANEL_INIT[lazy.sharedWith] : lazy;
+  if (!gate.started) {
+    gate.started = true;
     lazy.started = true;
     await lazy.fn();
   }
@@ -570,6 +581,7 @@ let _editingSubId  = null; // null = creating
 async function initFinancial() {
   document.getElementById('pl-period').addEventListener('change', renderPeriodSections);
   document.getElementById('annual-year').addEventListener('change', renderAnnual);
+  document.getElementById('annual-print-btn').addEventListener('click', () => window.print());
 
   document.getElementById('sub-add-btn').addEventListener('click', () => openSubscriptionModal(null));
   document.getElementById('sub-save-btn').addEventListener('click', saveSubscription);
@@ -604,13 +616,17 @@ async function initFinancial() {
 
     document.getElementById('fin-loading').classList.add('hidden');
     document.getElementById('fin-content').classList.remove('hidden');
+    document.getElementById('aging-loading').classList.add('hidden');
+    document.getElementById('aging-content').classList.remove('hidden');
   } catch (err) {
     const messages = {
       zoho_not_connected:        'Zoho is not connected yet — use Connect Zoho Invoice on the dashboard first.',
       zoho_organization_missing: 'Zoho connection has no organization — reconnect from the dashboard.',
       zoho_api_error:            'Zoho rejected the request. Please try again.',
     };
-    document.getElementById('fin-loading').textContent = messages[err.message] || err.message;
+    const text = messages[err.message] || err.message;
+    document.getElementById('fin-loading').textContent = text;
+    document.getElementById('aging-loading').textContent = text;
   }
 }
 
@@ -947,6 +963,187 @@ function renderAging(invoices) {
       <div class="aging-tile__amount">${esc(money(sums[b.key]))}</div>
       <div class="aging-tile__count">${counts[b.key]} ${esc(t('fin_invoices_count'))}</div>
     </div>`).join('');
+}
+
+// ============================================================
+// Panel: Financial Tools — manual expense entry + client
+// billing details. Expenses write straight to Zoho (no local
+// cache), so they show up in Financial Health's P&L / category
+// breakdown immediately. The "recently added" list here is
+// session-only, just a receipt of what this page just created.
+// ============================================================
+
+let _recentExpenses = [];   // session-only, newest first
+let _toolsClients    = null;
+
+async function initTools() {
+  document.getElementById('exp-save-btn').addEventListener('click', createExpense);
+  document.getElementById('exp-recent-list').addEventListener('click', onExpenseAction);
+
+  document.getElementById('exp-date').value = new Date().toISOString().slice(0, 10);
+  loadExpenseCategoryOptions();
+
+  document.getElementById('billing-client').addEventListener('change', onBillingClientChange);
+  document.getElementById('billing-save-btn').addEventListener('click', saveBillingDetails);
+  await loadBillingClients();
+
+  renderRecentExpenses();
+}
+
+// ---- Manual expense entry ----
+
+async function loadExpenseCategoryOptions() {
+  try {
+    const categories = await api.zohoExpenseCategories();
+    document.getElementById('exp-category-list').innerHTML =
+      categories.map(c => `<option value="${esc(c.category_name)}"></option>`).join('');
+  } catch (err) { /* datalist is a convenience — silently skip on failure */ }
+}
+
+function expError(msg) {
+  const el = document.getElementById('exp-error');
+  el.textContent   = msg || '';
+  el.style.display = msg ? 'block' : 'none';
+}
+
+async function createExpense() {
+  expError(null);
+  const data = {
+    description:  document.getElementById('exp-description').value.trim(),
+    amount:       parseFloat(document.getElementById('exp-amount').value),
+    date:         document.getElementById('exp-date').value,
+    category:     document.getElementById('exp-category').value.trim(),
+    paid_through: document.getElementById('exp-paid-through').value.trim(),
+  };
+  if (!data.description)                      { expError('Enter a description.'); return; }
+  if (isNaN(data.amount) || data.amount <= 0)  { expError('Enter a valid amount.'); return; }
+  if (!data.date)                              { expError('Pick a date.'); return; }
+  if (!data.category)                          { expError('Enter a category.'); return; }
+  if (!data.paid_through)                      { expError('Enter a paid-through account.'); return; }
+
+  const btn = document.getElementById('exp-save-btn');
+  btn.disabled = true;
+  try {
+    const expense = await api.zohoCreateExpense(data);
+    _recentExpenses.unshift(expense);
+    renderRecentExpenses();
+
+    document.getElementById('exp-description').value  = '';
+    document.getElementById('exp-amount').value        = '';
+    document.getElementById('exp-category').value      = '';
+    document.getElementById('exp-paid-through').value  = '';
+    toast('Expense added in Zoho.', 'success');
+  } catch (err) {
+    const messages = {
+      zoho_not_connected:                    'Zoho is not connected — use Connect Zoho Invoice on the dashboard first.',
+      zoho_organization_missing:             'Zoho connection has no organization — reconnect from the dashboard.',
+      zoho_paid_through_account_not_found:   'No Zoho account matches that Paid Through name exactly — check spelling against Zoho.',
+      zoho_paid_through_lookup_unavailable:  'Could not look up Paid Through accounts in Zoho right now.',
+      zoho_expense_category_create_failed:   'Could not create that expense category in Zoho.',
+      zoho_expense_create_failed:            'Zoho did not accept the expense. Please try again.',
+      zoho_api_error:                        'Zoho rejected the request. Please try again.',
+    };
+    expError(messages[err.message] || err.message);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function renderRecentExpenses() {
+  const list  = document.getElementById('exp-recent-list');
+  const empty = document.getElementById('exp-recent-empty');
+  empty.classList.toggle('hidden', _recentExpenses.length > 0);
+
+  list.innerHTML = _recentExpenses.map(e => `
+    <div class="sub-row" data-expense-id="${esc(e.expense_id)}">
+      <span class="text-primary-fixed-dim text-[13px] font-semibold">${esc(e.description)}</span>
+      <span class="text-outline-variant text-[13px]">${esc(money(e.total))}</span>
+      <span class="sub-cell--optional text-outline-variant text-[13px]">${esc(e.category_name || '—')}</span>
+      <span class="sub-cell--optional text-outline-variant text-[13px]">${esc(e.date || '—')}</span>
+      <div class="flex items-center gap-2 justify-end">
+        <button data-action="delete" data-id="${esc(e.expense_id)}"
+                class="text-outline-variant hover:text-red-400 text-[11px] uppercase tracking-widest px-3 py-1.5 rounded-full border border-white/10 transition-colors">
+          ${esc(t('delete'))}
+        </button>
+      </div>
+    </div>`).join('');
+}
+
+async function onExpenseAction(e) {
+  const btn = e.target.closest('button[data-action="delete"]');
+  if (!btn) return;
+  if (!confirm(t('fin_exp_delete_confirm'))) return;
+
+  btn.disabled = true;
+  try {
+    await api.zohoDeleteExpense(btn.dataset.id);
+    _recentExpenses = _recentExpenses.filter(x => x.expense_id !== btn.dataset.id);
+    renderRecentExpenses();
+    toast('Expense deleted.', 'success');
+  } catch (err) {
+    toast(err.message, 'error');
+    btn.disabled = false;
+  }
+}
+
+// ---- Client Billing Details ----
+
+async function loadBillingClients() {
+  const select = document.getElementById('billing-client');
+  select.innerHTML = `<option value="">${esc(t('loading'))}</option>`;
+  try {
+    _toolsClients = await api.clients();
+    select.innerHTML = `<option value="">—</option>` + _toolsClients.map(c =>
+      `<option value="${c.id}">${esc(c.business_name || c.name)}</option>`
+    ).join('');
+  } catch (err) {
+    select.innerHTML = `<option value="">—</option>`;
+    toast(err.message, 'error');
+  }
+}
+
+function billingError(msg) {
+  const el = document.getElementById('billing-error');
+  el.textContent   = msg || '';
+  el.style.display = msg ? 'block' : 'none';
+}
+
+function onBillingClientChange() {
+  billingError(null);
+  const id = document.getElementById('billing-client').value;
+  const fields = document.getElementById('billing-fields');
+  if (!id) { fields.classList.add('hidden'); return; }
+
+  const client = (_toolsClients || []).find(c => String(c.id) === id);
+  document.getElementById('billing-email').value   = client?.email   || '';
+  document.getElementById('billing-phone').value   = client?.whatsapp || client?.phone || '';
+  document.getElementById('billing-address').value = client?.address || '';
+  fields.classList.remove('hidden');
+}
+
+async function saveBillingDetails() {
+  billingError(null);
+  const id = document.getElementById('billing-client').value;
+  if (!id) return;
+
+  const data = {
+    email:    document.getElementById('billing-email').value.trim() || null,
+    whatsapp: document.getElementById('billing-phone').value.trim() || null,
+    address:  document.getElementById('billing-address').value.trim() || null,
+  };
+
+  const btn = document.getElementById('billing-save-btn');
+  btn.disabled = true;
+  try {
+    const updated = await api.updateClient(id, data);
+    const idx = (_toolsClients || []).findIndex(c => c.id === updated.id);
+    if (idx >= 0) _toolsClients[idx] = { ..._toolsClients[idx], ...updated };
+    toast('Billing details saved.', 'success');
+  } catch (err) {
+    billingError(err.message);
+  } finally {
+    btn.disabled = false;
+  }
 }
 
 // ============================================================

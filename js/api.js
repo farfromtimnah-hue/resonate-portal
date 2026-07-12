@@ -101,8 +101,10 @@ export const api = {
   zohoFinalizeInvoice:    (id)       => req('POST', `/api/zoho/invoices/${id}/finalize`),
 
   // Financial Health — live Zoho reads + manual subscriptions (admin)
-  zohoExpenses:          (params = '') => req('GET', `/api/zoho/expenses${params}`),
-  zohoExpenseCategories: ()            => req('GET', '/api/zoho/expensecategories'),
+  zohoExpenses:          (params = '') => req('GET',    `/api/zoho/expenses${params}`),
+  zohoExpenseCategories: ()            => req('GET',    '/api/zoho/expensecategories'),
+  zohoCreateExpense:     (d)           => req('POST',   '/api/zoho/expenses', d),
+  zohoDeleteExpense:     (id)          => req('DELETE', `/api/zoho/expenses/${id}`),
   zohoPayments:          (params = '') => req('GET', `/api/zoho/payments${params}`),
   subscriptions:         ()       => req('GET',    '/api/subscriptions'),
   createSubscription:    (d)      => req('POST',   '/api/subscriptions', d),

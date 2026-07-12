@@ -215,24 +215,36 @@
 
   <!-- Persistent finance pill tab bar — switches panels in place, no navigation -->
   <nav class="finance-pill-bar" role="tablist" aria-label="Finance sections">
-    <button type="button" class="finance-pill finance-pill--active" data-finance-tab="invoices" role="tab" aria-selected="true">
-      <span class="material-symbols-outlined text-[15px]">receipt_long</span>
-      <span data-i18n="books_title">Books &amp; Invoicing</span>
-    </button>
-    <button type="button" class="finance-pill" data-finance-tab="financial" role="tab" aria-selected="false">
+    <button type="button" class="finance-pill finance-pill--active" data-finance-tab="financial" role="tab" aria-selected="true">
       <span class="material-symbols-outlined text-[15px]">monitoring</span>
       <span data-i18n="fin_title">Financial Health</span>
+    </button>
+    <button type="button" class="finance-pill" data-finance-tab="invoices" role="tab" aria-selected="false">
+      <span class="material-symbols-outlined text-[15px]">receipt_long</span>
+      <span data-i18n="books_title">Books &amp; Invoicing</span>
     </button>
     <button type="button" class="finance-pill" data-finance-tab="reconciliation" role="tab" aria-selected="false">
       <span class="material-symbols-outlined text-[15px]">account_balance</span>
       <span data-i18n="recon_title">Bank Reconciliation</span>
+    </button>
+    <button type="button" class="finance-pill" data-finance-tab="aging" role="tab" aria-selected="false">
+      <span class="material-symbols-outlined text-[15px]">hourglass_top</span>
+      <span data-i18n="fin_aging_heading">AR Aging</span>
+    </button>
+    <button type="button" class="finance-pill" data-finance-tab="tax" role="tab" aria-selected="false">
+      <span class="material-symbols-outlined text-[15px]">summarize</span>
+      <span data-i18n="fin_annual_heading">Tax Summary</span>
+    </button>
+    <button type="button" class="finance-pill" data-finance-tab="tools" role="tab" aria-selected="false">
+      <span class="material-symbols-outlined text-[15px]">construction</span>
+      <span data-i18n="fin_tools_title">Financial Tools</span>
     </button>
   </nav>
 
   <!-- ══════════════════════════════════════════════════════════
        Panel: Books & Invoicing
   ═══════════════════════════════════════════════════════════ -->
-  <div id="finance-panel-invoices" class="finance-panel finance-panel--active space-y-8">
+  <div id="finance-panel-invoices" class="finance-panel space-y-8">
 
     <div class="flex items-start justify-end gap-3 flex-wrap">
       <button id="sync-all-btn"
@@ -274,7 +286,7 @@
   <!-- ══════════════════════════════════════════════════════════
        Panel: Financial Health
   ═══════════════════════════════════════════════════════════ -->
-  <div id="finance-panel-financial" class="finance-panel space-y-8">
+  <div id="finance-panel-financial" class="finance-panel finance-panel--active space-y-8">
     <p id="fin-subtitle" class="text-outline-variant text-[13px]"></p>
 
     <div id="fin-loading" class="loading">Loading…</div>
@@ -353,47 +365,6 @@
         <div id="subs-empty" class="text-outline-variant text-[13px] py-6 text-center hidden" data-i18n="fin_subs_empty">No subscriptions yet. Add the first one.</div>
       </section>
 
-      <!-- Annual Tax-Filing Summary — income + expenses only, for the accountant -->
-      <section class="bg-inverse-surface rounded-lg border border-white/5 p-6">
-        <div class="flex items-baseline justify-between gap-4 flex-wrap mb-1">
-          <p class="text-outline-variant text-[11px] uppercase font-semibold tracking-widest" data-i18n="fin_annual_heading">Annual Tax-Filing Summary</p>
-          <select id="annual-year" class="fin-select"></select>
-        </div>
-        <p class="text-outline-variant text-[12px] mb-5" data-i18n="fin_annual_copy">Paid-invoice income and expenses by category for the chosen year — ready to hand to your accountant.</p>
-        <div id="annual-loading" class="loading hidden">Loading…</div>
-        <div id="annual-body">
-          <div class="aging-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom: 18px;">
-            <div class="aging-tile">
-              <div class="aging-tile__label" data-i18n="fin_annual_income">Paid-invoice income</div>
-              <div id="annual-income" class="aging-tile__amount">$0.00</div>
-            </div>
-            <div class="aging-tile">
-              <div class="aging-tile__label" data-i18n="fin_annual_expenses">Total expenses</div>
-              <div id="annual-expenses" class="aging-tile__amount" style="color:#ffb781;">$0.00</div>
-            </div>
-            <div class="aging-tile">
-              <div class="aging-tile__label" data-i18n="fin_annual_net">Net</div>
-              <div id="annual-net" class="aging-tile__amount">$0.00</div>
-            </div>
-          </div>
-          <p class="text-outline-variant text-[11px] uppercase font-semibold tracking-widest mb-2" data-i18n="fin_annual_by_cat">Expenses by category</p>
-          <div id="annual-cats"></div>
-        </div>
-      </section>
-
-      <!-- AR Aging -->
-      <section class="bg-inverse-surface rounded-lg border border-white/5 p-6">
-        <div class="flex items-baseline justify-between gap-4 flex-wrap mb-1">
-          <p class="text-outline-variant text-[11px] uppercase font-semibold tracking-widest" data-i18n="fin_aging_heading">AR Aging</p>
-          <div class="flex items-baseline gap-2">
-            <span class="text-outline-variant text-[11px] uppercase tracking-widest" data-i18n="fin_total_outstanding">Total Outstanding</span>
-            <span id="aging-total" class="text-primary-fixed-dim text-[22px] font-bold">$0.00</span>
-          </div>
-        </div>
-        <p class="text-outline-variant text-[12px] mb-5" data-i18n="fin_aging_copy">Outstanding balances by days past due, from cached unpaid invoices.</p>
-        <div id="aging-grid" class="aging-grid"></div>
-      </section>
-
     </div>
   </div>
 
@@ -434,6 +405,150 @@
       <div id="txn-empty" class="text-outline-variant text-[13px] py-8 text-center hidden"></div>
       <div id="txn-loading" class="loading">Loading…</div>
     </section>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       Panel: AR Aging
+  ═══════════════════════════════════════════════════════════ -->
+  <div id="finance-panel-aging" class="finance-panel space-y-8">
+    <div id="aging-loading" class="loading">Loading…</div>
+    <div id="aging-content" class="hidden space-y-8">
+      <section class="bg-inverse-surface rounded-lg border border-white/5 p-6">
+        <div class="flex items-baseline justify-between gap-4 flex-wrap mb-1">
+          <p class="text-outline-variant text-[11px] uppercase font-semibold tracking-widest" data-i18n="fin_aging_heading">AR Aging</p>
+          <div class="flex items-baseline gap-2">
+            <span class="text-outline-variant text-[11px] uppercase tracking-widest" data-i18n="fin_total_outstanding">Total Outstanding</span>
+            <span id="aging-total" class="text-primary-fixed-dim text-[22px] font-bold">$0.00</span>
+          </div>
+        </div>
+        <p class="text-outline-variant text-[12px] mb-5" data-i18n="fin_aging_copy">Outstanding balances by days past due, from cached unpaid invoices.</p>
+        <div id="aging-grid" class="aging-grid"></div>
+      </section>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       Panel: Tax Summary
+  ═══════════════════════════════════════════════════════════ -->
+  <div id="finance-panel-tax" class="finance-panel space-y-8">
+    <section class="bg-inverse-surface rounded-lg border border-white/5 p-6">
+      <div class="flex items-baseline justify-between gap-4 flex-wrap mb-1">
+        <p class="text-outline-variant text-[11px] uppercase font-semibold tracking-widest" data-i18n="fin_annual_heading">Annual Tax-Filing Summary</p>
+        <div class="flex items-center gap-3">
+          <select id="annual-year" class="fin-select"></select>
+          <button id="annual-print-btn" type="button"
+                  class="flex items-center gap-1.5 text-outline-variant hover:text-primary-fixed-dim text-[12px] uppercase tracking-widest transition-colors px-4 py-2 rounded-full border border-white/10">
+            <span class="material-symbols-outlined text-[15px]">print</span>
+            <span data-i18n="fin_annual_print">Print</span>
+          </button>
+        </div>
+      </div>
+      <p class="text-outline-variant text-[12px] mb-5" data-i18n="fin_annual_copy">Paid-invoice income and expenses by category for the chosen year — ready to hand to your accountant.</p>
+      <div id="annual-loading" class="loading hidden">Loading…</div>
+      <div id="annual-body">
+        <div class="aging-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom: 18px;">
+          <div class="aging-tile">
+            <div class="aging-tile__label" data-i18n="fin_annual_income">Paid-invoice income</div>
+            <div id="annual-income" class="aging-tile__amount">$0.00</div>
+          </div>
+          <div class="aging-tile">
+            <div class="aging-tile__label" data-i18n="fin_annual_expenses">Total expenses</div>
+            <div id="annual-expenses" class="aging-tile__amount" style="color:#ffb781;">$0.00</div>
+          </div>
+          <div class="aging-tile">
+            <div class="aging-tile__label" data-i18n="fin_annual_net">Net</div>
+            <div id="annual-net" class="aging-tile__amount">$0.00</div>
+          </div>
+        </div>
+        <p class="text-outline-variant text-[11px] uppercase font-semibold tracking-widest mb-2" data-i18n="fin_annual_by_cat">Expenses by category</p>
+        <div id="annual-cats"></div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       Panel: Financial Tools
+  ═══════════════════════════════════════════════════════════ -->
+  <div id="finance-panel-tools" class="finance-panel space-y-8">
+
+    <!-- Manual expense entry -->
+    <section class="bg-inverse-surface rounded-lg border border-white/5 p-6">
+      <p class="text-outline-variant text-[11px] uppercase font-semibold tracking-widest mb-1" data-i18n="fin_exp_heading">Add Expense</p>
+      <p class="text-outline-variant text-[12px] mb-5" data-i18n="fin_exp_copy">Recorded directly in Zoho — appears in Profit &amp; Loss and Expenses by Category immediately.</p>
+
+      <div id="exp-error" style="display:none; background:#fee2e2; color:#b91c1c;
+           border-radius:.5rem; padding:.75rem 1rem; font-size:13px; margin-bottom:1rem;
+           font-family:'Plus Jakarta Sans',sans-serif;"></div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" data-i18n="fin_exp_description">Description</label>
+          <input id="exp-description" type="text" class="form-control" placeholder="">
+        </div>
+        <div class="form-group">
+          <label class="form-label" data-i18n="fin_exp_amount">Amount</label>
+          <input id="exp-amount" type="number" class="form-control" min="0" step="0.01" placeholder="0.00">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" data-i18n="fin_exp_date">Date</label>
+          <input id="exp-date" type="date" class="form-control">
+        </div>
+        <div class="form-group">
+          <label class="form-label" data-i18n="fin_exp_category">Category</label>
+          <input id="exp-category" type="text" class="form-control" list="exp-category-list" placeholder="">
+          <datalist id="exp-category-list"></datalist>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" data-i18n="fin_exp_paid_through">Paid Through</label>
+        <input id="exp-paid-through" type="text" class="form-control" placeholder="">
+      </div>
+
+      <div class="flex justify-end" style="margin-top:8px;">
+        <button id="exp-save-btn" class="btn btn--primary" data-i18n="fin_exp_add">Add Expense</button>
+      </div>
+
+      <p class="text-outline-variant text-[11px] uppercase font-semibold tracking-widest mt-8 mb-3" data-i18n="fin_exp_recent">Recently Added</p>
+      <div id="exp-recent-list"></div>
+      <div id="exp-recent-empty" class="text-outline-variant text-[13px] py-6 text-center hidden" data-i18n="fin_exp_recent_empty">No expenses added yet this session.</div>
+    </section>
+
+    <!-- Client Billing Details -->
+    <section class="bg-inverse-surface rounded-lg border border-white/5 p-6">
+      <p class="text-outline-variant text-[11px] uppercase font-semibold tracking-widest mb-1" data-i18n="fin_billing_heading">Client Billing Details</p>
+      <p class="text-outline-variant text-[12px] mb-5" data-i18n="fin_billing_copy">Email, phone, and billing address used on invoices for the selected client.</p>
+
+      <div id="billing-error" style="display:none; background:#fee2e2; color:#b91c1c;
+           border-radius:.5rem; padding:.75rem 1rem; font-size:13px; margin-bottom:1rem;
+           font-family:'Plus Jakarta Sans',sans-serif;"></div>
+
+      <div class="form-group">
+        <label class="form-label" data-i18n="fin_billing_client">Client</label>
+        <select id="billing-client" class="form-control"></select>
+      </div>
+      <div id="billing-fields" class="hidden">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" data-i18n="fin_billing_email">Email</label>
+            <input id="billing-email" type="email" class="form-control" placeholder="">
+          </div>
+          <div class="form-group">
+            <label class="form-label" data-i18n="fin_billing_phone">Phone</label>
+            <input id="billing-phone" type="text" class="form-control" placeholder="">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" data-i18n="fin_billing_address">Billing address</label>
+          <input id="billing-address" type="text" class="form-control" placeholder="">
+        </div>
+        <div class="flex justify-end" style="margin-top:8px;">
+          <button id="billing-save-btn" class="btn btn--primary" data-i18n="save">Save</button>
+        </div>
+      </div>
+    </section>
+
   </div>
 
 </main>
