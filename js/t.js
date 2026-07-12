@@ -227,6 +227,7 @@ const STRINGS = {
     inv_finalize_confirm:     'Finalize this draft? It moves to Unpaid in Zoho. Sending it to the client is a separate action.',
     inv_archive:              'Archive',
     inv_restore:              'Restore',
+    inv_send:                 'Send',
 
     // Invoices (Zoho)
     section_invoices:         'Invoices',
@@ -447,6 +448,7 @@ const STRINGS = {
     inv_finalize_confirm:     'Finalizar este rascunho? Ele passa a Não Paga no Zoho. Enviar ao cliente é uma ação separada.',
     inv_archive:              'Arquivar',
     inv_restore:              'Restaurar',
+    inv_send:                 'Enviar',
 
     // Invoices (Zoho)
     section_invoices:         'Faturas',

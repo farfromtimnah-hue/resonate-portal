@@ -170,7 +170,8 @@ function rowActionsHTML(inv) {
            actionBtn('finalize', esc(t('inv_finalize')), true);
   }
   // Unpaid tab (sent / overdue / partially paid / paid awaiting archive)
-  return viewLink + actionBtn('archive', esc(t('inv_archive')));
+  const send = inv.status !== 'paid' ? actionBtn('send', esc(t('inv_send')), true) : '';
+  return viewLink + actionBtn('archive', esc(t('inv_archive'))) + send;
 }
 
 async function onRowAction(e) {
@@ -183,6 +184,83 @@ async function onRowAction(e) {
   if (btn.dataset.action === 'finalize') return finalizeInvoice(inv, btn);
   if (btn.dataset.action === 'archive')  return setArchived(inv, btn, true);
   if (btn.dataset.action === 'restore')  return setArchived(inv, btn, false);
+  if (btn.dataset.action === 'send')     return showSendMenu(inv, btn);
+}
+
+// ---- Send via WhatsApp or Email (Books Phase 7) ------------------
+// Deep links only — Send never touches Zoho status; Finalize is separate.
+// The menu items are plain <a href> anchors built synchronously here, so
+// navigation happens directly in the user's click — no popup blocking.
+
+function sendMessageFor(inv) {
+  const lang    = inv.client_language === 'pt' ? 'pt' : 'en';
+  const name    = (inv.client_name || '').trim().split(/\s+/)[0] || '';
+  const number  = inv.invoice_number || inv.zoho_invoice_id;
+  const amount  = money(inv.balance ?? inv.amount, inv.currency_code);
+  const viewUrl = new URL(invoiceTemplateUrl(inv, lang), window.location.href).href;
+  const due     = inv.due_date || '';
+
+  const msgEn = `Hi ${name}! Your invoice ${number} (${amount}${due ? `, due ${due}` : ''}) is ready. View it here: ${viewUrl}`;
+  const msgPt = `Oi ${name}! Sua fatura ${number} (${amount}${due ? `, vencimento ${due}` : ''}) está pronta. Veja aqui: ${viewUrl}`;
+  return { lang, subject: lang === 'pt' ? `Fatura ${number} — Resonate` : `Invoice ${number} — Resonate`,
+           text: lang === 'pt' ? msgPt : msgEn };
+}
+
+function showSendMenu(inv, anchorEl) {
+  let menu = document.getElementById('books-send-menu');
+  if (!menu) {
+    menu = document.createElement('div');
+    menu.id = 'books-send-menu';
+    menu.className = 'share-menu';
+    document.body.appendChild(menu);
+  }
+
+  const { subject, text } = sendMessageFor(inv);
+  const waNum  = (inv.client_whatsapp || '').replace(/[\s\-\(\)\+]/g, '');
+  const waHref = waNum
+    ? `https://wa.me/${waNum}?text=${encodeURIComponent(text)}`
+    : `https://wa.me/?text=${encodeURIComponent(text)}`;
+  const mailHref = `mailto:${encodeURIComponent(inv.client_email || '')}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(text)}`;
+
+  menu.innerHTML = `
+    <a class="share-menu__item" href="${esc(waHref)}" target="_blank" rel="noopener noreferrer">
+      <span class="share-menu__icon">💬</span>WhatsApp
+    </a>
+    <a class="share-menu__item" href="${esc(mailHref)}">
+      <span class="share-menu__icon">✉️</span>Email
+    </a>`;
+  menu.querySelectorAll('a').forEach(a => a.addEventListener('click', hideSendMenu));
+
+  const rect = anchorEl.getBoundingClientRect();
+  const menuWidth = 172;
+  menu.style.display = 'block';
+  menu.style.top  = `${rect.bottom + window.scrollY + 6}px`;
+  menu.style.left = `${Math.min(rect.left + window.scrollX, window.innerWidth - menuWidth - 12)}px`;
+
+  const close = (e) => {
+    if (!menu.contains(e.target) && e.target !== anchorEl) {
+      hideSendMenu();
+      document.removeEventListener('click', close, true);
+      document.removeEventListener('keydown', onEsc);
+    }
+  };
+  const onEsc = (e) => {
+    if (e.key === 'Escape') {
+      hideSendMenu();
+      document.removeEventListener('click', close, true);
+      document.removeEventListener('keydown', onEsc);
+    }
+  };
+  // Defer so the Send button's own click doesn't immediately close the menu
+  setTimeout(() => {
+    document.addEventListener('click', close, true);
+    document.addEventListener('keydown', onEsc);
+  }, 0);
+}
+
+function hideSendMenu() {
+  const menu = document.getElementById('books-send-menu');
+  if (menu) menu.style.display = 'none';
 }
 
 // ---- Lifecycle actions ----

@@ -97,7 +97,8 @@ export async function routeZoho(request, env, user, url, method, path) {
     requireAdminRole(user);
     var { results } = await env.DB.prepare(
       `SELECT i.*, c.name AS client_name, c.business_name AS client_business_name,
-              c.email AS client_email, c.whatsapp AS client_whatsapp
+              c.email AS client_email, c.whatsapp AS client_whatsapp,
+              c.language_preference AS client_language
        FROM client_invoices i
        JOIN clients c ON c.id = i.client_id
        ORDER BY i.due_date DESC, i.invoice_number DESC`
