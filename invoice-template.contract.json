@@ -1,0 +1,30 @@
+{
+  "$comment": "Data contract for invoice-template.html. The template loads GET {API_BASE}/api/public/invoices/{zoho_invoice_id} (opened as invoice-template.html?invoice_id={zoho_invoice_id}) and expects exactly this shape, populated from the client_invoices cache. Keep in sync with handlePublicInvoice in worker/src/zoho.js. No tax fields anywhere — this business charges no sales tax.",
+  "invoice_number": "INV-000042",
+  "status": "sent",
+  "currency_code": "USD",
+  "amount": 1500.0,
+  "balance": 1500.0,
+  "sub_total": 1500.0,
+  "due_date": "2026-08-01",
+  "last_synced_at": "2026-07-12T00:00:00.000Z",
+  "payment_url": "https://zohosecurepay.com/invoice/…",
+  "line_items": [
+    {
+      "line_item_id": "1234567890123456789",
+      "name": "Website build",
+      "description": "Five-page marketing site",
+      "quantity": 1,
+      "rate": 1500.0,
+      "amount": 1500.0
+    }
+  ],
+  "client": {
+    "name": "Alice Prata",
+    "business_name": "Company LLC",
+    "email": "client@example.com",
+    "address": "City, State",
+    "logo_url": "https://…/logo.png",
+    "language_preference": "en"
+  }
+}

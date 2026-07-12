@@ -141,6 +141,11 @@ function invoiceRowHTML(inv) {
     </div>`;
 }
 
+// Builds the invoice-template.html URL for an invoice (Ver Fatura / View Invoice)
+export function invoiceTemplateUrl(inv, lang = 'en') {
+  return `invoice-template.html?invoice_id=${encodeURIComponent(inv.zoho_invoice_id)}&lang=${lang}`;
+}
+
 // Per-row actions depend on where the invoice sits in its lifecycle.
 function rowActionsHTML(inv) {
   const actionBtn = (action, label, primary = false) => `
@@ -150,16 +155,22 @@ function rowActionsHTML(inv) {
               : 'text-outline-variant hover:text-primary-fixed-dim text-[11px] uppercase tracking-widest px-3 py-1.5 rounded-full border border-white/10 transition-colors'}">
       ${label}
     </button>`;
+  const viewLink = `
+    <a href="${esc(invoiceTemplateUrl(inv))}" target="_blank" rel="noopener"
+       class="text-outline-variant hover:text-primary-fixed-dim text-[11px] uppercase tracking-widest px-3 py-1.5 rounded-full border border-white/10 whitespace-nowrap no-underline transition-colors">
+      ${esc(t('invoice_view'))}
+    </a>`;
 
   if (inv.is_archived === 1) {
-    return actionBtn('restore', esc(t('inv_restore')));
+    return viewLink + actionBtn('restore', esc(t('inv_restore')));
   }
   if (inv.status === 'draft') {
-    return actionBtn('edit', esc(t('inv_edit'))) +
+    return viewLink +
+           actionBtn('edit', esc(t('inv_edit'))) +
            actionBtn('finalize', esc(t('inv_finalize')), true);
   }
   // Unpaid tab (sent / overdue / partially paid / paid awaiting archive)
-  return actionBtn('archive', esc(t('inv_archive')));
+  return viewLink + actionBtn('archive', esc(t('inv_archive')));
 }
 
 async function onRowAction(e) {

@@ -231,13 +231,12 @@ function renderInvoices(invoices) {
     const due = inv.due_date
       ? `${t('invoice_due')}: ${new Date(inv.due_date + 'T00:00:00').toLocaleDateString(locale, { day: 'numeric', month: 'short', year: 'numeric' })}`
       : '';
-    // Pay Now only for payable invoices with a synced hosted-payment URL;
-    // paid ones keep a quiet view link, no URL → no button at all
-    let action = '';
-    if (inv.payment_url) {
-      action = inv.status === 'paid'
-        ? `<a href="${esc(inv.payment_url)}" target="_blank" rel="noopener" class="text-[12px] text-[#005b96] underline whitespace-nowrap">${esc(t('invoice_view'))}</a>`
-        : `<a href="${esc(inv.payment_url)}" target="_blank" rel="noopener" class="btn btn--primary btn--sm whitespace-nowrap">${esc(t('invoice_pay_now'))}</a>`;
+    // Ver Fatura / View Invoice always opens the branded template;
+    // Pay Now stays only on payable invoices with a hosted-payment URL
+    const templateUrl = `invoice-template.html?invoice_id=${encodeURIComponent(inv.zoho_invoice_id)}&lang=${_lang}`;
+    let action = `<a href="${esc(templateUrl)}" target="_blank" rel="noopener" class="text-[12px] text-[#005b96] underline whitespace-nowrap">${esc(t('invoice_view'))}</a>`;
+    if (inv.payment_url && inv.status !== 'paid') {
+      action += ` <a href="${esc(inv.payment_url)}" target="_blank" rel="noopener" class="btn btn--primary btn--sm whitespace-nowrap">${esc(t('invoice_pay_now'))}</a>`;
     }
     return `
       <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid rgba(0,0,0,0.05);">
@@ -248,7 +247,7 @@ function renderInvoices(invoices) {
           </div>
           <div class="text-[#717781] text-[12px] mt-1">${esc(money)}${due ? ` · ${esc(due)}` : ''}</div>
         </div>
-        ${action}
+        <div class="flex items-center gap-3 whitespace-nowrap">${action}</div>
       </div>`;
   }).join('');
 }

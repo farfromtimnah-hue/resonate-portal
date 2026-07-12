@@ -557,6 +557,48 @@ async function handleSyncAll(env) {
 }
 
 // ------------------------------------------------------------
+// Public invoice read (Books Phase 6) — powers the custom
+// invoice template. No auth: keyed by the long Zoho invoice id
+// (same public-read pattern as /api/public/projects/:id) and
+// returns only the display fields in the template's JSON contract.
+// ------------------------------------------------------------
+export async function handlePublicInvoice(zohoInvoiceId, env) {
+  var row = await env.DB.prepare(
+    'SELECT * FROM client_invoices WHERE zoho_invoice_id = ?'
+  ).bind(zohoInvoiceId).first();
+  if (!row) throw new ApiError('Invoice not found', 404);
+
+  var client = await env.DB.prepare(
+    'SELECT name, business_name, email, address, logo_url, language_preference FROM clients WHERE id = ?'
+  ).bind(row.client_id).first();
+
+  var lineItems = [];
+  try { lineItems = JSON.parse(row.line_items) ?? []; } catch (e) { lineItems = []; }
+
+  // Shape defined in invoice-template.contract.json — keep the two in sync.
+  return jsonResponse({
+    invoice_number: row.invoice_number,
+    status:         row.status,
+    currency_code:  row.currency_code,
+    amount:         row.amount,
+    balance:        row.balance,
+    sub_total:      row.sub_total,
+    due_date:       row.due_date,
+    last_synced_at: row.last_synced_at,
+    payment_url:    row.payment_url,
+    line_items:     lineItems,
+    client: {
+      name:                client?.name ?? null,
+      business_name:       client?.business_name ?? null,
+      email:               client?.email ?? null,
+      address:             client?.address ?? null,
+      logo_url:            client?.logo_url ?? null,
+      language_preference: client?.language_preference ?? 'en',
+    },
+  }, 200, env);
+}
+
+// ------------------------------------------------------------
 // OAuth callback — hit by Zoho's browser redirect, so it runs
 // BEFORE authenticate() in the fetch handler (no Firebase token).
 // CSRF is covered by the state check against D1.

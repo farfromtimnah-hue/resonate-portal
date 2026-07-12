@@ -6,7 +6,7 @@
 // ============================================================
 
 import { routeInterview } from './interview.js';
-import { routeZoho, handleZohoOAuthCallback } from './zoho.js';
+import { routeZoho, handleZohoOAuthCallback, handlePublicInvoice } from './zoho.js';
 
 export default {
   async fetch(request, env, ctx) {
@@ -47,6 +47,13 @@ export default {
       const publicParams = match('/api/public/projects/:id', path);
       if (publicParams && method === 'GET') {
         return handlePublicProject(publicParams.id, env);
+      }
+
+      // GET /api/public/invoices/:zoho_invoice_id — no auth required; keyed by the
+      // long Zoho invoice id so View Invoice links work from WhatsApp/email
+      const publicInvoiceParams = match('/api/public/invoices/:zid', path);
+      if (publicInvoiceParams && method === 'GET') {
+        return handlePublicInvoice(publicInvoiceParams.zid, env);
       }
 
       // GET /api/zoho/oauth/callback — hit by Zoho's browser redirect (no Firebase token)

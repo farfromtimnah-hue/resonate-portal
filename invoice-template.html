@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Invoice — Resonate</title>
+
+  <!-- Fonts only — no runtime JS dependencies. Data shape: invoice-template.contract.json -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700&family=Newsreader:opsz,wght@6..72,500;6..72,700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --brand:       #005b96;
+      --brand-hover: #004370;
+      --navy:        #0a1628;
+      --navy-deep:   #001d35;
+      --gold:        #C9A427;
+      --paper:       #F8F7F4;
+      --ink:         #191c20;
+      --ink-2:       #414750;
+      --ink-3:       #717781;
+      --font:        'Plus Jakarta Sans', system-ui, sans-serif;
+      --serif:       'Newsreader', serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #e7e6e2; font-family: var(--font); color: var(--ink-2); }
+
+    .sheet {
+      max-width: 820px; margin: 24px auto; background: var(--paper);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.10), 0 4px 8px rgba(0,0,0,0.06);
+      border-radius: 12px; overflow: hidden;
+    }
+
+    /* ── Hero ─────────────────────────────────────────────── */
+    .hero { position: relative; height: 220px; background: var(--navy); }
+    .hero img.hero__bg {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      object-fit: cover; object-position: center;
+    }
+    .hero__tiles {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      gap: 0; padding: 36px 48px;
+    }
+    .hero__tile {
+      flex: 1 1 0; height: 100%;
+      background: rgba(248,247,244,0.14);
+      -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+      border: 1px solid rgba(248,247,244,0.25);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      text-align: center; padding: 12px 20px; color: #fff;
+    }
+    .hero__tile--left  { border-radius: 12px 0 0 12px; border-right: none; }
+    .hero__tile--right { border-radius: 0 12px 12px 0; border-left: none; }
+    .hero__rule { width: 2px; height: 100%; background: var(--gold); flex: 0 0 2px; }
+    .hero__wordmark {
+      font-family: var(--serif); font-weight: 700; font-size: 30px;
+      letter-spacing: -0.02em; color: #fff;
+    }
+    .hero__tagline { font-size: 10px; letter-spacing: .18em; text-transform: uppercase; color: rgba(255,255,255,0.75); margin-top: 6px; }
+    .hero__client-logo { max-height: 76px; max-width: 80%; object-fit: contain; background: rgba(255,255,255,0.9); border-radius: 8px; padding: 8px 14px; }
+    .hero__client-name { font-family: var(--serif); font-weight: 500; font-size: 24px; letter-spacing: -0.01em; color: #fff; }
+
+    /* ── Body ─────────────────────────────────────────────── */
+    .body { padding: 40px 48px 48px; }
+
+    .meta { display: flex; justify-content: space-between; gap: 24px; flex-wrap: wrap; margin-bottom: 32px; }
+    .meta h1 { font-family: var(--serif); font-weight: 700; font-size: 30px; color: var(--navy-deep); letter-spacing: -0.02em; }
+    .meta .inv-number { color: var(--brand); }
+    .meta__dates { text-align: right; font-size: 13px; color: var(--ink-3); line-height: 1.9; }
+    .meta__dates strong { color: var(--ink); font-weight: 600; }
+    .status-pill {
+      display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: .12em;
+      text-transform: uppercase; padding: 4px 12px; border-radius: 9999px;
+      border: 1px solid currentColor; margin-top: 6px;
+    }
+    .status--overdue        { color: #b45309; }
+    .status--paid           { color: #16a34a; }
+    .status--partially_paid { color: #0e7490; }
+    .status--sent, .status--viewed, .status--unpaid { color: var(--brand); }
+    .status--draft, .status--void { color: var(--ink-3); }
+
+    .billto { margin-bottom: 32px; }
+    .label { font-size: 10px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 6px; }
+    .billto__name { font-size: 16px; font-weight: 700; color: var(--ink); }
+    .billto__line { font-size: 13px; color: var(--ink-3); line-height: 1.6; }
+
+    /* Line items */
+    table.items { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
+    table.items th {
+      font-family: var(--serif); font-weight: 700; font-size: 15px; color: var(--navy-deep);
+      text-align: left; padding: 10px 8px; border-bottom: 2px solid var(--brand);
+    }
+    table.items th.num, table.items td.num { text-align: right; }
+    table.items td { font-size: 13.5px; padding: 12px 8px; border-bottom: 1px solid #e1e2e8; vertical-align: top; }
+    table.items td .item-name { font-weight: 600; color: var(--ink); }
+    table.items td .item-desc { color: var(--ink-3); font-size: 12.5px; margin-top: 2px; line-height: 1.5; }
+
+    .totals { display: flex; justify-content: flex-end; margin: 12px 0 40px; }
+    .totals__box { min-width: 260px; font-size: 13.5px; }
+    .totals__row { display: flex; justify-content: space-between; padding: 6px 8px; color: var(--ink-2); }
+    .totals__row--grand {
+      border-top: 2px solid var(--brand); margin-top: 6px; padding-top: 10px;
+      font-family: var(--serif); font-size: 19px; font-weight: 700; color: var(--navy-deep);
+    }
+    .totals__row--balance { color: var(--brand); font-weight: 700; }
+
+    /* ── Payments ─────────────────────────────────────────── */
+    .payments { border-top: 1px solid #e1e2e8; padding-top: 32px; }
+    .payments h2 { font-family: var(--serif); font-weight: 700; font-size: 22px; color: var(--navy-deep); margin-bottom: 18px; letter-spacing: -0.01em; }
+
+    .pay-zelle {
+      display: flex; gap: 20px; align-items: center;
+      background: #fff; border: 1px solid #e1e2e8; border-left: 3px solid var(--gold);
+      border-radius: 12px; padding: 20px; margin-bottom: 16px;
+    }
+    .pay-zelle__qr { width: 128px; height: 128px; flex: 0 0 128px; border-radius: 8px; object-fit: contain; background: #fff; }
+    .pay-zelle__qr--placeholder {
+      display: flex; align-items: center; justify-content: center; text-align: center;
+      border: 1.5px dashed #c1c7d1; color: var(--ink-3); font-size: 11px; line-height: 1.5; padding: 10px;
+    }
+    .pay-zelle__title { font-size: 15px; font-weight: 700; color: var(--ink); margin-bottom: 4px; }
+    .pay-zelle__copy  { font-size: 13px; color: var(--ink-3); line-height: 1.6; }
+    .pay-zelle__copy strong { color: var(--ink-2); }
+
+    .pay-bank {
+      background: #fff; border: 1px solid #e1e2e8; border-radius: 12px;
+      padding: 18px 20px; margin-bottom: 20px;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+    }
+    .pay-bank h3 { font-size: 12px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--brand); margin-bottom: 8px; }
+    .pay-bank dl { font-size: 12.5px; line-height: 1.8; color: var(--ink-3); }
+    .pay-bank dt { display: inline; font-weight: 600; color: var(--ink-2); }
+    .pay-bank dd { display: inline; margin: 0 0 0 4px; }
+    .pay-bank .row { display: block; }
+
+    .pay-card { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+    .pay-card__btn {
+      display: inline-block; background: var(--brand); color: #fff; text-decoration: none;
+      font-size: 12px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+      padding: 12px 28px; border-radius: 9999px; transition: background .15s;
+    }
+    .pay-card__btn:hover { background: var(--brand-hover); }
+    .pay-card__fee { font-size: 12px; color: var(--ink-3); }
+
+    /* ── Footer / print ───────────────────────────────────── */
+    .foot { text-align: center; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: #a0a4ae; padding: 22px 0 30px; }
+
+    .toolbar { max-width: 820px; margin: 16px auto 0; display: flex; justify-content: flex-end; padding: 0 4px; }
+    .toolbar button {
+      font-family: var(--font); font-size: 12px; font-weight: 600; letter-spacing: .08em;
+      text-transform: uppercase; color: var(--brand); background: none;
+      border: 1px solid var(--brand); border-radius: 9999px; padding: 8px 20px; cursor: pointer;
+    }
+    .toolbar button:hover { background: var(--brand); color: #fff; }
+
+    #load-state { max-width: 820px; margin: 60px auto; text-align: center; color: var(--ink-3); font-size: 14px; }
+
+    @media (max-width: 640px) {
+      .hero__tiles { padding: 20px 16px; }
+      .hero__wordmark { font-size: 22px; }
+      .hero__client-name { font-size: 17px; }
+      .body { padding: 28px 20px 36px; }
+      .pay-bank { grid-template-columns: 1fr; }
+      .pay-zelle { flex-direction: column; text-align: center; }
+    }
+
+    @media print {
+      body { background: #fff; }
+      .sheet { margin: 0; max-width: none; box-shadow: none; border-radius: 0; }
+      .toolbar, #load-state { display: none !important; }
+      .hero__tile { -webkit-backdrop-filter: none; backdrop-filter: none; background: rgba(10,22,40,0.55); }
+      .pay-card__btn { color: var(--brand); background: none; border: 1px solid var(--brand); }
+      @page { margin: 0; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="toolbar" id="print-toolbar" style="display:none;">
+  <button onclick="window.print()" id="print-btn">Print / PDF</button>
+</div>
+
+<div id="load-state">Loading invoice…</div>
+
+<div class="sheet" id="sheet" style="display:none;">
+
+  <!-- Hero: ripple still, two frosted tiles, gold rule between -->
+  <div class="hero">
+    <img class="hero__bg" src="assets/images/invoice-hero-ripple.jpg" alt="">
+    <div class="hero__tiles">
+      <div class="hero__tile hero__tile--left">
+        <div class="hero__wordmark">Resonate</div>
+        <div class="hero__tagline" id="hero-tagline">Business Systems</div>
+      </div>
+      <div class="hero__rule"></div>
+      <div class="hero__tile hero__tile--right" id="hero-client"></div>
+    </div>
+  </div>
+
+  <div class="body">
+
+    <!-- Invoice number + dates -->
+    <div class="meta">
+      <div>
+        <h1><span id="doc-title">Invoice</span> <span class="inv-number" id="inv-number"></span></h1>
+        <span class="status-pill" id="inv-status"></span>
+      </div>
+      <div class="meta__dates" id="inv-dates"></div>
+    </div>
+
+    <!-- Bill to -->
+    <div class="billto">
+      <div class="label" id="billto-label">Bill To</div>
+      <div class="billto__name" id="billto-name"></div>
+      <div class="billto__line" id="billto-lines"></div>
+    </div>
+
+    <!-- Line items -->
+    <table class="items">
+      <thead>
+        <tr>
+          <th id="th-item">Item</th>
+          <th class="num" id="th-qty">Qty</th>
+          <th class="num" id="th-rate">Rate</th>
+          <th class="num" id="th-amount">Amount</th>
+        </tr>
+      </thead>
+      <tbody id="items-body"></tbody>
+    </table>
+
+    <div class="totals">
+      <div class="totals__box" id="totals-box"></div>
+    </div>
+
+    <!-- Payments — business-wide config in PAYMENT_CONFIG below -->
+    <div class="payments">
+      <h2 id="pay-title">How to Pay</h2>
+
+      <!-- 1. Zelle — preferred, no fees -->
+      <div class="pay-zelle">
+        <img class="pay-zelle__qr" id="zelle-qr" src="assets/images/zelle-qr.png" alt="Zelle QR code">
+        <div>
+          <div class="pay-zelle__title" id="zelle-title">Zelle — preferred, no fees</div>
+          <div class="pay-zelle__copy" id="zelle-copy"></div>
+        </div>
+      </div>
+
+      <!-- 2. Wire / ACH -->
+      <div class="pay-bank">
+        <div>
+          <h3>Wire Transfer</h3>
+          <dl id="wire-details"></dl>
+        </div>
+        <div>
+          <h3>ACH</h3>
+          <dl id="ach-details"></dl>
+        </div>
+      </div>
+
+      <!-- 3. Card — hosted Zoho payment page, 3% processing fee, always last -->
+      <div class="pay-card" id="pay-card-row" style="display:none;">
+        <a class="pay-card__btn" id="pay-card-btn" target="_blank" rel="noopener">Pay by Card</a>
+        <span class="pay-card__fee" id="pay-card-fee">Card payments include a 3% processing fee.</span>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="foot">© Resonate Business Systems · An impact that ripples throughout</div>
+</div>
+
+<script>
+// ============================================================
+// Business-wide payment details (not per-client).
+// Nicole: fill these in once — they render on every invoice.
+// ============================================================
+var PAYMENT_CONFIG = {
+  zelle: {
+    recipient: 'Resonate Business Systems',
+    email:     'payments@resonateai.online',   // ← confirm Zelle email/phone
+  },
+  wire: {
+    bank_name:      '—',
+    routing_number: '—',
+    account_number: '—',
+    account_name:   'Resonate Business Systems',
+  },
+  ach: {
+    routing_number: '—',
+    account_number: '—',
+    account_type:   'Checking',
+    account_name:   'Resonate Business Systems',
+  },
+};
+
+var API_BASE = 'https://resonate-portal-api.farfromtimnah.workers.dev';
+
+// Minimal bilingual labels — ?lang=pt or the client's stored preference
+var L = {
+  en: { invoice:'Invoice', due:'Due', synced:'Issued via Zoho Invoice', billto:'Bill To',
+        item:'Item', qty:'Qty', rate:'Rate', amount:'Amount',
+        subtotal:'Subtotal', total:'Total', balance:'Balance Due',
+        pay:'How to Pay', zelle:'Zelle — preferred, no fees',
+        zelleCopy:'Scan the QR code in your banking app, or send to',
+        card:'Pay by Card', fee:'Card payments include a 3% processing fee.',
+        print:'Print / PDF', notFound:'Invoice not found.',
+        status:{draft:'Draft',sent:'Sent',viewed:'Viewed',unpaid:'Unpaid',partially_paid:'Partially Paid',overdue:'Overdue',paid:'Paid',void:'Void'} },
+  pt: { invoice:'Fatura', due:'Vencimento', synced:'Emitida via Zoho Invoice', billto:'Faturar Para',
+        item:'Item', qty:'Qtd', rate:'Valor Unit.', amount:'Valor',
+        subtotal:'Subtotal', total:'Total', balance:'Saldo Devedor',
+        pay:'Como Pagar', zelle:'Zelle — preferido, sem taxas',
+        zelleCopy:'Escaneie o código QR no aplicativo do seu banco, ou envie para',
+        card:'Pagar com Cartão', fee:'Pagamentos com cartão incluem taxa de processamento de 3%.',
+        print:'Imprimir / PDF', notFound:'Fatura não encontrada.',
+        status:{draft:'Rascunho',sent:'Enviada',viewed:'Visualizada',unpaid:'Em aberto',partially_paid:'Parcialmente paga',overdue:'Vencida',paid:'Paga',void:'Anulada'} },
+};
+
+function esc(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+function money(v, currency) {
+  if (v == null) return '—';
+  return new Intl.NumberFormat('en-US', { style:'currency', currency: currency || 'USD' }).format(v);
+}
+
+function bankRows(el, cfg, labels) {
+  el.innerHTML = Object.keys(labels).map(function (key) {
+    return '<span class="row"><dt>' + esc(labels[key]) + ':</dt><dd>' + esc(cfg[key]) + '</dd></span>';
+  }).join('');
+}
+
+async function init() {
+  var params = new URLSearchParams(location.search);
+  var invoiceId = params.get('invoice_id');
+  var loadEl = document.getElementById('load-state');
+
+  var data = null;
+  if (invoiceId) {
+    try {
+      var res = await fetch(API_BASE + '/api/public/invoices/' + encodeURIComponent(invoiceId), { cache: 'no-store' });
+      if (res.ok) data = await res.json();
+    } catch (e) { /* falls through to not-found */ }
+  }
+
+  var lang = params.get('lang') || (data && data.client && data.client.language_preference) || 'en';
+  var t = L[lang] || L.en;
+  document.documentElement.lang = lang;
+
+  if (!data) { loadEl.textContent = t.notFound; return; }
+
+  document.title = (data.invoice_number || t.invoice) + ' — Resonate';
+
+  // Hero right tile: client logo when available, else client name in serif
+  var heroClient = document.getElementById('hero-client');
+  var clientLabel = data.client.business_name || data.client.name || '';
+  var showClientName = function () {
+    heroClient.innerHTML = '<div class="hero__client-name">' + esc(clientLabel) + '</div>';
+  };
+  if (data.client.logo_url) {
+    var logo = document.createElement('img');
+    logo.className = 'hero__client-logo';
+    logo.alt = clientLabel;
+    logo.addEventListener('error', showClientName);
+    logo.src = data.client.logo_url;
+    heroClient.innerHTML = '';
+    heroClient.appendChild(logo);
+  } else {
+    showClientName();
+  }
+
+  // Meta
+  document.getElementById('doc-title').textContent  = t.invoice;
+  document.getElementById('inv-number').textContent = data.invoice_number || '';
+  var statusEl = document.getElementById('inv-status');
+  statusEl.textContent = (t.status[data.status] || data.status || '');
+  statusEl.className   = 'status-pill status--' + (data.status || 'draft');
+  document.getElementById('inv-dates').innerHTML =
+    (data.due_date ? '<span><strong>' + esc(t.due) + ':</strong> ' + esc(data.due_date) + '</span><br>' : '') +
+    '<span>' + esc(t.synced) + '</span>';
+
+  // Bill to
+  document.getElementById('billto-label').textContent = t.billto;
+  document.getElementById('billto-name').textContent  = clientLabel;
+  document.getElementById('billto-lines').innerHTML =
+    [data.client.name !== clientLabel ? data.client.name : null, data.client.address, data.client.email]
+      .filter(Boolean).map(esc).join('<br>');
+
+  // Line items
+  document.getElementById('th-item').textContent   = t.item;
+  document.getElementById('th-qty').textContent    = t.qty;
+  document.getElementById('th-rate').textContent   = t.rate;
+  document.getElementById('th-amount').textContent = t.amount;
+  var cur = data.currency_code;
+  document.getElementById('items-body').innerHTML = (data.line_items || []).map(function (li) {
+    return '<tr>' +
+      '<td><div class="item-name">' + esc(li.name) + '</div>' +
+        (li.description && li.description !== li.name ? '<div class="item-desc">' + esc(li.description) + '</div>' : '') + '</td>' +
+      '<td class="num">' + esc(li.quantity) + '</td>' +
+      '<td class="num">' + money(li.rate, cur) + '</td>' +
+      '<td class="num">' + money(li.amount, cur) + '</td>' +
+    '</tr>';
+  }).join('') || '<tr><td colspan="4" style="color:#717781;">—</td></tr>';
+
+  // Totals — no tax rows, ever
+  var totals = '';
+  if (data.sub_total != null && data.sub_total !== data.amount) {
+    totals += '<div class="totals__row"><span>' + esc(t.subtotal) + '</span><span>' + money(data.sub_total, cur) + '</span></div>';
+  }
+  totals += '<div class="totals__row totals__row--grand"><span>' + esc(t.total) + '</span><span>' + money(data.amount, cur) + '</span></div>';
+  if (data.balance != null && data.balance !== data.amount) {
+    totals += '<div class="totals__row totals__row--balance"><span>' + esc(t.balance) + '</span><span>' + money(data.balance, cur) + '</span></div>';
+  }
+  document.getElementById('totals-box').innerHTML = totals;
+
+  // Payments
+  document.getElementById('pay-title').textContent   = t.pay;
+  document.getElementById('zelle-title').textContent = t.zelle;
+  document.getElementById('zelle-copy').innerHTML =
+    esc(t.zelleCopy) + ' <strong>' + esc(PAYMENT_CONFIG.zelle.email) + '</strong><br>' +
+    esc(PAYMENT_CONFIG.zelle.recipient);
+
+  // Zelle QR placeholder when the image asset is missing.
+  // The <img> may have already failed before this script ran, so check
+  // the loaded state too, not just the error event.
+  var qr = document.getElementById('zelle-qr');
+  var qrPlaceholder = function () {
+    var ph = document.createElement('div');
+    ph.className = 'pay-zelle__qr pay-zelle__qr--placeholder';
+    ph.textContent = 'Zelle QR — drop zelle-qr.png into assets/images/';
+    qr.replaceWith(ph);
+  };
+  if (qr.complete && qr.naturalWidth === 0) qrPlaceholder();
+  else qr.addEventListener('error', qrPlaceholder);
+
+  bankRows(document.getElementById('wire-details'), PAYMENT_CONFIG.wire,
+    { bank_name:'Bank', routing_number:'Routing', account_number:'Account', account_name:'Name' });
+  bankRows(document.getElementById('ach-details'), PAYMENT_CONFIG.ach,
+    { routing_number:'Routing', account_number:'Account', account_type:'Type', account_name:'Name' });
+
+  // Card — Zoho hosted payment page, shown last, with the 3% fee note
+  if (data.payment_url) {
+    document.getElementById('pay-card-btn').href        = data.payment_url;
+    document.getElementById('pay-card-btn').textContent = t.card;
+    document.getElementById('pay-card-fee').textContent = t.fee;
+    document.getElementById('pay-card-row').style.display = '';
+  }
+
+  document.getElementById('print-btn').textContent = t.print;
+  loadEl.style.display = 'none';
+  document.getElementById('print-toolbar').style.display = '';
+  document.getElementById('sheet').style.display = '';
+}
+
+init();
+</script>
+</body>
+</html>
