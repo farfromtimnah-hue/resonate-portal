@@ -230,6 +230,41 @@
   </div>
 </div>
 
-<script type="module" src="js/books.js?v=2"></script>
+<!-- ── Edit Draft Invoice Modal ────────────────────────────── -->
+<div id="modal-edit-invoice" class="modal">
+  <div class="modal__box" style="max-width:640px;">
+    <div class="modal__head">
+      <span class="modal__title"><span data-i18n="inv_edit_title">Edit Draft Invoice</span> <span id="ei-number" class="text-outline-variant text-[13px]"></span></span>
+      <button type="button" class="modal__close" data-close="modal-edit-invoice">✕</button>
+    </div>
+    <div class="modal__body">
+      <div id="ei-error" style="display:none; background:#fee2e2; color:#b91c1c;
+           border-radius:.5rem; padding:.75rem 1rem; font-size:13px; margin-bottom:1rem;
+           font-family:'Plus Jakarta Sans',sans-serif;"></div>
+      <div class="form-group">
+        <label class="form-label" data-i18n="inv_form_line_items">Line Items</label>
+        <div id="ei-items" class="flex flex-col gap-2"></div>
+        <button id="ei-add-item-btn" type="button"
+                style="background:none; border:none; cursor:pointer; padding:6px 0 0; display:flex; align-items:center; gap:4px;
+                       font-family:'Plus Jakarta Sans',sans-serif; font-size:11px; font-weight:600;
+                       letter-spacing:.06em; text-transform:uppercase; color:rgba(193,199,209,0.5);"
+                onmouseover="this.style.color='#9ccaff'" onmouseout="this.style.color='rgba(193,199,209,0.5)'">
+          <span class="material-symbols-outlined" style="font-size:13px;">add</span>
+          <span data-i18n="inv_form_add_item">Add Item</span>
+        </button>
+      </div>
+      <div class="flex justify-end items-baseline gap-3" style="padding:4px 0 4px; border-top:1px solid rgba(255,255,255,0.08); margin-top:4px;">
+        <span class="text-outline-variant text-[11px] uppercase tracking-widest" data-i18n="inv_form_total">Total</span>
+        <span id="ei-total" class="text-primary-fixed-dim text-[18px] font-bold">$0.00</span>
+      </div>
+    </div>
+    <div class="modal__footer">
+      <button type="button" class="btn btn--secondary" data-close="modal-edit-invoice" data-i18n="cancel">Cancel</button>
+      <button id="ei-save-btn" class="btn btn--primary" data-i18n="inv_save_items">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<script type="module" src="js/books.js?v=3"></script>
 </body>
 </html>

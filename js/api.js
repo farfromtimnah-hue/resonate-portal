@@ -96,6 +96,8 @@ export const api = {
   zohoSyncInvoices: (clientId) => req('POST', `/api/zoho/sync/${clientId}`),
   zohoSyncAll:      ()         => req('POST', '/api/zoho/sync'),
   zohoCreateInvoice:(data)     => req('POST', '/api/zoho/invoices', data),
+  zohoInvoiceItems:       (id)       => req('GET', `/api/zoho/invoices/${id}/items`),
+  zohoUpdateInvoiceItems: (id, data) => req('PUT', `/api/zoho/invoices/${id}/items`, data),
   zohoAllInvoices:  ()         => req('GET',  '/api/zoho/invoices'),
   invoices:         (clientId) => req('GET',  `/api/clients/${clientId}/invoices`),
 

@@ -220,6 +220,9 @@ const STRINGS = {
     inv_form_total:           'Total',
     inv_create:               'Create Draft',
     inv_creating:             'Creating…',
+    inv_edit:                 'Edit',
+    inv_edit_title:           'Edit Draft Invoice',
+    inv_save_items:           'Save Changes',
 
     // Invoices (Zoho)
     section_invoices:         'Invoices',
@@ -433,6 +436,9 @@ const STRINGS = {
     inv_form_total:           'Total',
     inv_create:               'Criar Rascunho',
     inv_creating:             'Criando…',
+    inv_edit:                 'Editar',
+    inv_edit_title:           'Editar Fatura em Rascunho',
+    inv_save_items:           'Salvar Alterações',
 
     // Invoices (Zoho)
     section_invoices:         'Faturas',

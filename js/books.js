@@ -34,8 +34,15 @@ async function init() {
 
   // New Invoice modal
   document.getElementById('new-invoice-btn').addEventListener('click', openNewInvoice);
-  document.getElementById('ni-add-item-btn').addEventListener('click', () => addItemRow());
+  document.getElementById('ni-add-item-btn').addEventListener('click', () => addItemRow('ni-items', 'ni-total'));
   document.getElementById('ni-save-btn').addEventListener('click', createInvoice);
+
+  // Edit Draft modal
+  document.getElementById('ei-add-item-btn').addEventListener('click', () => addItemRow('ei-items', 'ei-total'));
+  document.getElementById('ei-save-btn').addEventListener('click', saveInvoiceItems);
+
+  // Row actions — event delegation on the list
+  document.getElementById('invoices-list').addEventListener('click', onRowAction);
   document.querySelectorAll('[data-close]').forEach(btn => {
     btn.addEventListener('click', () => closeModal(btn.dataset.close));
   });
@@ -130,8 +137,34 @@ function invoiceRowHTML(inv) {
       <span class="invoice-cell--optional text-outline-variant text-[13px]">${esc(money(inv.amount, inv.currency_code))}</span>
       <span class="invoice-cell--optional text-outline-variant text-[13px]">${esc(money(inv.balance, inv.currency_code))}</span>
       <span class="invoice-cell--optional text-outline-variant text-[13px]">${esc(inv.due_date || '—')}</span>
-      <div class="flex items-center gap-2 justify-end"></div>
+      <div class="flex items-center gap-2 justify-end">${rowActionsHTML(inv)}</div>
     </div>`;
+}
+
+// Per-row actions depend on where the invoice sits in its lifecycle.
+function rowActionsHTML(inv) {
+  const actionBtn = (action, label, primary = false) => `
+    <button data-action="${action}" data-id="${inv.id}"
+            class="${primary
+              ? 'bg-primary-container text-white text-[11px] uppercase tracking-widest px-3 py-1.5 rounded-full hover:opacity-90 transition-opacity'
+              : 'text-outline-variant hover:text-primary-fixed-dim text-[11px] uppercase tracking-widest px-3 py-1.5 rounded-full border border-white/10 transition-colors'}">
+      ${label}
+    </button>`;
+
+  if (inv.is_archived === 1) return '';
+  if (inv.status === 'draft') {
+    return actionBtn('edit', esc(t('inv_edit')));
+  }
+  return '';
+}
+
+async function onRowAction(e) {
+  const btn = e.target.closest('button[data-action]');
+  if (!btn) return;
+  const inv = _invoices.find(i => i.id === +btn.dataset.id);
+  if (!inv) return;
+
+  if (btn.dataset.action === 'edit') return openEditInvoice(inv, btn);
 }
 
 // ---- New Invoice (Nova Fatura) — always created as a Zoho DRAFT ----
@@ -147,8 +180,7 @@ async function openNewInvoice() {
   document.getElementById('ni-due').value   = '';
   document.getElementById('ni-notes').value = '';
   document.getElementById('ni-items').innerHTML = '';
-  addItemRow();
-  updateComposeTotal();
+  addItemRow('ni-items', 'ni-total');
 
   const select = document.getElementById('ni-client');
   if (!_clients) {
@@ -164,10 +196,13 @@ async function openNewInvoice() {
   openModal('modal-new-invoice');
 }
 
-function addItemRow(item = null) {
-  const list = document.getElementById('ni-items');
+// Shared line-item row builder — used by both the New Invoice ('ni')
+// and Edit Draft ('ei') modals. Each row keeps live line totals.
+function addItemRow(listId, totalId, item = null) {
+  const list = document.getElementById(listId);
   const row  = document.createElement('div');
   row.className = 'ni-item-row';
+  if (item?.line_item_id) row.dataset.lineItemId = item.line_item_id;
   row.style.cssText = 'display:grid; grid-template-columns: 1fr 64px 96px 84px auto; gap:8px; align-items:center;';
   row.innerHTML = `
     <input type="text"   class="form-control ni-item-name" placeholder="${esc(t('inv_form_item_name'))}" value="${esc(item?.name || '')}">
@@ -178,38 +213,41 @@ function addItemRow(item = null) {
       <span class="material-symbols-outlined" style="font-size:16px; color:var(--s-red, #f87171)">close</span>
     </button>`;
 
+  const refresh = () => updateItemsTotal(listId, totalId);
   row.querySelector('.ni-item-remove').addEventListener('click', () => {
     row.remove();
-    updateComposeTotal();
+    refresh();
   });
-  row.querySelectorAll('input').forEach(inp => inp.addEventListener('input', updateComposeTotal));
+  row.querySelectorAll('input').forEach(inp => inp.addEventListener('input', refresh));
   list.appendChild(row);
+  refresh();
 }
 
-function readItemRows() {
-  return [...document.querySelectorAll('#ni-items .ni-item-row')].map(row => ({
+function readItemRows(listId) {
+  return [...document.querySelectorAll(`#${listId} .ni-item-row`)].map(row => ({
+    ...(row.dataset.lineItemId ? { line_item_id: row.dataset.lineItemId } : {}),
     name:     row.querySelector('.ni-item-name').value.trim(),
     quantity: parseFloat(row.querySelector('.ni-item-qty').value) || 0,
     rate:     parseFloat(row.querySelector('.ni-item-rate').value) || 0,
   }));
 }
 
-function updateComposeTotal() {
+function updateItemsTotal(listId, totalId) {
   let total = 0;
-  document.querySelectorAll('#ni-items .ni-item-row').forEach(row => {
+  document.querySelectorAll(`#${listId} .ni-item-row`).forEach(row => {
     const qty  = parseFloat(row.querySelector('.ni-item-qty').value)  || 0;
     const rate = parseFloat(row.querySelector('.ni-item-rate').value) || 0;
     const amount = qty * rate;
     row.querySelector('.ni-item-amount').textContent = money(amount, 'USD');
     total += amount;
   });
-  document.getElementById('ni-total').textContent = money(total, 'USD');
+  document.getElementById(totalId).textContent = money(total, 'USD');
 }
 
 async function createInvoice() {
   niError(null);
   const clientId = parseInt(document.getElementById('ni-client').value);
-  const items    = readItemRows().filter(li => li.name && li.quantity > 0);
+  const items    = readItemRows('ni-items').filter(li => li.name && li.quantity > 0);
 
   if (!clientId)     { niError('Select a client.'); return; }
   if (!items.length) { niError('Add at least one line item with a name and quantity.'); return; }
@@ -252,6 +290,71 @@ async function createInvoice() {
   } finally {
     btn.disabled = false;
     btn.textContent = t('inv_create');
+  }
+}
+
+// ---- Edit Draft line items — persists to the real Zoho invoice ----
+
+let _editingInvoiceId = null;
+
+function eiError(msg) {
+  const el = document.getElementById('ei-error');
+  el.textContent   = msg || '';
+  el.style.display = msg ? 'block' : 'none';
+}
+
+async function openEditInvoice(inv, triggerBtn) {
+  triggerBtn.disabled = true;
+  try {
+    // Read the current line items from the REAL Zoho invoice, not the cache
+    const detail = await api.zohoInvoiceItems(inv.id);
+    if (detail.status !== 'draft') {
+      toast('Only draft invoices can be edited.', 'error');
+      await loadInvoices();   // cache said draft but Zoho disagrees — refresh
+      return;
+    }
+    _editingInvoiceId = inv.id;
+    eiError(null);
+    document.getElementById('ei-number').textContent = detail.invoice_number || '';
+    document.getElementById('ei-items').innerHTML = '';
+    (detail.line_items.length ? detail.line_items : [null]).forEach(li =>
+      addItemRow('ei-items', 'ei-total', li)
+    );
+    openModal('modal-edit-invoice');
+  } catch (err) {
+    toast(err.message === 'zoho_api_error' ? 'Could not load the invoice from Zoho.' : err.message, 'error');
+  } finally {
+    triggerBtn.disabled = false;
+  }
+}
+
+async function saveInvoiceItems() {
+  eiError(null);
+  const items = readItemRows('ei-items').filter(li => li.name && li.quantity > 0);
+  if (!items.length) { eiError('Add at least one line item with a name and quantity.'); return; }
+
+  const btn = document.getElementById('ei-save-btn');
+  btn.disabled = true;
+  btn.textContent = t('saving');
+
+  try {
+    const fresh = await api.zohoUpdateInvoiceItems(_editingInvoiceId, { line_items: items });
+    const idx = _invoices.findIndex(i => i.id === fresh.id);
+    if (idx >= 0) _invoices[idx] = { ..._invoices[idx], ...fresh };
+    renderTabs();
+    renderList();
+    closeModal('modal-edit-invoice');
+    toast('Invoice updated in Zoho.', 'success');
+  } catch (err) {
+    const messages = {
+      invoice_not_draft:           'This invoice is no longer a draft in Zoho — refresh the list.',
+      zoho_invoice_update_failed:  'Zoho did not accept the change. Please try again.',
+      zoho_api_error:              'Zoho rejected the request. Please try again.',
+    };
+    eiError(messages[err.message] || err.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = t('inv_save_items');
   }
 }
 

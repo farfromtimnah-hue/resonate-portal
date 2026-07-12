@@ -111,6 +111,16 @@ export async function routeZoho(request, env, user, url, method, path) {
     return handleCreateInvoice(request, env);
   }
 
+  // GET/PUT /api/zoho/invoices/:id/items — read / update a DRAFT invoice's
+  // line items against the real Zoho invoice, then re-cache locally.
+  params = match('/api/zoho/invoices/:id/items', path);
+  if (params && (method === 'GET' || method === 'PUT')) {
+    requireAdminRole(user);
+    return method === 'GET'
+      ? handleGetInvoiceItems(params.id, env)
+      : handleUpdateInvoiceItems(params.id, request, env);
+  }
+
   // POST /api/zoho/sync — best-effort sync for every client that can be matched to Zoho
   if (method === 'POST' && path === '/api/zoho/sync') {
     requireAdminRole(user);
@@ -199,6 +209,29 @@ async function zohoPost(access, pathAndQuery, body) {
     `${access.apiDomain}/invoice/v3${pathAndQuery}${sep}organization_id=${encodeURIComponent(access.organizationId ?? '')}`,
     {
       method: 'POST',
+      headers: {
+        'Authorization': `Zoho-oauthtoken ${access.accessToken}`,
+        'X-com-zoho-invoice-organizationid': access.organizationId ?? '',
+        'Content-Type': 'application/json',
+      },
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+    }
+  );
+  var data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    console.error('Zoho API error:', pathAndQuery, res.status, JSON.stringify(data).slice(0, 500));
+    throw new ApiError('zoho_api_error', 502);
+  }
+  return data;
+}
+
+// Mirrors zohoPost for updates.
+async function zohoPut(access, pathAndQuery, body) {
+  var sep = pathAndQuery.includes('?') ? '&' : '?';
+  var res = await fetch(
+    `${access.apiDomain}/invoice/v3${pathAndQuery}${sep}organization_id=${encodeURIComponent(access.organizationId ?? '')}`,
+    {
+      method: 'PUT',
       headers: {
         'Authorization': `Zoho-oauthtoken ${access.accessToken}`,
         'X-com-zoho-invoice-organizationid': access.organizationId ?? '',
@@ -307,6 +340,80 @@ async function handleCreateInvoice(request, env) {
     'SELECT * FROM client_invoices WHERE zoho_invoice_id = ?'
   ).bind(String(invoice.invoice_id)).first();
   return jsonResponse(row, 201, env);
+}
+
+// ------------------------------------------------------------
+// Draft line-item editing (Books Phase 4) — reads and writes go
+// to the real Zoho invoice; the local row is only a cache.
+// ------------------------------------------------------------
+
+async function loadCachedInvoiceRow(id, env) {
+  var row = await env.DB.prepare('SELECT * FROM client_invoices WHERE id = ?').bind(id).first();
+  if (!row) throw new ApiError('Invoice not found', 404);
+  return row;
+}
+
+async function handleGetInvoiceItems(id, env) {
+  var row    = await loadCachedInvoiceRow(id, env);
+  var access = await getZohoAccess(env);
+  if (!access.organizationId) throw new ApiError('zoho_organization_missing', 409);
+
+  var detail  = await zohoGet(access, `/invoices/${row.zoho_invoice_id}`);
+  var invoice = detail?.invoice;
+  if (!invoice) throw new ApiError('zoho_invoice_not_found', 404);
+
+  // Freshen the cache while we have the real record
+  await upsertCachedInvoice(row.client_id, invoice, env);
+
+  return jsonResponse({
+    id:             row.id,
+    invoice_number: invoice.invoice_number ?? row.invoice_number,
+    status:         invoice.status ?? row.status,
+    due_date:       invoice.due_date ?? row.due_date,
+    notes:          invoice.notes ?? null,
+    sub_total:      invoice.sub_total ?? null,
+    total:          invoice.total ?? null,
+    line_items:     (invoice.line_items ?? []).map(mapZohoLineItem),
+  }, 200, env);
+}
+
+async function handleUpdateInvoiceItems(id, request, env) {
+  var row    = await loadCachedInvoiceRow(id, env);
+  var access = await getZohoAccess(env);
+  if (!access.organizationId) throw new ApiError('zoho_organization_missing', 409);
+
+  var body = await request.json();
+  var lineItems = body?.line_items;
+  if (!Array.isArray(lineItems) || lineItems.length === 0) {
+    throw new ApiError('line_items required', 400);
+  }
+
+  // Only drafts are editable — check against the REAL Zoho status,
+  // not the possibly-stale cache.
+  var detail  = await zohoGet(access, `/invoices/${row.zoho_invoice_id}`);
+  var invoice = detail?.invoice;
+  if (!invoice) throw new ApiError('zoho_invoice_not_found', 404);
+  if (invoice.status !== 'draft') throw new ApiError('invoice_not_draft', 409);
+
+  var payload = {
+    customer_id: invoice.customer_id,
+    line_items: lineItems.map(li => ({
+      // Keeping line_item_id updates the existing Zoho line; omitting it adds a new one
+      ...(li.line_item_id ? { line_item_id: li.line_item_id } : {}),
+      name:        li.name || li.description || 'Service',
+      description: li.description ?? '',
+      quantity:    Number(li.quantity) || 1,
+      rate:        Number(li.rate) || 0,
+    })),
+  };
+  var updated = await zohoPut(access, `/invoices/${row.zoho_invoice_id}`, payload);
+  var updatedInvoice = updated?.invoice;
+  if (!updatedInvoice?.invoice_id) throw new ApiError('zoho_invoice_update_failed', 502);
+
+  await upsertCachedInvoice(row.client_id, updatedInvoice, env);
+
+  var fresh = await env.DB.prepare('SELECT * FROM client_invoices WHERE id = ?').bind(row.id).first();
+  return jsonResponse(fresh, 200, env);
 }
 
 // Pulls one client's invoices from Zoho and upserts them into client_invoices.
