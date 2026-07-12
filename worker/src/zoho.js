@@ -105,6 +105,12 @@ export async function routeZoho(request, env, user, url, method, path) {
     return jsonResponse(results, 200, env);
   }
 
+  // POST /api/zoho/invoices — create a DRAFT invoice in Zoho and cache it
+  if (method === 'POST' && path === '/api/zoho/invoices') {
+    requireAdminRole(user);
+    return handleCreateInvoice(request, env);
+  }
+
   // POST /api/zoho/sync — best-effort sync for every client that can be matched to Zoho
   if (method === 'POST' && path === '/api/zoho/sync') {
     requireAdminRole(user);
@@ -185,6 +191,30 @@ async function zohoGet(access, pathAndQuery) {
   return data;
 }
 
+// Mirrors zohoGet for write calls — same Zoho-oauthtoken header,
+// organization_id handling, and cached-token access object.
+async function zohoPost(access, pathAndQuery, body) {
+  var sep = pathAndQuery.includes('?') ? '&' : '?';
+  var res = await fetch(
+    `${access.apiDomain}/invoice/v3${pathAndQuery}${sep}organization_id=${encodeURIComponent(access.organizationId ?? '')}`,
+    {
+      method: 'POST',
+      headers: {
+        'Authorization': `Zoho-oauthtoken ${access.accessToken}`,
+        'X-com-zoho-invoice-organizationid': access.organizationId ?? '',
+        'Content-Type': 'application/json',
+      },
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+    }
+  );
+  var data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    console.error('Zoho API error:', pathAndQuery, res.status, JSON.stringify(data).slice(0, 500));
+    throw new ApiError('zoho_api_error', 502);
+  }
+  return data;
+}
+
 // Finds the Zoho customer for a portal client (by stored id, else email
 // match against Zoho contacts) and stores it on the client row.
 async function resolveZohoCustomerId(client, access, env) {
@@ -199,6 +229,84 @@ async function resolveZohoCustomerId(client, access, env) {
     'UPDATE clients SET zoho_customer_id = ? WHERE id = ?'
   ).bind(String(contact.contact_id), client.id).run();
   return String(contact.contact_id);
+}
+
+// Like resolveZohoCustomerId, but creates the Zoho contact from the client
+// record when no match exists — used by invoice creation.
+async function ensureZohoCustomerId(client, access, env) {
+  try {
+    return await resolveZohoCustomerId(client, access, env);
+  } catch (e) {
+    // Only fall through to creation when the customer genuinely doesn't
+    // exist (or the client has no email to match by) — API errors re-throw.
+    if (!(e instanceof ApiError) || (e.status !== 404 && e.status !== 409)) throw e;
+  }
+
+  var payload = {
+    contact_name: client.business_name || client.name,
+    company_name: client.business_name || undefined,
+  };
+  if (client.email) {
+    payload.contact_persons = [{
+      first_name: (client.name || '').split(/\s+/)[0] || client.name,
+      last_name:  (client.name || '').split(/\s+/).slice(1).join(' ') || undefined,
+      email:      client.email,
+      is_primary_contact: true,
+    }];
+  }
+  var data = await zohoPost(access, '/contacts', payload);
+  var contact = data?.contact;
+  if (!contact?.contact_id) throw new ApiError('zoho_contact_create_failed', 502);
+
+  await env.DB.prepare(
+    'UPDATE clients SET zoho_customer_id = ? WHERE id = ?'
+  ).bind(String(contact.contact_id), client.id).run();
+  return String(contact.contact_id);
+}
+
+// ------------------------------------------------------------
+// Create invoice (Books Phase 3) — always a DRAFT in Zoho.
+// Finalizing (mark-as-sent) is a separate, explicit action.
+// No tax fields anywhere: this business charges no sales tax.
+// ------------------------------------------------------------
+async function handleCreateInvoice(request, env) {
+  var access = await getZohoAccess(env);
+  if (!access.organizationId) throw new ApiError('zoho_organization_missing', 409);
+
+  var body = await request.json();
+  var { client_id, line_items, due_date, notes } = body;
+  if (!client_id) throw new ApiError('client_id required', 400);
+  if (!Array.isArray(line_items) || line_items.length === 0) {
+    throw new ApiError('line_items required', 400);
+  }
+
+  var client = await env.DB.prepare('SELECT * FROM clients WHERE id = ?').bind(client_id).first();
+  if (!client) throw new ApiError('Client not found', 404);
+
+  var customerId = await ensureZohoCustomerId(client, access, env);
+
+  var payload = {
+    customer_id: customerId,
+    line_items: line_items.map(li => ({
+      name:        li.name || li.description || 'Service',
+      description: li.description ?? '',
+      quantity:    Number(li.quantity) || 1,
+      rate:        Number(li.rate) || 0,
+    })),
+  };
+  if (due_date) payload.due_date = due_date;
+  if (notes)    payload.notes    = notes;
+
+  var data = await zohoPost(access, '/invoices', payload);
+  var invoice = data?.invoice;
+  if (!invoice?.invoice_id) throw new ApiError('zoho_invoice_create_failed', 502);
+
+  await upsertCachedInvoice(client.id, invoice, env);
+
+  var row = await env.DB.prepare(
+    'SELECT * FROM client_invoices WHERE zoho_invoice_id = ?'
+  ).bind(String(invoice.invoice_id)).first();
+  return jsonResponse(row, 201, env);
 }
 
 // Pulls one client's invoices from Zoho and upserts them into client_invoices.
