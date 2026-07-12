@@ -1151,6 +1151,43 @@ html.dark .banner--info    { background: rgba(0,91,150,0.12); color: #9ccaff; bo
   .client-mobile-header { display: none !important; }
 }
 
+/* client.html sidebar — desktop collapse to icon rail.
+   html.sidebar-rail is applied pre-paint from sessionStorage, so the
+   choice sticks for the session without a flash of the wide sidebar. */
+@media (min-width: 768px) {
+  .client-sidebar { transition: width 0.22s cubic-bezier(0.4, 0, 0.2, 1); }
+  .client-main    { transition: margin-left 0.22s cubic-bezier(0.4, 0, 0.2, 1); }
+
+  html.sidebar-rail .client-sidebar { width: 76px; }
+  html.sidebar-rail .client-main    { margin-left: 76px; }
+
+  html.sidebar-rail .client-sidebar .sidebar-text { display: none; }
+  html.sidebar-rail .client-sidebar > div { padding-left: 14px; padding-right: 14px; }
+  html.sidebar-rail .client-sidebar nav a,
+  html.sidebar-rail .client-sidebar #back-link,
+  html.sidebar-rail .client-sidebar #signout-btn { justify-content: center; padding-left: 0; padding-right: 0; }
+  html.sidebar-rail #sidebar-collapse-btn .material-symbols-outlined { transform: rotate(180deg); }
+}
+
+.sidebar-collapse-btn {
+  display: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  border-radius: 9999px;
+  width: 32px; height: 32px;
+  align-items: center;
+  justify-content: center;
+  color: #717781;
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s;
+}
+.sidebar-collapse-btn:hover { background: rgba(255,255,255,0.06); color: #9ccaff; }
+.sidebar-collapse-btn .material-symbols-outlined { font-size: 20px; transition: transform 0.22s; }
+@media (min-width: 768px) {
+  .sidebar-collapse-btn { display: inline-flex; }
+}
+
 /* Phone field — country code + number side by side */
 .phone-field {
   display: flex;

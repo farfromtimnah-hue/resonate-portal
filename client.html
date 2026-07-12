@@ -35,7 +35,13 @@
     }
   </script>
 
-  <link rel="stylesheet" href="css/app.css?v=3">
+  <link rel="stylesheet" href="css/app.css?v=4">
+  <script>
+    // Restore the collapsed-sidebar choice before first paint (session-only)
+    if (sessionStorage.getItem('resonate_sidebar_rail') === '1') {
+      document.documentElement.classList.add('sidebar-rail');
+    }
+  </script>
 
   <style>
     body { font-family: 'Plus Jakarta Sans', sans-serif; background: #0f1115; color: #c1c7d1; }
@@ -55,46 +61,51 @@
 <aside id="client-sidebar" class="client-sidebar fixed left-0 top-0 h-full w-72 flex flex-col bg-inverse-surface border-r border-white/5 z-50">
   <div class="flex flex-col h-full px-6 py-8">
 
-    <!-- Brand -->
-    <a href="dashboard.html"
-       class="font-newsreader font-bold text-[22px] tracking-tight text-primary-fixed-dim no-underline mb-8"
-       style="font-family:'Newsreader',serif; letter-spacing:-0.02em;">
-      Resonate
-    </a>
+    <!-- Brand + collapse toggle -->
+    <div class="flex items-center justify-between mb-8">
+      <a href="dashboard.html"
+         class="font-newsreader font-bold text-[22px] tracking-tight text-primary-fixed-dim no-underline sidebar-text"
+         style="font-family:'Newsreader',serif; letter-spacing:-0.02em;">
+        Resonate
+      </a>
+      <button id="sidebar-collapse-btn" class="sidebar-collapse-btn" title="Collapse sidebar" aria-label="Collapse sidebar">
+        <span class="material-symbols-outlined">chevron_left</span>
+      </button>
+    </div>
 
     <!-- Back link -->
     <a id="back-link" href="dashboard.html"
        class="flex items-center gap-2 text-outline-variant hover:text-primary-fixed-dim text-[13px] transition-colors group no-underline -mt-2 mb-6">
       <span class="material-symbols-outlined text-[16px] transition-transform group-hover:-translate-x-1">arrow_back</span>
-      Back to Dashboard
+      <span class="sidebar-text">Back to Dashboard</span>
     </a>
 
     <!-- Nav -->
     <nav class="flex flex-col gap-1">
-      <p class="text-outline-variant text-[10px] uppercase font-semibold tracking-widest px-4 mb-2">Navigation</p>
-      <a href="dashboard.html"
+      <p class="text-outline-variant text-[10px] uppercase font-semibold tracking-widest px-4 mb-2 sidebar-text">Navigation</p>
+      <a href="dashboard.html" title="Dashboard"
          class="px-4 py-2.5 rounded-full text-outline-variant hover:text-primary-fixed-dim text-[13px] transition-colors flex items-center gap-3 no-underline">
         <span class="material-symbols-outlined text-[17px]">grid_view</span>
-        Dashboard
+        <span class="sidebar-text">Dashboard</span>
       </a>
-      <a href="books.html"
+      <a href="books.html" title="Books"
          class="px-4 py-2.5 rounded-full text-outline-variant hover:text-primary-fixed-dim text-[13px] transition-colors flex items-center gap-3 no-underline">
         <span class="material-symbols-outlined text-[17px]">receipt_long</span>
-        Books
+        <span class="sidebar-text">Books</span>
       </a>
-      <a href="archive.html"
+      <a href="archive.html" title="Archive"
          class="px-4 py-2.5 rounded-full text-outline-variant hover:text-primary-fixed-dim text-[13px] transition-colors flex items-center gap-3 no-underline">
         <span class="material-symbols-outlined text-[17px]">archive</span>
-        Archive
+        <span class="sidebar-text">Archive</span>
       </a>
     </nav>
 
     <!-- Sign out (pinned to bottom) -->
     <div class="mt-auto border-t border-white/5 pt-6">
-      <button id="signout-btn"
+      <button id="signout-btn" title="Sign Out"
               class="w-full text-left flex items-center gap-2 text-outline-variant hover:text-primary-fixed-dim text-[12px] uppercase tracking-widest transition-colors px-4 py-2 rounded-full">
         <span class="material-symbols-outlined text-[16px]">logout</span>
-        Sign Out
+        <span class="sidebar-text">Sign Out</span>
       </button>
     </div>
 
@@ -495,6 +506,21 @@
   btn.addEventListener('click', open);
   overlay.addEventListener('click', close);
   document.addEventListener('keydown', function(e){ if (e.key === 'Escape') close(); });
+})();
+</script>
+
+<script>
+// Desktop sidebar collapse-to-rail — remembered for this session only
+(function () {
+  var KEY    = 'resonate_sidebar_rail';
+  var toggle = document.getElementById('sidebar-collapse-btn');
+  if (!toggle) return;
+  toggle.addEventListener('click', function () {
+    var rail = document.documentElement.classList.toggle('sidebar-rail');
+    sessionStorage.setItem(KEY, rail ? '1' : '0');
+    toggle.title = rail ? 'Expand sidebar' : 'Collapse sidebar';
+    toggle.setAttribute('aria-label', toggle.title);
+  });
 })();
 </script>
 </body>
