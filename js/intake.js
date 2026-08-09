@@ -5,10 +5,10 @@
 // Section 4: future/vision behind a click-to-skip gate
 // ============================================================
 
-import { requireAuth } from './auth.js';
+import { requireAuth, getToken } from './auth.js';
 import { api } from './api.js';
-import { WHISPER_WS_URL } from './config.js';
-import { probeVoiceServer, createVoiceRecorder } from './voice.js';
+import { API_BASE } from './config.js';
+import { createVoiceRecorder } from './voice.js';
 
 // ---- state ----
 var _session   = null;
@@ -21,6 +21,7 @@ var _autoSpeak = false;
 var _sending   = false;
 var _voiceAvailable = false;
 var _voiceRecorder  = null;
+var _voiceSessionId = null;   // session the current recorder is bound to
 
 // ---- bilingual strings for this flow (en / pt only) ----
 var I18N = {
@@ -78,7 +79,10 @@ var I18N = {
     done_title:        'Thank you!',
     done_copy:         'Your answers were saved. Nicole will review everything and design your system from here.',
     done_back:         'Back to Portal',
-    error_generic:     'Something went wrong. Your answer was saved - please try again.'
+    error_generic:     'Something went wrong. Your answer was saved - please try again.',
+    voice_permission:  'Microphone access was blocked. You can type your answer instead.',
+    voice_empty:       'Nothing was heard. Try again, or type your answer.',
+    voice_failed:      'Voice input is not available right now. Please type your answer.'
   },
   pt: {
     pref_progress: 'Pergunta {n} de 4',
@@ -134,7 +138,10 @@ var I18N = {
     done_title:        'Obrigada!',
     done_copy:         'Suas respostas foram salvas. A Nicole vai revisar tudo e desenhar o seu sistema a partir daqui.',
     done_back:         'Voltar ao Portal',
-    error_generic:     'Algo deu errado. Sua resposta foi salva - tente novamente.'
+    error_generic:     'Algo deu errado. Sua resposta foi salva - tente novamente.',
+    voice_permission:  'O acesso ao microfone foi bloqueado. Voce pode escrever a sua resposta.',
+    voice_empty:       'Nao ouvimos nada. Tente de novo, ou escreva a sua resposta.',
+    voice_failed:      'A entrada por voz nao esta disponivel agora. Por favor escreva a sua resposta.'
   }
 };
 
@@ -221,55 +228,82 @@ function wireStaticButtons() {
   if (skipBtn) skipBtn.addEventListener('click', skipFuture);
 }
 
-// ---- voice input (Whisper WebSocket stub — silent fallback to text) ----
-async function initVoice() {
-  if (!WHISPER_WS_URL) return; // not configured yet: text-only, no error shown
-
-  var available = await probeVoiceServer(WHISPER_WS_URL, 4000);
-  if (!available) return; // unreachable: silently keep the voice button hidden
-
-  _voiceAvailable = true;
+// ---- voice input (records locally, transcribed by the Worker) ----
+// No server probe: voice is available whenever the browser supports it.
+// An unsupported browser simply leaves the button hidden, with no error.
+function initVoice() {
+  if (typeof navigator === 'undefined' || !navigator.mediaDevices ||
+      typeof MediaRecorder === 'undefined') {
+    return;
+  }
   var voiceBtn = document.getElementById('voice-btn');
   if (!voiceBtn) return;
+  _voiceAvailable = true;
   voiceBtn.classList.remove('hidden');
   voiceBtn.addEventListener('click', toggleVoice);
 }
 
-function hideVoice() {
-  _voiceAvailable = false;
-  var voiceBtn = document.getElementById('voice-btn');
-  if (voiceBtn) {
-    voiceBtn.classList.add('hidden');
-    voiceBtn.classList.remove('intake-icon-btn--recording');
-  }
+function voiceStatus(message) {
+  var status = document.getElementById('chat-status');
+  if (status) status.textContent = message;
+}
+
+// The session id is not known when init() runs, so the recorder is built
+// on first use and rebuilt whenever the session changes.
+function ensureVoiceRecorder() {
+  if (!_session || !_session.id) return null;
+  if (_voiceRecorder && _voiceSessionId === _session.id) return _voiceRecorder;
+
+  _voiceSessionId = _session.id;
+  _voiceRecorder = createVoiceRecorder({
+    apiBase: API_BASE,
+    sessionId: _session.id,
+    getAuthHeader: async function () {
+      var token = await getToken();
+      return 'Bearer ' + token;
+    },
+    onTranscript: function (text) {
+      // Appended, never auto-sent: the client has to be able to read and
+      // correct the transcription before sending it.
+      var input = document.getElementById('chat-input');
+      if (!input || !text) return;
+      input.value = input.value ? input.value + ' ' + text : text;
+      input.focus();
+    },
+    onError: function (reason) {
+      if (reason === 'permission') voiceStatus(t('voice_permission'));
+      else if (reason === 'empty') voiceStatus(t('voice_empty'));
+      else voiceStatus(t('voice_failed'));
+    },
+    onStateChange: function (state) {
+      var btn = document.getElementById('voice-btn');
+      if (!btn) return;
+      if (state === 'recording') {
+        btn.classList.add('intake-icon-btn--recording');
+        btn.disabled = false;
+        voiceStatus('');
+      } else if (state === 'transcribing') {
+        btn.classList.remove('intake-icon-btn--recording');
+        btn.disabled = true;   // a second tap must not fire mid upload
+      } else {
+        btn.classList.remove('intake-icon-btn--recording');
+        btn.disabled = false;
+      }
+    }
+  });
+  return _voiceRecorder;
 }
 
 async function toggleVoice() {
   if (!_voiceAvailable) return;
-  var voiceBtn = document.getElementById('voice-btn');
+  var recorder = ensureVoiceRecorder();
+  if (!recorder) return;
 
-  if (_voiceRecorder && _voiceRecorder.isRecording()) {
-    _voiceRecorder.stop();
-    if (voiceBtn) voiceBtn.classList.remove('intake-icon-btn--recording');
+  if (recorder.isRecording()) {
+    recorder.stop();
     return;
   }
-
-  _voiceRecorder = createVoiceRecorder({
-    url: WHISPER_WS_URL,
-    language: _lang,
-    onTranscript: function (text, isFinal) {
-      var input = document.getElementById('chat-input');
-      if (!input || !text) return;
-      input.value = input.value ? input.value + ' ' + text : text;
-    },
-    onUnavailable: function () {
-      // Any mid-recording failure: fail silently, typing remains available
-      hideVoice();
-    }
-  });
-
-  var started = await _voiceRecorder.start();
-  if (started && voiceBtn) voiceBtn.classList.add('intake-icon-btn--recording');
+  await recorder.start();
 }
 
 // ---- resume an in-progress session ----
