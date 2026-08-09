@@ -10,7 +10,14 @@ import { ApiError, jsonResponse, match } from './index.js';
 // Constants
 // ------------------------------------------------------------
 
-var CLAUDE_MODEL = 'claude-opus-4-8';
+// Sonnet, not Opus. The hard guarantees in this engine are structural, not
+// model-dependent: the JSON shape is enforced by structured outputs at the API
+// layer, the suggestion-language guardrail is a server-side scan, and the
+// follow-up cap, uncertainty skip and section openers are all deterministic
+// code. What is left for the model is picking the missing dimension and
+// writing one short question in the session language. Decided 2026-08-09;
+// the earlier claude-opus-4-8 was a build-time default, never a decision.
+var CLAUDE_MODEL = 'claude-sonnet-5';
 var MAX_FOLLOWUPS = 2;          // hard cap: 2 follow-up attempts per entry
 var MAX_FUTURE_QUESTIONS = 3;   // cap for the future/vision section
 
