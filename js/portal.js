@@ -23,6 +23,8 @@ async function init() {
   _profile = await requireAuth('client');
   if (!_profile) return;
 
+  renderPreviewBanner();
+
   // Set language from user preference
   _lang = _profile.language_preference || 'en';
   setLang(_lang);
@@ -135,6 +137,97 @@ function switchLang(lang) {
 function updateLangButtons() {
   document.getElementById('lang-en').classList.toggle('lang-btn--active', _lang === 'en');
   document.getElementById('lang-pt').classList.toggle('lang-btn--active', _lang === 'pt');
+}
+
+// ---- Admin preview banner ----
+//
+// Whether writing is even POSSIBLE comes from the server (_profile.preview),
+// never decided locally. When the previewed client is not a test client the
+// banner offers no control to enable writing at all, because offering a
+// control the Worker will refuse is worse than offering none.
+//
+// This banner is a convenience only. The Worker's write gate is what actually
+// prevents the write, and it refuses even if this logic were absent or wrong.
+
+function renderPreviewBanner() {
+  const el = document.getElementById('preview-banner');
+  if (!el) return;
+
+  const preview = _profile?.preview;
+  if (!preview?.active) return;   // not previewing: banner stays hidden
+
+  // Writing is on only when the page URL says so AND the server agrees this
+  // client permits it. Read fresh from the URL every time — never from
+  // localStorage or sessionStorage, so leaving and re-entering preview always
+  // returns to read-only with no memory of previous sessions.
+  const writeEnabled = preview.write_enabled === true;
+
+  el.className = 'fixed bottom-0 left-0 right-0 z-[60] border-t-4 shadow-2xl '
+    + (writeEnabled
+        ? 'bg-[#7f1d1d] border-[#ef4444] text-white'
+        : 'bg-[#1f2937] border-[#f59e0b] text-white');
+
+  const mode = writeEnabled
+    ? 'WRITING ENABLED — actions are saved as this client'
+    : 'READ-ONLY';
+
+  el.innerHTML = `
+    <div class="max-w-[860px] mx-auto px-6 py-3 flex items-center gap-4 flex-wrap">
+      <div class="flex-1 min-w-[240px] text-[13px] leading-snug">
+        <div class="font-bold uppercase tracking-widest text-[11px] opacity-80">
+          Admin preview
+        </div>
+        <div class="mt-0.5">
+          Previewing <strong>${esc(preview.client_name)}</strong>
+          &middot; <strong>${mode}</strong>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        ${preview.can_enable_write ? `
+          <button id="preview-write-toggle"
+                  class="text-[12px] uppercase tracking-widest px-4 py-2 rounded-full border transition-colors ${
+                    writeEnabled
+                      ? 'bg-white text-[#7f1d1d] border-white hover:bg-white/90'
+                      : 'bg-transparent text-white border-white/40 hover:border-white'
+                  }">
+            ${writeEnabled ? 'Disable writing' : 'Enable writing'}
+          </button>` : ''}
+        <button id="preview-exit-btn"
+                class="text-[12px] uppercase tracking-widest px-4 py-2 rounded-full bg-white/10 border border-white/30 hover:bg-white/20 transition-colors">
+          Exit preview
+        </button>
+      </div>
+    </div>`;
+
+  el.classList.remove('hidden');
+  // Keep the fixed banner from covering the end of the page content.
+  document.body.style.paddingBottom = `${el.offsetHeight}px`;
+
+  document.getElementById('preview-exit-btn').addEventListener('click', () => {
+    window.location.href = `client.html?id=${encodeURIComponent(preview.client_id)}`;
+  });
+
+  const toggle = document.getElementById('preview-write-toggle');
+  if (toggle) {
+    toggle.addEventListener('click', () => {
+      const url = new URL(window.location.href);
+      if (writeEnabled) {
+        url.searchParams.delete('previewWrite');
+        window.location.href = url.toString();
+        return;
+      }
+      // Deliberate action, with the consequence stated in plain language.
+      const ok = window.confirm(
+        `Enable writing while previewing ${preview.client_name}?\n\n`
+        + 'From this point on, actions you take in this portal will be SAVED '
+        + 'as though the client performed them. This client is marked as a '
+        + 'test client, so the server will accept those writes.'
+      );
+      if (!ok) return;
+      url.searchParams.set('previewWrite', 'on');
+      window.location.href = url.toString();
+    });
+  }
 }
 
 // ---- Main render ----

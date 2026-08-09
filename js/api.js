@@ -5,7 +5,29 @@
 import { getToken }  from './auth.js';
 import { API_BASE }  from './config.js';
 
+// Admin preview-as: carry the current page's preview context onto every
+// outgoing API call. Doing this in the one shared request function is what
+// guarantees a future call site cannot forget to carry it. The parameters are
+// only ever added when they are already present on the page URL.
+//
+// This is plumbing, not a permission: the Worker decides what previewAs and
+// previewWrite actually allow, and ignores both for a non-admin caller.
+function withPreviewParams(path) {
+  const page = new URLSearchParams(window.location.search);
+  const previewAs = page.get('previewAs');
+  if (!previewAs) return path;
+
+  const sep = path.includes('?') ? '&' : '?';
+  let extra = `previewAs=${encodeURIComponent(previewAs)}`;
+
+  const previewWrite = page.get('previewWrite');
+  if (previewWrite) extra += `&previewWrite=${encodeURIComponent(previewWrite)}`;
+
+  return `${path}${sep}${extra}`;
+}
+
 async function req(method, path, body) {
+  path = withPreviewParams(path);
   const token = await getToken();
   const opts  = {
     method,
@@ -129,7 +151,8 @@ export const api = {
     const body  = new FormData();
     body.append('file', file);
     body.append('client_id', String(clientId));
-    const res  = await fetch(`${API_BASE}/api/upload-logo`, {
+    // Bypasses req() for multipart, so it applies the same preview plumbing.
+    const res  = await fetch(`${API_BASE}${withPreviewParams('/api/upload-logo')}`, {
       method: 'POST',
       cache:  'no-store',
       headers: { 'Authorization': `Bearer ${token}` },

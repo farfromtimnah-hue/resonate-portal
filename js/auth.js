@@ -82,6 +82,12 @@ export async function requireAuth(expectedRole = null) {
     window.location.href = 'index.html';
     return null;
   }
+  // An admin previewing a client's portal is legitimately on a client page.
+  // profile.preview is set by the Worker and only ever for an admin caller,
+  // so this cannot be used by a client to reach a page meant for another role.
+  if (expectedRole === 'client' && profile.role === 'admin' && profile.preview?.active) {
+    return profile;
+  }
   if (expectedRole && profile.role !== expectedRole) {
     // Wrong role — send to the correct page
     if (profile.role === 'admin')  window.location.href = 'dashboard.html';
@@ -95,7 +101,20 @@ export async function requireAuth(expectedRole = null) {
 
 async function fetchProfile(fbUser) {
   const token = await getIdToken(fbUser);
-  const res   = await fetch(`${API_BASE}/api/me`, {
+  // Carry preview context: this call bypasses the api.js request helper, and
+  // /api/me is what reports the previewed client and whether writing is
+  // possible. The Worker ignores previewAs entirely for a non-admin caller.
+  const page      = new URLSearchParams(window.location.search);
+  const previewAs = page.get('previewAs');
+  let   query     = '';
+  if (previewAs) {
+    query = `?previewAs=${encodeURIComponent(previewAs)}`;
+    // previewWrite must be forwarded too, otherwise the Worker always reports
+    // write_enabled: false and the banner could never show the enabled state.
+    const previewWrite = page.get('previewWrite');
+    if (previewWrite) query += `&previewWrite=${encodeURIComponent(previewWrite)}`;
+  }
+  const res   = await fetch(`${API_BASE}/api/me${query}`, {
     headers: { Authorization: `Bearer ${token}` }
   });
   if (!res.ok) {

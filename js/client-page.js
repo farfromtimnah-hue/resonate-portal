@@ -71,6 +71,12 @@ async function init() {
 
   document.getElementById('edit-client-btn').addEventListener('click', openEditClient);
   document.getElementById('archive-btn').addEventListener('click', archiveClient);
+
+  // Open this client's portal as they see it. Preview is read-only unless the
+  // client is flagged as a test client AND writing is switched on in the banner.
+  document.getElementById('preview-portal-btn').addEventListener('click', () => {
+    window.location.href = `portal.html?previewAs=${encodeURIComponent(_clientId)}`;
+  });
   document.getElementById('archive-now-btn')?.addEventListener('click', archiveClient);
   document.getElementById('add-project-btn').addEventListener('click', openAddProject);
   document.getElementById('add-note-btn').addEventListener('click',    openAddNote);

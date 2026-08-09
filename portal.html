@@ -31,6 +31,13 @@
 </head>
 <body class="min-h-screen antialiased">
 
+<!-- ── Admin preview banner ─────────────────────────────────────
+     Fixed to the bottom so it is visible at all times while previewing,
+     not only at the top of a scrolled page. Not dismissible: this is what
+     stops an administrator from forgetting which mode they are in.
+     Populated by js/portal.js; hidden entirely when not previewing. -->
+<div id="preview-banner" class="hidden fixed bottom-0 left-0 right-0 z-[60] border-t-4 shadow-2xl"></div>
+
 <!-- ── Portal Header ────────────────────────────────────────── -->
 <header class="sticky top-0 z-50 bg-white/90 backdrop-blur-sm border-b border-black/5">
   <div class="max-w-[860px] mx-auto px-6 h-16 flex items-center justify-between">

@@ -181,6 +181,12 @@
                   class="bg-inverse-surface border border-white/10 text-outline-variant hover:text-primary-fixed-dim text-[12px] uppercase tracking-widest px-5 py-2 rounded-full transition-colors">
             Archive
           </button>
+          <!-- Admin preview-as. This page is gated on requireAuth('admin'),
+               so a client session never reaches this control. -->
+          <button id="preview-portal-btn"
+                  class="bg-inverse-surface border border-white/10 text-outline-variant hover:text-primary-fixed-dim text-[12px] uppercase tracking-widest px-5 py-2 rounded-full transition-colors">
+            View their portal
+          </button>
         </div>
       </div>
       <div class="flex items-center gap-3 mt-3 flex-wrap">
