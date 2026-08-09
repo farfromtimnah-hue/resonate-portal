@@ -413,6 +413,9 @@ export async function routeInterview(request, env, user, url, method, path) {
   params = match('/api/interview/sessions/:sid/answer', path);
   if (params && method === 'POST') return handleAnswer(params.sid, request, env, user);
 
+  params = match('/api/interview/sessions/:sid/transcribe', path);
+  if (params && method === 'POST') return handleTranscribe(params.sid, request, env, user);
+
   params = match('/api/interview/sessions/:sid/future', path);
   if (params && method === 'POST') return handleFutureAnswer(params.sid, request, env, user);
 
@@ -716,6 +719,43 @@ async function handleAnswer(sessionId, request, env, user) {
     solution_jump: result.solution_jump === true,
     section_complete: false
   }, 200, env);
+}
+
+// POST /api/interview/sessions/:sid/transcribe
+// Body is raw audio bytes (Content-Type is the recorder mime type), not JSON
+// and not multipart. Transcribes with Workers AI Whisper and returns the text;
+// nothing is written to D1 - the text becomes the client's answer and the
+// normal answer flow persists it.
+async function handleTranscribe(sessionId, request, env, user) {
+  var session = await getSessionForUser(env, user, sessionId);
+
+  var audioBuffer = await request.arrayBuffer();
+  if (!audioBuffer || audioBuffer.byteLength < 1000) throw new ApiError('No audio received', 400);
+  if (audioBuffer.byteLength > 20000000) throw new ApiError('Audio too long', 413);
+
+  // Language always follows the session row, never a global default: English
+  // and Portuguese clients use this endpoint at the same time.
+  var langCode = session.language === 'pt' ? 'pt' : 'en';
+
+  var result;
+  try {
+    result = await env.AI.run('@cf/openai/whisper-large-v3-turbo', {
+      audio: [].slice.call(new Uint8Array(audioBuffer)),
+      task: 'transcribe',
+      // Explicit language stops autodetect flipping when a Portuguese speaker
+      // says an English brand name mid sentence.
+      language: langCode,
+      vad_filter: true,
+      // Prevents hallucination loops that repeat a phrase on quiet audio.
+      condition_on_previous_text: false
+    });
+  } catch (e) {
+    throw new ApiError('Transcription failed', 502);
+  }
+
+  var text = result && result.text ? String(result.text).trim() : '';
+  // Silence is a normal outcome, not an error.
+  return jsonResponse({ text: text }, 200, env);
 }
 
 // POST /api/interview/sessions/:sid/future  { answer }

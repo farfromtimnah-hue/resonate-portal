@@ -25,6 +25,12 @@ binding     = "BUCKET"
 bucket_name = "resonate-logos"
 
 # ----------------------------------------------------------
+# Workers AI binding (Whisper transcription for the intake interview)
+# ----------------------------------------------------------
+[ai]
+binding = "AI"
+
+# ----------------------------------------------------------
 # Environment variables
 # ----------------------------------------------------------
 [vars]
