@@ -4,7 +4,7 @@
 // Every answer is written to D1 immediately on submission.
 // ============================================================
 
-import { ApiError, jsonResponse, match } from './index.js';
+import { ApiError, jsonResponse, match, effectiveClientId } from './index.js';
 
 // ------------------------------------------------------------
 // Constants
@@ -405,7 +405,7 @@ export async function routeInterview(request, env, user, url, method, path) {
     return handleCreateSession(request, env, user);
   }
   if (method === 'GET' && path === '/api/interview/current') {
-    return handleGetCurrent(env, user);
+    return handleGetCurrent(env, user, request);
   }
 
   params = match('/api/interview/sessions/:sid', path);
@@ -447,7 +447,11 @@ async function handleCreateSession(request, env, user) {
   var language = body.language;
   if (language !== 'en' && language !== 'pt') throw new ApiError('language must be en or pt', 400);
 
-  var clientId = user.role === 'admin' ? body.client_id : user.client_id;
+  // A previewing admin creates the session for the client being previewed.
+  // effectiveClientId ignores previewAs entirely for a client caller, so a
+  // client session still resolves only to its own client_id.
+  var clientId = effectiveClientId(user, request);
+  if (user.role === 'admin' && !clientId) clientId = body.client_id;
   if (!clientId) throw new ApiError('client_id required', 400);
 
   var existing = await env.DB.prepare(
@@ -471,13 +475,17 @@ async function handleCreateSession(request, env, user) {
   return jsonResponse({ session: session, resumed: false }, 201, env);
 }
 
-// GET /api/interview/current - resume state for the logged-in client
-async function handleGetCurrent(env, user) {
-  if (!user.client_id) return jsonResponse({ session: null }, 200, null);
+// GET /api/interview/current - resume state for the logged-in client,
+// or for the previewed client when an admin is previewing.
+async function handleGetCurrent(env, user, request) {
+  // effectiveClientId resolves to user.client_id for a client session and is
+  // only redirectable by previewAs for an admin caller.
+  var clientId = effectiveClientId(user, request);
+  if (!clientId) return jsonResponse({ session: null }, 200, null);
 
   var session = await env.DB.prepare(
     "SELECT * FROM intake_sessions WHERE client_id = ? AND status = 'in_progress' ORDER BY created_at DESC LIMIT 1"
-  ).bind(user.client_id).first();
+  ).bind(clientId).first();
   if (!session) return jsonResponse({ session: null }, 200, null);
 
   var prefs = await env.DB.prepare('SELECT * FROM intake_preferences WHERE session_id = ?').bind(session.id).first();

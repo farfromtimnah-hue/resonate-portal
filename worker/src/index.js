@@ -64,6 +64,29 @@ export default {
       // All other routes require a valid Firebase token
       const user = await authenticate(request, env);
 
+      // ---- PREVIEW WRITE GATE ----
+      // Sits here, after authentication and BEFORE route dispatch, so it
+      // protects every route at once — including routes added later, which
+      // are covered without anyone remembering to protect them.
+      //
+      // Enforced at the API layer and NOT by hiding buttons in the interface,
+      // because a hidden button is not a security control. This gate must
+      // still refuse if the portal's banner logic were absent, wrong, or
+      // bypassed entirely.
+      if (method !== 'GET') {
+        const previewing = previewClientId(user, request);
+        if (previewing !== null && !(await previewWriteAllowed(env, request, previewing))) {
+          // Two distinguishable refusals, so the reader knows which wall they hit.
+          const isTestClient = await isTestClientRow(env, previewing);
+          const error = isTestClient
+            ? 'Preview is read-only. Writing can be enabled from the banner. / '
+              + 'A pre-visualizacao e somente leitura. A escrita pode ser ativada no banner.'
+            : 'Preview is read-only for this client. Writing is only possible on a client marked as a test client. / '
+              + 'A pre-visualizacao e somente leitura para este cliente. A escrita so e possivel em um cliente marcado como cliente de teste.';
+          return jsonResponse({ error }, 403, env);
+        }
+      }
+
       return await router(request, env, user, url, method, path);
     } catch (err) {
       if (err instanceof ApiError) {
@@ -84,7 +107,7 @@ async function router(request, env, user, url, method, path) {
 
   // GET /api/me — current user info
   if (method === 'GET' && path === '/api/me') {
-    return handleGetMe(env, user);
+    return handleGetMe(env, user, request);
   }
 
   // POST /api/me/password-changed — client clears the must_change_password flag after setting new password
@@ -242,8 +265,35 @@ async function router(request, env, user, url, method, path) {
 // ROUTE HANDLERS
 // ============================================================
 
-async function handleGetMe(env, user) {
-  return jsonResponse(user, 200, env);
+async function handleGetMe(env, user, request) {
+  // portal.js resolves the client it renders from _profile.client_id, so
+  // preview identity is applied here once rather than at each portal call site.
+  // effectiveClientId returns the caller's own client_id unless an ADMIN is
+  // previewing, so a client session is never redirected by a query parameter.
+  const previewing = previewClientId(user, request);
+  if (previewing === null) return jsonResponse(user, 200, env);
+
+  const clientId = effectiveClientId(user, request);
+  // Tell the banner whether writing is even possible for this client. The
+  // answer comes from the server so the interface cannot decide it locally.
+  const testClient = await isTestClientRow(env, clientId);
+  const client = await env.DB.prepare(
+    'SELECT business_display_name, business_name, name FROM clients WHERE id = ?'
+  ).bind(clientId).first();
+
+  return jsonResponse({
+    ...user,
+    client_id: clientId,
+    preview: {
+      active:         true,
+      client_id:      clientId,
+      client_name:    client
+        ? (client.business_display_name || client.business_name || client.name || `Client ${clientId}`)
+        : `Client ${clientId}`,
+      can_enable_write: testClient,
+      write_enabled:  await previewWriteAllowed(env, request, clientId),
+    },
+  }, 200, env);
 }
 
 // ---- Users ----
@@ -1219,6 +1269,86 @@ export class ApiError extends Error {
 
 function requireAdmin(user) {
   if (user.role !== 'admin') throw new ApiError('Forbidden — admin only', 403);
+}
+
+// ============================================================
+// ADMIN PREVIEW-AS
+// An admin can render any client's portal without that client's
+// password. Preview only ever NARROWS what an admin can already
+// reach through the admin interface, so it grants no new data —
+// it only changes which view is rendered.
+// ============================================================
+
+// Who is being previewed. Returns null unless the caller is an admin.
+//
+// The role gate below is the entire point of this helper: a client-role
+// caller who appends ?previewAs= to a URL is ignored completely, so a
+// client can never view another client by editing a URL.
+//
+// Note that a filter which silently ignores input from the wrong caller is
+// a filter someone will later mistake for an authorization check. This
+// returns null for a client rather than throwing, so callers MUST treat a
+// null as "not previewing" and fall back to the caller's own client_id —
+// never as "allowed".
+export function previewClientId(user, request) {
+  if (user.role !== 'admin') return null;
+  const url = new URL(request.url);
+  return url.searchParams.get('previewAs') || null;
+}
+
+// The single place any handler resolves "whose data is this request about".
+// For a client session this is ALWAYS that session's own client_id: a client
+// can never be redirected elsewhere by a query parameter. For an admin it is
+// the previewed client when previewing, and otherwise their own (null) value.
+//
+// Every handler that derives a client from the session must call this rather
+// than reading user.client_id directly, so a route added later cannot forget
+// the rule by accident.
+export function effectiveClientId(user, request) {
+  const previewing = previewClientId(user, request);
+  if (previewing !== null) return parseInt(previewing);
+  return user.client_id;
+}
+
+// Read the flag purely to choose which refusal message to show. This is a
+// presentation concern only and is never consulted to ALLOW anything —
+// previewWriteAllowed above is the sole authority on whether a write proceeds.
+async function isTestClientRow(env, clientId) {
+  try {
+    const row = await env.DB.prepare(
+      'SELECT is_test_client FROM clients WHERE id = ?'
+    ).bind(clientId).first();
+    return !!row && row.is_test_client === 1;
+  } catch {
+    return false;
+  }
+}
+
+// Whether a preview WRITE is permitted against this client.
+//
+// The previewWrite query parameter alone is NEVER sufficient. The database
+// flag is the actual control: this reads is_test_client from D1 on every
+// single write, never from the URL, never from a cache, and never from a
+// header or body the caller controls. That ordering is what makes a mistake
+// on a real client structurally impossible rather than merely discouraged —
+// a request forged by hand against a real client's portal is refused here
+// even if every interface control were bypassed.
+//
+// This deliberately does not check the role, because it is only ever
+// consulted after previewClientId has already established the caller is an admin.
+export async function previewWriteAllowed(env, request, clientId) {
+  const url = new URL(request.url);
+  if (url.searchParams.get('previewWrite') !== 'on') return false;
+
+  try {
+    const row = await env.DB.prepare(
+      'SELECT is_test_client FROM clients WHERE id = ?'
+    ).bind(clientId).first();
+    if (!row) return false;                 // missing client row: refuse
+    return row.is_test_client === 1;
+  } catch {
+    return false;                            // any lookup failure: refuse
+  }
 }
 
 export function match(pattern, path) {
