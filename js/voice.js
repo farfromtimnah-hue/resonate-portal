@@ -3,8 +3,8 @@
 // The client taps the mic, speaks, and taps again to stop. The whole
 // recording is uploaded as a single blob to
 //   POST {apiBase}/api/interview/sessions/{sessionId}/transcribe
-// which runs Workers AI Whisper and returns { text }. There is no
-// WebSocket and no self-hosted server involved.
+// which runs Workers AI Whisper and returns { text }. No streaming
+// connection and no self-hosted server is involved.
 //
 // Every failure path here is non-fatal: typing is always available and
 // nothing in this file may ever block the client from continuing.
