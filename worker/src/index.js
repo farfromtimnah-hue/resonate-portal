@@ -519,6 +519,7 @@ async function handleUpdateClient(id, request, env, user) {
     name, business_name, business_display_name, legal_name,
     overall_status, language_preference,
     brand_color_primary, brand_color_secondary, intake_complete, intake_enabled,
+    is_test_client,
     phone, whatsapp, email, website, address, contact_notes
   } = body;
 
@@ -541,6 +542,7 @@ async function handleUpdateClient(id, request, env, user) {
       brand_color_secondary = ?,
       intake_complete       = ?,
       intake_enabled        = ?,
+      is_test_client        = ?,
       phone                 = ?,
       whatsapp              = ?,
       email                 = ?,
@@ -560,6 +562,7 @@ async function handleUpdateClient(id, request, env, user) {
     brand_color_secondary !== undefined ? brand_color_secondary : client.brand_color_secondary,
     intake_complete     !== undefined ? (intake_complete ? 1 : 0) : client.intake_complete,
     intake_enabled      !== undefined ? (intake_enabled ? 1 : 0) : client.intake_enabled,
+    is_test_client      !== undefined ? (is_test_client ? 1 : 0) : client.is_test_client,
     phone               ?? client.phone,
     whatsapp            ?? client.whatsapp,
     email               ?? client.email,

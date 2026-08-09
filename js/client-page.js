@@ -1040,11 +1040,39 @@ function renderIntakeToggle(client) {
   const el = document.getElementById('intake-toggle-block');
   let isEnabled = !!client.intake_enabled;
 
+  let isTest = !!client.is_test_client;
+
   el.innerHTML = `
     <label class="form-check">
       <input id="intake-enabled-toggle" type="checkbox" ${isEnabled ? 'checked' : ''}>
       <span>Intake interview enabled</span>
-    </label>`;
+    </label>
+    <label class="form-check" style="margin-top:12px;">
+      <input id="test-client-toggle" type="checkbox" ${isTest ? 'checked' : ''}>
+      <span>Test client, allows preview writing</span>
+    </label>
+    <div class="text-muted" style="margin-top:6px; font-size:12px; line-height:1.5;">
+      Marking this client as a test client is what permits an administrator to
+      <strong>write</strong> to their portal while previewing it. Leave this off for every
+      real client: preview stays read-only and the API refuses preview writes.
+    </div>`;
+
+  const testCheckbox = document.getElementById('test-client-toggle');
+  testCheckbox.addEventListener('change', async () => {
+    const next = testCheckbox.checked;
+    testCheckbox.disabled = true;
+    try {
+      const updated = await api.updateClient(_clientId, { is_test_client: next });
+      isTest = !!updated.is_test_client;
+      _data.client.is_test_client = isTest;
+      testCheckbox.checked = isTest;
+    } catch (err) {
+      testCheckbox.checked = isTest; // revert on error
+      toast(err.message, 'error');
+    } finally {
+      testCheckbox.disabled = false;
+    }
+  });
 
   const checkbox = document.getElementById('intake-enabled-toggle');
   checkbox.addEventListener('change', async () => {

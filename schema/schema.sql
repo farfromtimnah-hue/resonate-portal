@@ -55,6 +55,9 @@ CREATE TABLE clients (
   brand_color_secondary TEXT,
   intake_complete       INTEGER  NOT NULL DEFAULT 0,
   intake_enabled        INTEGER  NOT NULL DEFAULT 0,
+  -- Test client: the ONLY thing that permits admin preview writes.
+  -- Defaults to 0 so no real client can ever be written to via preview.
+  is_test_client        INTEGER  NOT NULL DEFAULT 0,
 
   -- Legacy identity fields (referenced by existing frontend JS)
   name                  TEXT     NOT NULL DEFAULT '',   -- contact person name
