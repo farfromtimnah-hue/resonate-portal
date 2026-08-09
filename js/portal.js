@@ -285,7 +285,19 @@ function renderContent() {
   renderContact(client);
 
   // AI intake interview card — only for clients with intake explicitly enabled
-  document.getElementById('portal-intake-card')?.classList.toggle('hidden', !client.intake_enabled);
+  const intakeCard = document.getElementById('portal-intake-card');
+  intakeCard?.classList.toggle('hidden', !client.intake_enabled);
+
+  // Carry preview context across the navigation to intake.html. A plain href
+  // would drop it, and intake would then run against the admin's own session
+  // instead of the client being previewed.
+  if (intakeCard && _profile?.preview?.active) {
+    const page = new URLSearchParams(window.location.search);
+    const carry = new URLSearchParams();
+    carry.set('previewAs', page.get('previewAs'));
+    if (page.get('previewWrite')) carry.set('previewWrite', page.get('previewWrite'));
+    intakeCard.setAttribute('href', `intake.html?${carry.toString()}`);
+  }
 }
 
 // ---- Invoices ----

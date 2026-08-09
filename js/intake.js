@@ -82,7 +82,9 @@ var I18N = {
     error_generic:     'Something went wrong. Your answer was saved - please try again.',
     voice_permission:  'Microphone access was blocked. You can type your answer instead.',
     voice_empty:       'Nothing was heard. Try again, or type your answer.',
-    voice_failed:      'Voice input is not available right now. Please type your answer.'
+    voice_failed:      'Voice input is not available right now. Please type your answer.',
+    preview_readonly:  'Preview is read-only. Writing can be enabled from the banner at the bottom of the portal.',
+    preview_not_test:  'Preview is read-only for this client. Writing is only possible on a client marked as a test client.'
   },
   pt: {
     pref_progress: 'Pergunta {n} de 4',
@@ -141,13 +143,35 @@ var I18N = {
     error_generic:     'Algo deu errado. Sua resposta foi salva - tente novamente.',
     voice_permission:  'O acesso ao microfone foi bloqueado. Voce pode escrever a sua resposta.',
     voice_empty:       'Nao ouvimos nada. Tente de novo, ou escreva a sua resposta.',
-    voice_failed:      'A entrada por voz nao esta disponivel agora. Por favor escreva a sua resposta.'
+    voice_failed:      'A entrada por voz nao esta disponivel agora. Por favor escreva a sua resposta.',
+    preview_readonly:  'A pre-visualizacao e somente leitura. A escrita pode ser ativada no banner no rodape do portal.',
+    preview_not_test:  'A pre-visualizacao e somente leitura para este cliente. A escrita so e possivel em um cliente marcado como cliente de teste.'
   }
 };
 
 function t(key) {
   var dict = I18N[_lang] || I18N.en;
   return dict[key] || key;
+}
+
+// An interview is almost entirely writes, so an admin previewing without
+// writing enabled will hit the Worker's preview gate on nearly every action.
+// Say so plainly in the session language instead of showing a generic error
+// that leaves the person guessing which wall they hit.
+//
+// The Worker returns the two refusals as bilingual text; we map its 403 back
+// onto the local strings so the message matches the rest of this screen.
+function errorMessage(err) {
+  if (err && err.status === 403) {
+    var raw = String(err.message || '');
+    if (raw.indexOf('test client') !== -1 || raw.indexOf('cliente de teste') !== -1) {
+      return t('preview_not_test');
+    }
+    if (raw.indexOf('read-only') !== -1 || raw.indexOf('somente leitura') !== -1) {
+      return t('preview_readonly');
+    }
+  }
+  return (err && err.message) || t('error_generic');
 }
 
 // ---- screen switching ----
@@ -173,12 +197,33 @@ function speakQuestion(text) {
   window.speechSynthesis.speak(utterance);
 }
 
+// Preview context has to survive the trip back to portal.html, otherwise the
+// admin lands on the portal as themselves and loses the preview banner.
+// The API calls on this screen inherit preview through the shared api.js
+// helper, so no special-case request code is needed here.
+function carryPreviewOnPortalLinks() {
+  var page = new URLSearchParams(window.location.search);
+  var previewAs = page.get('previewAs');
+  if (!previewAs) return;
+
+  var query = '?previewAs=' + encodeURIComponent(previewAs);
+  var previewWrite = page.get('previewWrite');
+  if (previewWrite) query += '&previewWrite=' + encodeURIComponent(previewWrite);
+
+  var ids = ['back-to-portal', 'done-back-btn'];
+  for (var i = 0; i < ids.length; i++) {
+    var link = document.getElementById(ids[i]);
+    if (link) link.setAttribute('href', 'portal.html' + query);
+  }
+}
+
 // ---- init ----
 async function init() {
   var profile = await requireAuth('client');
   if (!profile) return;
 
   wireStaticButtons();
+  carryPreviewOnPortalLinks();
   initVoice();
 
   try {
@@ -388,7 +433,7 @@ async function chooseLanguage(language) {
       showPrefScreen();
     }
   } catch (err) {
-    alert(err.message || 'Error');
+    alert(errorMessage(err));
     showScreen('screen-language');
   }
 }
@@ -433,7 +478,7 @@ async function savePrefsAndStart() {
     if (_prefs.format_preference === 'spoken') _autoSpeak = true;
     await startSection('tasks');
   } catch (err) {
-    alert(err.message || 'Error');
+    alert(errorMessage(err));
     _prefIndex = firstMissingPref();
     showPrefScreen();
   }
@@ -448,7 +493,7 @@ async function startSection(section) {
     _entryId = null;
     showChat(res.question);
   } catch (err) {
-    alert(err.message || 'Error');
+    alert(errorMessage(err));
   }
 }
 
@@ -514,7 +559,7 @@ async function sendAnswer() {
       handleAnswerResponse(res);
     }
   } catch (err) {
-    if (status) status.textContent = err.message || t('error_generic');
+    if (status) status.textContent = errorMessage(err);
   } finally {
     _sending = false;
     if (sendBtn) sendBtn.disabled = false;
@@ -570,7 +615,7 @@ async function skipFuture() {
     await api.interviewFutureSkip(_session.id);
     showDone();
   } catch (err) {
-    alert(err.message || 'Error');
+    alert(errorMessage(err));
     showFutureGate();
   }
 }

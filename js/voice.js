@@ -75,7 +75,17 @@ export function createVoiceRecorder(opts) {
     emitState('transcribing');
     try {
       var auth = await opts.getAuthHeader();
+      // Transcription is a POST and this call bypasses the api.js request
+      // helper, so it has to carry the preview context itself. Without this
+      // the Worker's preview gate refuses transcription while previewing.
       var url = opts.apiBase + '/api/interview/sessions/' + opts.sessionId + '/transcribe';
+      var page = new URLSearchParams(window.location.search);
+      var previewAs = page.get('previewAs');
+      if (previewAs) {
+        url += '?previewAs=' + encodeURIComponent(previewAs);
+        var previewWrite = page.get('previewWrite');
+        if (previewWrite) url += '&previewWrite=' + encodeURIComponent(previewWrite);
+      }
       var res = await fetch(url, {
         method: 'POST',
         cache: 'no-store',
