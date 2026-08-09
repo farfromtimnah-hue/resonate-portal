@@ -744,10 +744,23 @@ async function handleTranscribe(sessionId, request, env, user) {
   // and Portuguese clients use this endpoint at the same time.
   var langCode = session.language === 'pt' ? 'pt' : 'en';
 
+  // whisper-large-v3-turbo takes BASE64, not a byte array. Passing an array
+  // fails with a misleading error ("Type mismatch of '/audio', 'string' not in
+  // 'array','binary'") that reads as though an array were wanted. Verified
+  // 2026-08-09 against real Brazilian Portuguese audio: the array form fails
+  // 100% of the time, base64 transcribes correctly. Chunked to stay clear of
+  // the argument limit on String.fromCharCode for multi-MB recordings.
+  var bytes = new Uint8Array(audioBuffer);
+  var binary = '';
+  for (var i = 0; i < bytes.length; i += 8192) {
+    binary += String.fromCharCode.apply(null, bytes.subarray(i, i + 8192));
+  }
+  var audioBase64 = btoa(binary);
+
   var result;
   try {
     result = await env.AI.run('@cf/openai/whisper-large-v3-turbo', {
-      audio: [].slice.call(new Uint8Array(audioBuffer)),
+      audio: audioBase64,
       task: 'transcribe',
       // Explicit language stops autodetect flipping when a Portuguese speaker
       // says an English brand name mid sentence.
