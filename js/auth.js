@@ -44,8 +44,31 @@ export async function signOut() {
   _profile = null;
 }
 
+// The cached profile is only reusable when it already matches the preview
+// context of the page asking for it. signIn/signInWithGoogle and the
+// onAuthStateChanged listener all populate _profile from whatever URL happened
+// to be current at the time, which for an admin arriving from the dashboard is
+// a URL with no previewAs. Returning that cached profile on a portal.html
+// preview page left profile.preview undefined, so requireAuth fell through to
+// the wrong-role branch and bounced the admin straight back to the dashboard —
+// preview could never render. Re-fetch whenever the page's previewAs and the
+// cached profile disagree.
+function previewContextMatches(profile) {
+  const wanted = new URLSearchParams(window.location.search).get('previewAs');
+  const have   = profile && profile.preview && profile.preview.active
+    ? String(profile.preview.client_id)
+    : null;
+  return wanted === have;
+}
+
 export async function getProfile() {
-  if (_profile) return _profile;
+  if (_profile && previewContextMatches(_profile)) return _profile;
+  // Cached profile is missing or was fetched under a different preview
+  // context. Re-fetch against the current URL so preview state is correct.
+  if (_profile && _fbUser) {
+    try { _profile = await fetchProfile(_fbUser); } catch { /* keep the old profile */ }
+    return _profile;
+  }
   await waitForAuth();
   return _profile;
 }
