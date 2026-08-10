@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>Interview Results — Resonate</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700&family=Newsreader:opsz,wght@6..72,700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+
+  <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "primary-container":    "#005b96",
+            "primary-fixed-dim":    "#9ccaff",
+            "on-primary-fixed":     "#001d35",
+            "inverse-surface":      "#2e3135",
+            "outline-variant":      "#c1c7d1",
+            "on-primary":           "#ffffff",
+            "tertiary-fixed-dim":   "#ffb781",
+            "secondary-fixed-dim":  "#c5c6d1",
+          },
+          borderRadius: { "full": "9999px", "DEFAULT": "1rem", "lg": "2rem" },
+          fontFamily: { "jakarta": ["Plus Jakarta Sans","sans-serif"], "newsreader": ["Newsreader","serif"] },
+        }
+      }
+    }
+  </script>
+
+  <link rel="stylesheet" href="css/app.css?v=4">
+  <link rel="stylesheet" href="css/intake-results-print.css?v=1" media="print">
+</head>
+
+<body class="font-jakarta">
+
+<div id="loading" style="padding:3rem; text-align:center; color:#9ca3af;">Loading interview…</div>
+
+<main id="page" class="hidden" style="max-width:1080px; margin:0 auto; padding:24px 20px 80px;">
+
+  <!-- Screen-only navigation and controls. The print stylesheet drops this. -->
+  <div class="no-print" style="display:flex; flex-wrap:wrap; gap:12px; align-items:center; justify-content:space-between; margin-bottom:24px;">
+    <a id="back-link" class="btn btn--secondary btn--sm" href="dashboard.html">← Back to client</a>
+    <div style="display:flex; flex-wrap:wrap; gap:8px;">
+      <button id="copy-btn"  class="btn btn--secondary btn--sm">Copy as Markdown</button>
+      <button id="print-btn" class="btn btn--secondary btn--sm">Print / Save as PDF</button>
+    </div>
+  </div>
+
+  <header style="margin-bottom:24px;">
+    <h1 id="results-client" class="font-newsreader" style="font-size:28px; margin:0;"></h1>
+    <div id="results-sub" class="text-muted" style="font-size:13px; margin-top:4px;"></div>
+  </header>
+
+  <!-- Person switcher. Screen only: print shows every person in full. -->
+  <div id="person-tabs" class="no-print" style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:24px;"></div>
+
+  <!-- One section per person. On screen all but the selected are hidden;
+       in print every one is shown, each starting a new page. -->
+  <div id="people-sections"></div>
+
+</main>
+
+<script type="module" src="js/intake-results.js?v=1"></script>
+</body>
+</html>

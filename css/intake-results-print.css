@@ -1,0 +1,139 @@
+/* ============================================================
+   Intake interview results — print stylesheet
+   Loaded with media="print", so it only ever applies on paper.
+
+   Uses the browser's own print path rather than a PDF library: no new
+   dependency, and it produces a PDF on any machine via Save as PDF.
+   ============================================================ */
+
+/* Navigation and controls are screen affordances. On paper they are
+   either meaningless (a button) or misleading (a tab implying the other
+   people are missing), so they are dropped entirely. */
+.no-print,
+nav,
+button,
+.btn {
+  display: none !important;
+}
+
+/* Print in ink on white regardless of the dark screen theme. */
+html, body {
+  background: #fff !important;
+  color: #111 !important;
+  font-size: 11pt;
+}
+
+#page {
+  max-width: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* On screen only the selected person is shown. On paper EVERY person is
+   printed: a printed copy that silently contained one of three people
+   would be worse than no printout. */
+.person-section {
+  display: block !important;
+}
+
+/* Each person starts a new page and states their role, so a printed copy
+   is never ambiguous about who said what. */
+.person-section {
+  break-before: page;
+  page-break-before: always;
+}
+.person-section:first-of-type {
+  break-before: auto;
+  page-break-before: auto;
+}
+
+/* An entry must not split across two pages: half a task on one sheet and
+   its pain level on the next is how a reader loses the thread. */
+.entry-card {
+  break-inside: avoid;
+  page-break-inside: avoid;
+  border: 1px solid #ccc !important;
+  background: #fff !important;
+  margin-bottom: 10pt;
+  padding: 8pt 10pt;
+}
+
+.dimension,
+.summary-card,
+.pref-card {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+/* Headings stay with the content they introduce. */
+h1, h2, h3, h4 {
+  break-after: avoid;
+  page-break-after: avoid;
+  color: #111 !important;
+}
+
+/* Both languages survive the print. The Portuguese original stays
+   quieter than the English but remains fully legible — it is the
+   client's own words and the reason to trust the translation. */
+.pt-original {
+  color: #444 !important;
+  font-style: italic;
+  border-left: 2pt solid #bbb;
+  padding-left: 6pt;
+}
+
+.lang-tag {
+  color: #666 !important;
+  font-weight: 600;
+}
+
+/* Review flags must survive to paper: a printed copy that dropped the
+   incomplete markers would mislead the reader later. */
+.flag {
+  border: 1pt solid #444 !important;
+  background: #f0f0f0 !important;
+  color: #111 !important;
+  padding: 1pt 4pt;
+  font-weight: 600;
+}
+
+.flag-review {
+  border-color: #a15c00 !important;
+  background: #fff3e0 !important;
+  color: #6b3d00 !important;
+}
+
+.solution-jump {
+  border: 1pt dashed #666 !important;
+  background: #fafafa !important;
+  color: #111 !important;
+  padding: 6pt 8pt;
+}
+
+.missing {
+  color: #8a1c1c !important;
+  font-style: italic;
+}
+
+/* The raw conversation log is collapsed on screen. Whatever state it was
+   left in, print it expanded — a transcript folded shut on paper is just
+   a missing transcript. */
+details {
+  display: block !important;
+}
+details > summary {
+  display: block !important;
+  font-weight: 700;
+}
+details > *:not(summary) {
+  display: block !important;
+}
+
+a {
+  color: #111 !important;
+  text-decoration: none;
+}
+
+@page {
+  margin: 16mm 14mm;
+}
