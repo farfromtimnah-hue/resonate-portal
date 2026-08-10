@@ -26,7 +26,73 @@
   <link rel="stylesheet" href="css/app.css?v=4">
 
   <style>
-    body { font-family: 'Plus Jakarta Sans', sans-serif; background: #F8F7F4; color: #414750; }
+    /* ── Ocean background (Nicole's own photograph) ──────────────────────────
+       Full-strength photo with "liquid glass" cards over it, chosen at 45%
+       card opacity. C3 (30%) looked better in a screenshot but the client
+       reads and types in these boxes for twenty minutes; 45% keeps the photo
+       unmistakably present while the text stays comfortable to work in.
+
+       The image is FIXED so it does not scroll away - the whole interview
+       feels like one calm space rather than a photo that slides past. It is
+       applied to <body> so every screen shares it: language, preferences,
+       conversation, the future gate and the completion screen.             */
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      color: #414750;
+      background: #F8F7F4 url('assets/images/intake-bg-ocean.jpg') center 65% / cover no-repeat fixed;
+    }
+    /* Safari and iOS ignore background-attachment:fixed. Fall back to a fixed
+       pseudo-element so the effect survives rather than jumping on scroll. */
+    @supports (-webkit-touch-callout: none) {
+      body { background-attachment: scroll; }
+    }
+
+    /* Cards: translucent glass. The blur is what stops the photo from reading
+       THROUGH the text - without it, low opacity alone looks muddy. */
+    .intake-card {
+      background: rgba(255, 255, 255, .45) !important;
+      backdrop-filter: blur(18px) saturate(1.1);
+      -webkit-backdrop-filter: blur(18px) saturate(1.1);
+      border: 1px solid rgba(255, 255, 255, .55) !important;
+      box-shadow: 0 6px 28px rgba(0, 29, 53, .10) !important;
+    }
+
+    /* The answer box is where she types, so it stays lighter than the card
+       around it. Legibility of her own words beats the glass effect here. */
+    #screen-chat .form-control {
+      background: rgba(255, 255, 255, .62);
+      border-color: rgba(0, 0, 0, .10);
+    }
+    #screen-chat .form-control:focus { background: rgba(255, 255, 255, .78); }
+
+    /* Section label sits directly ON the photo with no card behind it, so it
+       carries its own contrast rather than relying on one. */
+    #chat-section-label, #pref-progress {
+      color: #0d2b3e !important;
+      text-shadow: 0 1px 2px rgba(255, 255, 255, .85);
+    }
+
+    /* Preference options and the secondary gate button are pale grey pills by
+       default, which float oddly on a beach. Give them the same glass. */
+    #pref-options .btn, .btn--secondary {
+      background: rgba(255, 255, 255, .55) !important;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, .6) !important;
+    }
+    #pref-options .btn:hover, .btn--secondary:hover {
+      background: rgba(255, 255, 255, .72) !important;
+    }
+
+    .intake-icon-btn { background: rgba(238, 241, 244, .85) !important; }
+
+    /* The sticky header sat on solid white; on the photo it reads as a band
+       across the top. Match the glass so it belongs to the same surface. */
+    header {
+      background: rgba(255, 255, 255, .55) !important;
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+    }
   </style>
 </head>
 <body class="min-h-screen antialiased">
@@ -53,7 +119,7 @@
 
   <!-- ── Section 0: language selection (static, never AI-generated) ── -->
   <div id="screen-language" class="hidden">
-    <div class="bg-white rounded-lg border border-black/5 p-8 shadow-sm text-center">
+    <div class="intake-card bg-white rounded-lg border border-black/5 p-8 shadow-sm text-center">
       <p class="font-newsreader text-[26px] text-[#001d35] mb-2" style="font-family:'Newsreader',serif;">
         Bem-vinda / Welcome
       </p>
@@ -67,7 +133,7 @@
 
   <!-- ── Section 1: preference questions (one per screen, tap only) ── -->
   <div id="screen-preferences" class="hidden">
-    <div class="bg-white rounded-lg border border-black/5 p-8 shadow-sm">
+    <div class="intake-card bg-white rounded-lg border border-black/5 p-8 shadow-sm">
       <p id="pref-progress" class="text-[#717781] text-[11px] uppercase font-semibold tracking-widest mb-4"></p>
       <p id="pref-question" class="font-newsreader text-[22px] text-[#001d35] mb-6" style="font-family:'Newsreader',serif;"></p>
       <div id="pref-options" class="flex flex-col gap-3"></div>
@@ -77,7 +143,7 @@
   <!-- ── Sections 2/3/4: conversational interview ── -->
   <div id="screen-chat" class="hidden">
     <p id="chat-section-label" class="text-[#717781] text-[11px] uppercase font-semibold tracking-widest mb-3"></p>
-    <div class="bg-white rounded-lg border border-black/5 p-6 shadow-sm mb-4">
+    <div class="intake-card bg-white rounded-lg border border-black/5 p-6 shadow-sm mb-4">
       <div class="flex items-start gap-3">
         <p id="chat-question" class="font-newsreader text-[20px] text-[#001d35] flex-1" style="font-family:'Newsreader',serif; line-height:1.4;"></p>
         <button id="listen-btn" class="intake-icon-btn" title="Listen" aria-label="Listen">
@@ -85,7 +151,7 @@
         </button>
       </div>
     </div>
-    <div class="bg-white rounded-lg border border-black/5 p-5 shadow-sm">
+    <div class="intake-card bg-white rounded-lg border border-black/5 p-5 shadow-sm">
       <textarea id="chat-input" class="form-control" rows="4"></textarea>
       <div class="flex items-center justify-between mt-3">
         <button id="voice-btn" class="intake-icon-btn hidden" title="Speak" aria-label="Speak">
@@ -100,7 +166,7 @@
 
   <!-- ── Section 4 gate: click-to-skip for Future/Vision ── -->
   <div id="screen-future-gate" class="hidden">
-    <div class="bg-white rounded-lg border border-black/5 p-8 shadow-sm text-center">
+    <div class="intake-card bg-white rounded-lg border border-black/5 p-8 shadow-sm text-center">
       <p id="future-gate-title" class="font-newsreader text-[22px] text-[#001d35] mb-3" style="font-family:'Newsreader',serif;"></p>
       <p id="future-gate-copy" class="text-[#717781] text-[14px] mb-8"></p>
       <div class="flex flex-col sm:flex-row gap-3 justify-center">
@@ -112,7 +178,7 @@
 
   <!-- ── Completion ── -->
   <div id="screen-done" class="hidden">
-    <div class="bg-white rounded-lg border border-black/5 p-8 shadow-sm text-center">
+    <div class="intake-card bg-white rounded-lg border border-black/5 p-8 shadow-sm text-center">
       <span class="material-symbols-outlined" style="font-size:44px; color:#005b96;">check_circle</span>
       <p id="done-title" class="font-newsreader text-[24px] text-[#001d35] mt-3 mb-2" style="font-family:'Newsreader',serif;"></p>
       <p id="done-copy" class="text-[#717781] text-[14px] mb-6"></p>
@@ -128,6 +194,6 @@
      old copy for hours regardless of what was deployed. This sat at v=1 from
      July until Aug 9, 2026, so no intake change had ever reached a browser
      that had already loaded the page once. -->
-<script type="module" src="js/intake.js?v=3"></script>
+<script type="module" src="js/intake.js?v=4"></script>
 </body>
 </html>
