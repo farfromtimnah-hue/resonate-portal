@@ -37,6 +37,14 @@
 
   <link rel="stylesheet" href="css/app.css?v=4">
   <link rel="stylesheet" href="css/intake-results-print.css?v=1" media="print">
+
+  <style>
+    /* Every other admin page sets these; without them the body inherits the
+       browser default black text and the person's name renders black-on-dark. */
+    body { font-family: 'Plus Jakarta Sans', sans-serif; background: #0f1115; color: #c1c7d1; }
+    /* The name is the primary heading on the card — brand blue, like other admin headings. */
+    #people-sections h2 { color: var(--text-1); }
+  </style>
 </head>
 
 <body class="font-jakarta">
@@ -68,6 +76,6 @@
 
 </main>
 
-<script type="module" src="js/intake-results.js?v=1"></script>
+<script type="module" src="js/intake-results.js?v=2"></script>
 </body>
 </html>
