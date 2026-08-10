@@ -68,6 +68,11 @@ export const api = {
   createClient: (data)           => req('POST',   '/api/clients', data),
   getClient:    (id)             => req('GET',    `/api/clients/${id}`),
   updateClient: (id, data)       => req('PUT',    `/api/clients/${id}`, data),
+  // People on a client (admin) — a business can have more than one
+  // person whose work is worth interviewing
+  addPerson:    (clientId, d)       => req('POST', `/api/clients/${clientId}/people`, d),
+  updatePerson: (clientId, pid, d)  => req('PUT',  `/api/clients/${clientId}/people/${pid}`, d),
+
   archiveClient: (id)            => req('POST',   `/api/clients/${id}/archive`),
   restoreClient: (id)            => req('POST',   `/api/clients/${id}/restore`),
   archive:      ()               => req('GET',    '/api/archive'),

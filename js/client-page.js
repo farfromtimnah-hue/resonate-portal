@@ -202,7 +202,7 @@ async function loadData() {
 // ---- Main render ----
 
 function render() {
-  const { client, projects, comments, notes, links, linked_user, history } = _data;
+  const { client, projects, comments, notes, links, people, history } = _data;
 
   document.title = `${client.name} — Resonate`;
 
@@ -257,11 +257,15 @@ function render() {
 
   // Links are rendered per-project inside renderProjects
 
-  // Portal access
-  renderPortalAccess(linked_user, client);
+  // People on this client (portal logins + who takes an interview)
+  renderPeople(people, client);
 
-  // Intake interview toggle
+  // Intake interview toggle (business-level on switch)
   renderIntakeToggle(client);
+
+  // Results link — shown only when this client actually has an interview,
+  // so a client who has never interviewed does not get a dead link.
+  renderResultsLink(client);
 
   // History
   renderHistory(history);
@@ -985,59 +989,202 @@ async function archiveClient() {
   } catch (err) { toast(err.message, 'error'); }
 }
 
-// ---- Portal access ----
+// ---- People on this client ----
+//
+// A client is a business, and a business often has more than one person whose
+// day-to-day work is worth capturing: the owner who runs it, and the spouse or
+// manager who runs the back office. This is a list, not a single linked user.
 
-function renderPortalAccess(linkedUser, client) {
-  const el = document.getElementById('portal-access-block');
-  if (linkedUser) {
-    el.innerHTML = `
-      <div style="font-size:13px; color:var(--text-2); margin-bottom:8px;">
-        <strong>${esc(linkedUser.email)}</strong><br>
-        <span style="font-size:11px; color:var(--text-3); font-family:var(--mono);">UID: ${esc(linkedUser.firebase_uid)}</span>
-      </div>
-      <button class="btn btn--danger btn--sm" onclick="window.__removePortalAccess('${linkedUser.firebase_uid}')">Remove Access</button>`;
-
-    window.__removePortalAccess = async (uid) => {
-      if (!confirm('Remove portal access for this client?')) return;
-      try {
-        await api.deleteUser(uid);
-        _data.linked_user = null;
-        renderPortalAccess(null, client);
-        toast('Portal access removed.');
-      } catch (err) { toast(err.message, 'error'); }
-    };
-  } else {
-    el.innerHTML = `
-      <div style="font-size:13px; color:var(--text-3); margin-bottom:8px;">No portal login configured.</div>
-      <button class="btn btn--secondary btn--sm" id="add-access-btn">Add Portal Access</button>`;
-    document.getElementById('add-access-btn').addEventListener('click', () => {
-      document.getElementById('pa-email').value = _data.client.email || '';
-      openModal('modal-portal-access');
-    });
+// An interview in progress must be visibly distinct from a finished one, so
+// Nicole can tell who she is still waiting on without opening anything.
+function interviewStatusChip(person) {
+  if (person.interview_status === 'completed') {
+    const when = person.interview_completed_at
+      ? ` ${formatDate(person.interview_completed_at)}`
+      : '';
+    return `<span class="badge" style="background:rgba(52,211,153,.14); color:#34d399;">Interview complete${esc(when)}</span>`;
   }
+  if (person.interview_status === 'in_progress') {
+    return `<span class="badge" style="background:rgba(251,191,36,.16); color:#fbbf24;">Interview in progress</span>`;
+  }
+  if (person.interview_status === 'abandoned') {
+    return `<span class="badge" style="background:rgba(248,113,113,.14); color:#f87171;">Interview abandoned</span>`;
+  }
+  return `<span class="badge" style="background:rgba(255,255,255,.06); color:var(--text-3);">Not started</span>`;
 }
 
+function renderPeople(people, client) {
+  const el = document.getElementById('portal-access-block');
+  const rows = (people || []).filter(p => p.role !== 'admin');
+
+  const list = rows.length ? rows.map(p => {
+    const name = [p.first_name, p.last_name].filter(Boolean).join(' ');
+    const roleLabel = p.interview_role
+      ? esc(p.interview_role)
+      : '<span style="color:var(--text-3);">role not set</span>';
+
+    return `
+      <div style="padding:12px 0; border-bottom:1px solid rgba(255,255,255,0.05);">
+        <div style="font-size:13px; color:var(--text-2);">
+          <strong>${esc(name || p.email)}</strong>
+          ${name ? `<br><span style="font-size:12px; color:var(--text-3);">${esc(p.email)}</span>` : ''}
+        </div>
+        <div style="font-size:12px; color:var(--text-2); margin-top:4px;">${roleLabel}</div>
+        <div style="display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin-top:8px;">
+          <span class="badge" style="background:rgba(255,255,255,.06); color:var(--text-3);">Portal access</span>
+          ${interviewStatusChip(p)}
+        </div>
+        <label class="form-check" style="margin-top:10px;">
+          <input type="checkbox" data-person-intake="${p.id}" ${p.intake_enabled ? 'checked' : ''}>
+          <span style="font-size:12px;">Takes the intake interview</span>
+        </label>
+        <div style="display:flex; gap:8px; margin-top:8px;">
+          <button class="btn btn--secondary btn--sm" data-edit-person="${p.id}">Edit role</button>
+          <button class="btn btn--danger btn--sm" data-remove-person="${esc(p.firebase_uid)}">Remove access</button>
+        </div>
+      </div>`;
+  }).join('') : `<div style="font-size:13px; color:var(--text-3); margin-bottom:8px;">No portal logins configured.</div>`;
+
+  el.innerHTML = `
+    ${list}
+    <button class="btn btn--secondary btn--sm" id="add-person-btn" style="margin-top:12px;">Add a person</button>
+    <div class="text-muted" style="margin-top:8px; font-size:12px; line-height:1.5;">
+      The client-level switch below turns interviews on for the business.
+      Each person here is enrolled individually.
+    </div>`;
+
+  document.getElementById('add-person-btn').addEventListener('click', () => {
+    document.getElementById('pa-email').value = '';
+    document.getElementById('pa-first').value = '';
+    document.getElementById('pa-last').value  = '';
+    document.getElementById('pa-role').value  = '';
+    document.getElementById('pa-intake').checked = false;
+    document.getElementById('pa-result').classList.add('hidden');
+    document.getElementById('pa-form').classList.remove('hidden');
+    openModal('modal-portal-access');
+  });
+
+  el.querySelectorAll('[data-person-intake]').forEach(cb => {
+    cb.addEventListener('change', async () => {
+      const id = cb.getAttribute('data-person-intake');
+      cb.disabled = true;
+      try {
+        await api.updatePerson(_clientId, id, { intake_enabled: cb.checked });
+        toast(cb.checked ? 'Interview enabled for this person.' : 'Interview disabled for this person.');
+        await loadData();
+      } catch (err) {
+        cb.checked = !cb.checked;
+        toast(err.message, 'error');
+      } finally { cb.disabled = false; }
+    });
+  });
+
+  el.querySelectorAll('[data-edit-person]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = btn.getAttribute('data-edit-person');
+      const person = rows.find(p => String(p.id) === String(id));
+      const next = prompt(
+        'What does this person do in the business?\n(for example: owner, back office, operations)',
+        person?.interview_role || ''
+      );
+      if (next === null) return;
+      try {
+        await api.updatePerson(_clientId, id, { interview_role: next.trim() });
+        toast('Role updated.');
+        await loadData();
+      } catch (err) { toast(err.message, 'error'); }
+    });
+  });
+
+  // Removing access must be honest about what it does and does not touch.
+  // A completed interview is Nicole's working material and outlives the login.
+  el.querySelectorAll('[data-remove-person]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const uid = btn.getAttribute('data-remove-person');
+      const person = rows.find(p => p.firebase_uid === uid);
+      const hasInterview = person && person.session_count > 0;
+      const msg = hasInterview
+        ? 'Remove this person\'s portal login?\n\n'
+          + 'They will no longer be able to sign in.\n\n'
+          + 'Their interview answers are KEPT and stay readable on the results '
+          + 'page, but the answers will no longer show who gave them.'
+        : 'Remove this person\'s portal login?\n\nThey will no longer be able to sign in.';
+      if (!confirm(msg)) return;
+      try {
+        await api.deleteUser(uid);
+        toast('Portal access removed. Interview answers kept.');
+        await loadData();
+      } catch (err) { toast(err.message, 'error'); }
+    });
+  });
+}
+
+// Adding a person creates a REAL login for a REAL person, through the same
+// Firebase path the Add Client flow uses. The temporary password is shown
+// once and is not recoverable afterwards, so the modal keeps it on screen
+// until Nicole dismisses it rather than closing on success.
 async function savePortalAccess() {
-  const uid   = document.getElementById('pa-uid').value.trim();
   const email = document.getElementById('pa-email').value.trim();
-  if (!uid || !email) { toast('UID and email are required.', 'error'); return; }
+  const first = document.getElementById('pa-first').value.trim();
+  const last  = document.getElementById('pa-last').value.trim();
+  const role  = document.getElementById('pa-role').value.trim();
+  const intake = document.getElementById('pa-intake').checked;
+  if (!email) { toast('An email address is required.', 'error'); return; }
 
   const btn = document.getElementById('pa-save-btn');
-  btn.disabled = true; btn.textContent = 'Saving…';
+  btn.disabled = true; btn.textContent = 'Creating…';
 
   try {
-    await api.upsertUser({
-      firebase_uid:        uid,
+    const res = await api.addPerson(_clientId, {
       email,
-      role:                'client',
-      client_id:           parseInt(_clientId),
-      language_preference: _data.client.language_preference || 'en',
+      first_name:     first,
+      last_name:      last,
+      interview_role: role,
+      intake_enabled: intake,
     });
+
+    document.getElementById('pa-form').classList.add('hidden');
+    const out = document.getElementById('pa-result');
+    out.classList.remove('hidden');
+    out.innerHTML = `
+      <p style="font-size:13px; color:var(--text-2); line-height:1.6;">
+        A login was created for <strong>${esc(email)}</strong>.
+        Give them this temporary password — it is not shown again.
+      </p>
+      <div style="font-family:var(--mono); font-size:16px; background:rgba(255,255,255,.06);
+                  padding:12px; border-radius:8px; margin-top:8px; user-select:all;">
+        ${esc(res.temp_password || '(not created)')}
+      </div>`;
+
     await loadData();
-    closeModal('modal-portal-access');
-    toast('Portal access added.');
+    toast('Person added.');
   } catch (err) { toast(err.message, 'error'); }
-  finally { btn.disabled = false; btn.textContent = 'Save Access'; }
+  finally { btn.disabled = false; btn.textContent = 'Create login'; }
+}
+
+// ---- Interview results link ----
+
+function renderResultsLink(client) {
+  const el = document.getElementById('intake-results-block');
+  if (!el) return;
+
+  // No interview, no link. A dead link that opens an empty page is worse
+  // than no link at all.
+  const count = _data.intake_session_count || 0;
+  if (!count) {
+    el.innerHTML = '';
+    el.classList.add('hidden');
+    return;
+  }
+
+  el.classList.remove('hidden');
+  el.innerHTML = `
+    <a class="btn btn--primary btn--sm" href="intake-results.html?client=${encodeURIComponent(_clientId)}">
+      Read interview results
+    </a>
+    <div class="text-muted" style="margin-top:6px; font-size:12px;">
+      ${count} interview${count === 1 ? '' : 's'} recorded for this client.
+    </div>`;
 }
 
 // ---- Intake interview toggle ----
@@ -1051,8 +1198,12 @@ function renderIntakeToggle(client) {
   el.innerHTML = `
     <label class="form-check">
       <input id="intake-enabled-toggle" type="checkbox" ${isEnabled ? 'checked' : ''}>
-      <span>Intake interview enabled</span>
+      <span>Intake interviews enabled for this business</span>
     </label>
+    <div class="text-muted" style="margin-top:4px; font-size:12px; line-height:1.5;">
+      The overall on switch. Each person above is then enrolled individually,
+      so turning this on does not offer the interview to everyone here.
+    </div>
     <label class="form-check" style="margin-top:12px;">
       <input id="test-client-toggle" type="checkbox" ${isTest ? 'checked' : ''}>
       <span>Test client, allows preview writing</span>

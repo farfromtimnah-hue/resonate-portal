@@ -279,11 +279,12 @@
         </div>
 
 
-        <!-- Portal Access -->
+        <!-- People on this client -->
         <div class="bg-inverse-surface rounded-lg border border-white/5 p-6">
-          <p class="text-outline-variant text-[11px] uppercase font-semibold tracking-widest mb-4">Portal Access</p>
+          <p class="text-outline-variant text-[11px] uppercase font-semibold tracking-widest mb-4">People</p>
           <div id="portal-access-block"></div>
           <div id="intake-toggle-block" style="margin-top:16px; padding-top:16px; border-top:1px solid rgba(255,255,255,0.05);"></div>
+          <div id="intake-results-block" class="hidden" style="margin-top:16px; padding-top:16px; border-top:1px solid rgba(255,255,255,0.05);"></div>
         </div>
 
         <!-- Status History -->
@@ -464,25 +465,45 @@
 <div id="modal-portal-access" class="modal">
   <div class="modal__box" style="max-width:440px;">
     <div class="modal__head">
-      <span class="modal__title">Add Portal Access</span>
+      <span class="modal__title">Add a person</span>
       <button type="button" class="modal__close" data-close="modal-portal-access">✕</button>
     </div>
     <div class="modal__body">
-      <p style="font-size:13px; color:var(--text-2); margin-bottom:16px; line-height:1.6;">
-        First, go to <strong>Firebase Console → Authentication → Add user</strong> and create an account for this client with their email and a temporary password. Then copy the UID shown there and paste it below.
-      </p>
-      <div class="form-group">
-        <label class="form-label">Firebase UID</label>
-        <input id="pa-uid" type="text" class="form-control" placeholder="e.g. abc123xyz…">
+      <div id="pa-form">
+        <p style="font-size:13px; color:var(--text-2); margin-bottom:16px; line-height:1.6;">
+          This creates a <strong>real login for a real person</strong>. They will be able to
+          sign in to this client's portal immediately, and you will get a temporary
+          password to pass on to them. The Firebase account is created for you.
+        </p>
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input id="pa-email" type="email" class="form-control" placeholder="person@example.com">
+        </div>
+        <div class="form-group">
+          <label class="form-label">First name</label>
+          <input id="pa-first" type="text" class="form-control" placeholder="Maria">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Last name</label>
+          <input id="pa-last" type="text" class="form-control" placeholder="Silva">
+        </div>
+        <div class="form-group">
+          <label class="form-label">What they do in the business</label>
+          <input id="pa-role" type="text" class="form-control" placeholder="owner, back office, operations…">
+          <div class="text-muted" style="margin-top:4px; font-size:12px;">
+            Recorded with their interview so an export says whose answers these are.
+          </div>
+        </div>
+        <label class="form-check">
+          <input id="pa-intake" type="checkbox">
+          <span>This person takes the intake interview</span>
+        </label>
       </div>
-      <div class="form-group">
-        <label class="form-label">Email</label>
-        <input id="pa-email" type="email" class="form-control" placeholder="client@example.com">
-      </div>
+      <div id="pa-result" class="hidden"></div>
     </div>
     <div class="modal__footer">
-      <button type="button" class="btn btn--secondary" data-close="modal-portal-access">Cancel</button>
-      <button id="pa-save-btn" class="btn btn--primary">Save Access</button>
+      <button type="button" class="btn btn--secondary" data-close="modal-portal-access">Close</button>
+      <button id="pa-save-btn" class="btn btn--primary">Create login</button>
     </div>
   </div>
 </div>

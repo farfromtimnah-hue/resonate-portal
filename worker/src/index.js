@@ -154,6 +154,21 @@ async function router(request, env, user, url, method, path) {
     if (method === 'PUT')  { requireAdmin(user); return handleUpdateClient(params.id, request, env, user); }
   }
 
+  // ---- PEOPLE ON A CLIENT (admin only) ----
+  // A client is a business, and a business often has more than one person
+  // whose day-to-day work is worth capturing.
+  params = match('/api/clients/:id/people', path);
+  if (params && method === 'POST') {
+    requireAdmin(user);
+    return handleAddPerson(params.id, request, env);
+  }
+
+  params = match('/api/clients/:id/people/:pid', path);
+  if (params && method === 'PUT') {
+    requireAdmin(user);
+    return handleUpdatePerson(params.id, params.pid, request, env);
+  }
+
   params = match('/api/clients/:id/archive', path);
   if (params && method === 'POST') {
     requireAdmin(user);
@@ -394,6 +409,130 @@ function generateTempPassword() {
   return pw.split('').sort(() => Math.random() - 0.5).join('');
 }
 
+// Create a real Firebase Auth login and its portal user row.
+//
+// Extracted from the Add Client flow so adding a second person to an existing
+// client goes through exactly the same path rather than a second, subtly
+// different way of doing the same thing. Returns the temp password so the
+// interface can show it once — it is never recoverable afterwards.
+//
+// A Firebase failure is reported to the caller rather than swallowed: when
+// this is called to add a person, a user row without a login is not a partial
+// success, it is a person who cannot sign in.
+async function createPortalLogin(env, { email, displayName, clientId, languagePreference,
+                                        firstName, lastName, interviewRole, intakeEnabled }) {
+  if (!env.FIREBASE_API_KEY || env.FIREBASE_API_KEY === 'REPLACE_WITH_YOUR_FIREBASE_WEB_API_KEY') {
+    throw new ApiError('Firebase is not configured, so a login cannot be created.', 503);
+  }
+
+  const tempPassword = generateTempPassword();
+
+  const fbRes = await fetch(
+    `https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${env.FIREBASE_API_KEY}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password: tempPassword, displayName: displayName || email }),
+    }
+  );
+
+  if (!fbRes.ok) {
+    const fbErr = await fbRes.json().catch(() => ({}));
+    const code = fbErr?.error?.message || 'UNKNOWN';
+    console.error('Firebase account creation failed:', code);
+    if (code === 'EMAIL_EXISTS') {
+      throw new ApiError('That email already has a Firebase login. Link it by UID instead.', 409);
+    }
+    throw new ApiError(`Could not create the Firebase login (${code}).`, 502);
+  }
+
+  const fbData = await fbRes.json();
+  const firebaseUid = fbData.localId;
+
+  await env.DB.prepare(`
+    INSERT INTO users (firebase_uid, email, role, client_id, language_preference,
+                       first_name, last_name, interview_role, intake_enabled, must_change_password)
+    VALUES (?, ?, 'client', ?, ?, ?, ?, ?, ?, 1)
+    ON CONFLICT(firebase_uid) DO UPDATE SET
+      email = excluded.email, client_id = excluded.client_id,
+      language_preference = excluded.language_preference,
+      first_name = excluded.first_name, last_name = excluded.last_name,
+      interview_role = excluded.interview_role,
+      intake_enabled = excluded.intake_enabled,
+      updated_at = CURRENT_TIMESTAMP
+  `).bind(firebaseUid, email, clientId, languagePreference ?? 'en',
+          firstName ?? null, lastName ?? null,
+          interviewRole ?? null, intakeEnabled ? 1 : 0).run();
+
+  return { firebase_uid: firebaseUid, temp_password: tempPassword };
+}
+
+// POST /api/clients/:id/people — add a second (or third) person to a client.
+// Creates a REAL login for a REAL person, via the same Firebase path the Add
+// Client flow uses.
+async function handleAddPerson(clientId, request, env) {
+  const client = await env.DB.prepare('SELECT id, language_preference FROM clients WHERE id = ?').bind(clientId).first();
+  if (!client) throw new ApiError('Client not found', 404);
+
+  const body = await request.json();
+  const email = (body.email || '').trim();
+  const firstName = (body.first_name || '').trim();
+  const lastName = (body.last_name || '').trim();
+  const interviewRole = (body.interview_role || '').trim();
+  if (!email) throw new ApiError('email is required', 400);
+
+  const displayName = [firstName, lastName].filter(Boolean).join(' ') || email;
+
+  const created = await createPortalLogin(env, {
+    email,
+    displayName,
+    clientId: parseInt(clientId),
+    languagePreference: body.language_preference || client.language_preference || 'en',
+    firstName: firstName || null,
+    lastName: lastName || null,
+    interviewRole: interviewRole || null,
+    intakeEnabled: !!body.intake_enabled,
+  });
+
+  const person = await env.DB.prepare(
+    'SELECT id, firebase_uid, email, first_name, last_name, interview_role, intake_enabled FROM users WHERE firebase_uid = ?'
+  ).bind(created.firebase_uid).first();
+
+  return jsonResponse({ person, temp_password: created.temp_password }, 201, env);
+}
+
+// PUT /api/clients/:id/people/:pid — edit one person's interview role and
+// whether intake is enabled for them specifically.
+async function handleUpdatePerson(clientId, personId, request, env) {
+  const person = await env.DB.prepare(
+    'SELECT * FROM users WHERE id = ? AND client_id = ?'
+  ).bind(personId, clientId).first();
+  if (!person) throw new ApiError('Person not found on this client', 404);
+
+  const body = await request.json();
+
+  await env.DB.prepare(`
+    UPDATE users SET
+      interview_role = ?,
+      intake_enabled = ?,
+      first_name     = ?,
+      last_name      = ?,
+      updated_at     = CURRENT_TIMESTAMP
+    WHERE id = ?
+  `).bind(
+    body.interview_role !== undefined ? (body.interview_role || null) : person.interview_role,
+    body.intake_enabled !== undefined ? (body.intake_enabled ? 1 : 0) : person.intake_enabled,
+    body.first_name !== undefined ? (body.first_name || null) : person.first_name,
+    body.last_name !== undefined ? (body.last_name || null) : person.last_name,
+    personId
+  ).run();
+
+  const updated = await env.DB.prepare(
+    'SELECT id, firebase_uid, email, first_name, last_name, interview_role, intake_enabled FROM users WHERE id = ?'
+  ).bind(personId).first();
+  return jsonResponse(updated, 200, env);
+}
+
 async function handleCreateClient(request, env, user) {
   const body = await request.json();
   const {
@@ -433,49 +572,28 @@ async function handleCreateClient(request, env, user) {
 
   if (email && env.FIREBASE_API_KEY && env.FIREBASE_API_KEY !== 'REPLACE_WITH_YOUR_FIREBASE_WEB_API_KEY') {
     try {
-      temp_password = generateTempPassword();
-
       // Extract first/last name from contact name
       const nameParts  = contactName.trim().split(/\s+/);
       const fn = first_name || nameParts[0] || '';
       const ln = last_name  || nameParts.slice(1).join(' ') || '';
 
-      // Create Firebase Auth account via REST API
-      const fbRes = await fetch(
-        `https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${env.FIREBASE_API_KEY}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            email,
-            password:    temp_password,
-            displayName: contactName,
-          }),
-        }
-      );
-
-      if (fbRes.ok) {
-        const fbData = await fbRes.json();
-        firebase_uid = fbData.localId;
-
-        // Save user record in D1
-        await env.DB.prepare(`
-          INSERT INTO users (firebase_uid, email, role, client_id, language_preference,
-                             first_name, last_name, must_change_password)
-          VALUES (?, ?, 'client', ?, ?, ?, ?, 1)
-          ON CONFLICT(firebase_uid) DO UPDATE SET
-            email = excluded.email, client_id = excluded.client_id,
-            language_preference = excluded.language_preference,
-            first_name = excluded.first_name, last_name = excluded.last_name,
-            updated_at = CURRENT_TIMESTAMP
-        `).bind(firebase_uid, email, client.id, language_preference, fn || null, ln || null).run();
-      } else {
-        // Log the error but don't fail the client creation
-        const fbErr = await fbRes.json().catch(() => ({}));
-        console.error('Firebase account creation failed:', fbErr);
-        temp_password = null; // signal to front-end that FB creation failed
-      }
+      // Same path the Add Person flow uses, so there is one way to create a
+      // login rather than two that can drift apart.
+      const created = await createPortalLogin(env, {
+        email,
+        displayName: contactName,
+        clientId: client.id,
+        languagePreference: language_preference,
+        firstName: fn || null,
+        lastName: ln || null,
+        interviewRole: body.interview_role || null,
+        intakeEnabled: false,
+      });
+      firebase_uid  = created.firebase_uid;
+      temp_password = created.temp_password;
     } catch (fbErr) {
+      // Creating the client still succeeds; a null temp_password signals to the
+      // front end that the login was not created.
       console.error('Firebase account creation error:', fbErr);
       temp_password = null;
     }
