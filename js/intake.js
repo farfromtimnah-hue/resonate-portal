@@ -74,7 +74,7 @@ var I18N = {
     placeholder:      'Type your answer here...',
     future_gate_title: 'One last part',
     future_gate_copy:  'This next part is about where you would like the business to go. You can answer a few questions about your vision, or skip it entirely - both are completely fine.',
-    future_proceed:    'Let’s talk about it',
+    future_proceed:    "Let's talk about it",
     future_skip:       'Skip this part',
     done_title:        'Thank you!',
     done_copy:         'Your answers were saved. Nicole will review everything and design your system from here.',
@@ -91,61 +91,61 @@ var I18N = {
     prefs: [
       {
         key: 'format_preference',
-        question: 'Quando voce aprende algo novo, o que funciona melhor para voce?',
+        question: 'Quando você aprende algo novo, o que funciona melhor para você?',
         options: [
-          { value: 'written',  label: 'Instrucoes escritas que eu possa ler' },
+          { value: 'written',  label: 'Instruções escritas que eu possa ler' },
           { value: 'spoken',   label: 'Me explique em voz alta' },
           { value: 'visual',   label: 'Me mostre imagens ou diagramas' },
-          { value: 'hands_on', label: 'Me deixe tentar na pratica' }
+          { value: 'hands_on', label: 'Me deixe tentar na prática' }
         ]
       },
       {
         key: 'density_preference',
-        question: 'Quanta informacao voce gosta de receber de uma vez?',
+        question: 'Quanta informação você gosta de receber de uma vez?',
         options: [
-          { value: 'short_scannable',    label: 'Curta e facil de ler por alto' },
+          { value: 'short_scannable',    label: 'Curta e fácil de ler por alto' },
           { value: 'everything_at_once', label: 'Tudo de uma vez' }
         ]
       },
       {
         key: 'data_narrative_preference',
-        question: 'Quando recebe novidades sobre o seu negocio, o que prefere?',
+        question: 'Quando recebe novidades sobre o seu negócio, o que prefere?',
         options: [
-          { value: 'numbers',            label: 'Numeros e dados' },
-          { value: 'plain_language',     label: 'Explicacoes em linguagem simples' },
+          { value: 'numbers',            label: 'Números e dados' },
+          { value: 'plain_language',     label: 'Explicações em linguagem simples' },
           { value: 'headline_then_data', label: 'Primeiro o resumo, depois os dados' }
         ]
       },
       {
         key: 'control_trust_preference',
-        question: 'Quando um sistema faz um trabalho por voce, quanto controle voce quer ter?',
+        question: 'Quando um sistema faz um trabalho por você, quanto controle você quer ter?',
         options: [
           { value: 'approve_first',        label: 'Quero aprovar as coisas antes' },
-          { value: 'flag_exceptions_only', label: 'So me avise quando algo for fora do normal' },
+          { value: 'flag_exceptions_only', label: 'Só me avise quando algo for fora do normal' },
           { value: 'depends_on_task',      label: 'Depende da tarefa' }
         ]
       }
     ],
     section_tasks:    'Parte 2 de 4 - Suas tarefas do dia a dia',
-    section_problems: 'Parte 3 de 4 - Problemas e frustracoes',
-    section_future:   'Parte 4 de 4 - Para onde voce quer ir',
+    section_problems: 'Parte 3 de 4 - Problemas e frustrações',
+    section_future:   'Parte 4 de 4 - Para onde você quer ir',
     send:             'Enviar',
     sending:          'Enviando...',
     thinking:         'Um momento...',
     placeholder:      'Escreva sua resposta aqui...',
-    future_gate_title: 'Ultima parte',
-    future_gate_copy:  'Esta proxima parte e sobre para onde voce gostaria que o negocio fosse. Voce pode responder algumas perguntas sobre a sua visao, ou pular esta parte - as duas opcoes sao perfeitamente ok.',
+    future_gate_title: 'Última parte',
+    future_gate_copy:  'Esta próxima parte é sobre para onde você gostaria que o negócio fosse. Você pode responder algumas perguntas sobre a sua visão, ou pular esta parte - as duas opções são perfeitamente ok.',
     future_proceed:    'Vamos falar sobre isso',
     future_skip:       'Pular esta parte',
     done_title:        'Obrigada!',
     done_copy:         'Suas respostas foram salvas. A Nicole vai revisar tudo e desenhar o seu sistema a partir daqui.',
     done_back:         'Voltar ao Portal',
     error_generic:     'Algo deu errado. Sua resposta foi salva - tente novamente.',
-    voice_permission:  'O acesso ao microfone foi bloqueado. Voce pode escrever a sua resposta.',
-    voice_empty:       'Nao ouvimos nada. Tente de novo, ou escreva a sua resposta.',
-    voice_failed:      'A entrada por voz nao esta disponivel agora. Por favor escreva a sua resposta.',
-    preview_readonly:  'A pre-visualizacao e somente leitura. A escrita pode ser ativada no banner no rodape do portal.',
-    preview_not_test:  'A pre-visualizacao e somente leitura para este cliente. A escrita so e possivel em um cliente marcado como cliente de teste.'
+    voice_permission:  'O acesso ao microfone foi bloqueado. Você pode escrever a sua resposta.',
+    voice_empty:       'Não ouvimos nada. Tente de novo, ou escreva a sua resposta.',
+    voice_failed:      'A entrada por voz não está disponível agora. Por favor escreva a sua resposta.',
+    preview_readonly:  'A pré-visualização é somente leitura. A escrita pode ser ativada no banner no rodapé do portal.',
+    preview_not_test:  'A pré-visualização é somente leitura para este cliente. A escrita só é possível em um cliente marcado como cliente de teste.'
   }
 };
 

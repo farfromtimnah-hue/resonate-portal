@@ -26,26 +26,34 @@ var DIMENSIONS = ['what', 'how', 'why_trigger', 'time_cost', 'pain_level'];
 // Static section openers (not AI-generated). The AI generates
 // follow-ups; openers are deterministic so a failed model call
 // can never strand the client between items.
+// Portuguese here is written properly, WITH diacritics. An earlier build-time
+// convention wrote every intake string in plain ASCII; that was a source-code
+// style choice carried over from the rest of the intake code, never a decision
+// about what a Brazilian client should read. Unaccented Portuguese reads as
+// foreign to a native speaker, which is the opposite of what this interview is
+// for. Nothing depends on ASCII: the pages declare UTF-8, and the guardrail
+// scan strips diacritics itself before matching (see normalizeForScan), so
+// accented text is checked exactly the same way.
 var OPENERS = {
   tasks_first: {
     en: 'Let us start with your day-to-day work. What is one task you do regularly in your business?',
-    pt: 'Vamos comecar com o seu dia a dia. Qual e uma tarefa que voce faz regularmente no seu negocio?'
+    pt: 'Vamos começar com o seu dia a dia. Qual é uma tarefa que você faz regularmente no seu negócio?'
   },
   tasks_next: {
     en: 'Thank you. What is another task you handle regularly? If nothing else comes to mind, just say "that is all".',
-    pt: 'Obrigada. Qual e outra tarefa que voce faz regularmente? Se nao lembrar de mais nada, diga apenas "e so isso".'
+    pt: 'Obrigada. Qual é outra tarefa que você faz regularmente? Se não lembrar de mais nada, diga apenas "é só isso".'
   },
   problems_first: {
     en: 'Now let us talk about problems. What is one thing in your business that regularly goes wrong, gets stuck, or causes stress?',
-    pt: 'Agora vamos falar de problemas. O que no seu negocio costuma dar errado, travar ou causar estresse?'
+    pt: 'Agora vamos falar de problemas. O que no seu negócio costuma dar errado, travar ou causar estresse?'
   },
   problems_next: {
     en: 'Thank you. What is another problem that comes up in your business? If nothing else comes to mind, just say "that is all".',
-    pt: 'Obrigada. Qual e outro problema que aparece no seu negocio? Se nao lembrar de mais nada, diga apenas "e so isso".'
+    pt: 'Obrigada. Qual é outro problema que aparece no seu negócio? Se não lembrar de mais nada, diga apenas "é só isso".'
   },
   future_first: {
     en: 'Where would you like your business to go in the next few years? Describe what you would love it to look like.',
-    pt: 'Para onde voce gostaria que o seu negocio fosse nos proximos anos? Descreva como voce adoraria que ele ficasse.'
+    pt: 'Para onde você gostaria que o seu negócio fosse nos próximos anos? Descreva como você adoraria que ele ficasse.'
   }
 };
 
@@ -53,7 +61,7 @@ var OPENERS = {
 // rejects the regenerated question too.
 var FALLBACK_QUESTION = {
   en: 'Could you tell me more about how you currently do this, step by step?',
-  pt: 'Voce pode me contar mais sobre como voce faz isso hoje, passo a passo?'
+  pt: 'Você pode me contar mais sobre como você faz isso hoje, passo a passo?'
 };
 
 // ------------------------------------------------------------
@@ -148,6 +156,11 @@ function buildSystemPrompt(language, section) {
 
   prompt += 'LANGUAGE:\n';
   prompt += 'The interview language is ' + langName + '. Write the question field entirely in ' + langName + '. ';
+  if (language === 'pt') {
+    prompt += 'Write natural, correctly spelled Brazilian Portuguese WITH full accents and diacritics: ';
+    prompt += 'você, não, negócio, situação, é, só, frequência, mês, peça. ';
+    prompt += 'Never strip accents. The client is a native speaker, and unaccented Portuguese reads as foreign and careless. ';
+  }
   prompt += 'Every rule above applies fully and identically regardless of language.\n\n';
 
   prompt += 'OUTPUT:\n';
