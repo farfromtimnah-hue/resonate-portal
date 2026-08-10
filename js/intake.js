@@ -188,12 +188,97 @@ function showScreen(id) {
 }
 
 // ---- text-to-speech (browser SpeechSynthesis, no third-party service) ----
+// Pick a GOOD voice rather than whatever the browser hands back first.
+//
+// Setting utterance.lang alone is not enough. On macOS the first pt-BR voice
+// the browser returns is "Eddy", one of Apple's novelty character voices
+// (alongside Grandma, Grandpa, Rocko, Shelley) - which is the real reason the
+// spoken questions sounded robotic. The same machine already has Google's
+// neural voices installed in Chrome, which sound markedly more human.
+//
+// Ranked by quality, best first. Matching is on a lowercased substring so a
+// name like "Google portugues do Brasil 2 (Natural)" still matches "natural".
+// Everything falls through to the browser default, so a device with none of
+// these still speaks - it just speaks with whatever it has.
+var VOICE_PREFERENCES = {
+  pt: ['natural', 'google', 'luciana', 'joana'],
+  en: ['natural', 'google', 'samantha', 'alex']
+};
+
+// Names to avoid outright: Apple's novelty/character voices. These are jokes,
+// not narration, and reading a client's business interview in one is worse
+// than any accent problem we were worried about.
+var NOVELTY_VOICES = [
+  'eddy', 'flo', 'grandma', 'grandpa', 'reed', 'rocko', 'sandy', 'shelley',
+  'bells', 'boing', 'bubbles', 'jester', 'organ', 'superstar', 'trinoids',
+  'whisper', 'wobble', 'zarvox', 'albert', 'bad news', 'good news', 'bahh',
+  'cellos', 'junior', 'kathy', 'ralph'
+];
+
+function isNoveltyVoice(name) {
+  var n = (name || '').toLowerCase();
+  for (var i = 0; i < NOVELTY_VOICES.length; i++) {
+    if (n.indexOf(NOVELTY_VOICES[i]) !== -1) return true;
+  }
+  return false;
+}
+
+// The voice list loads asynchronously. On a cold page load getVoices() returns
+// an empty array until the browser populates it and fires onvoiceschanged, so
+// without this the FIRST spoken question would fall back to the browser default
+// - which on macOS is the novelty voice this whole selection exists to avoid.
+// Nothing waits on this: it just warms the list so pickVoice has data by the
+// time a question is spoken.
+function warmUpVoices() {
+  if (!('speechSynthesis' in window)) return;
+  window.speechSynthesis.getVoices();
+  if (typeof window.speechSynthesis.onvoiceschanged !== 'undefined') {
+    window.speechSynthesis.onvoiceschanged = function () {
+      window.speechSynthesis.getVoices();
+    };
+  }
+}
+
+function pickVoice(langCode) {
+  if (!('speechSynthesis' in window)) return null;
+  var all = window.speechSynthesis.getVoices() || [];
+  var prefix = langCode.slice(0, 2).toLowerCase();
+
+  var candidates = [];
+  for (var i = 0; i < all.length; i++) {
+    var vLang = (all[i].lang || '').replace('_', '-').toLowerCase();
+    if (vLang.indexOf(prefix) === 0) candidates.push(all[i]);
+  }
+  if (!candidates.length) return null;
+
+  var prefs = VOICE_PREFERENCES[prefix] || [];
+  for (var p = 0; p < prefs.length; p++) {
+    for (var c = 0; c < candidates.length; c++) {
+      var name = (candidates[c].name || '').toLowerCase();
+      if (name.indexOf(prefs[p]) !== -1 && !isNoveltyVoice(name)) {
+        return candidates[c];
+      }
+    }
+  }
+  // No preferred voice on this device: take the first NON-novelty one.
+  for (var d = 0; d < candidates.length; d++) {
+    if (!isNoveltyVoice(candidates[d].name)) return candidates[d];
+  }
+  return null;   // everything is a novelty voice: let the browser decide
+}
+
 function speakQuestion(text) {
   if (!('speechSynthesis' in window) || !text) return;
   window.speechSynthesis.cancel();
   var utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = _lang === 'pt' ? 'pt-BR' : 'en-US';
+  var langCode = _lang === 'pt' ? 'pt-BR' : 'en-US';
+  utterance.lang = langCode;
+  var voice = pickVoice(langCode);
+  if (voice) utterance.voice = voice;
+  // Slightly slower than default reads as calmer and is easier to follow in a
+  // second language; the neural voices handle the reduced rate well.
   utterance.rate = 0.95;
+  utterance.pitch = 1.0;
   window.speechSynthesis.speak(utterance);
 }
 
@@ -225,6 +310,7 @@ async function init() {
   wireStaticButtons();
   carryPreviewOnPortalLinks();
   initVoice();
+  warmUpVoices();
 
   try {
     var current = await api.interviewCurrent();
