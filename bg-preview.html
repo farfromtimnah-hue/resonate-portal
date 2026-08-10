@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Background strength preview — Resonate</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700&family=Newsreader:opsz,wght@6..72,700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin:0; font-family:'Plus Jakarta Sans',sans-serif; color:#414750; background:#F8F7F4; }
+
+    .label {
+      position:sticky; top:0; z-index:10;
+      background:#001d35; color:#fff; padding:10px 20px;
+      font-size:12px; letter-spacing:.08em; text-transform:uppercase; font-weight:600;
+    }
+    .label span { opacity:.7; text-transform:none; letter-spacing:0; font-weight:400; margin-left:10px; }
+
+    .stage { position:relative; padding:56px 24px 72px; overflow:hidden; }
+    .stage::before {
+      content:''; position:absolute; inset:0;
+      background-image:url('assets/images/intake-bg-ocean.jpg');
+      background-size:cover; background-position:center 65%;
+    }
+    .stage::after { content:''; position:absolute; inset:0; }
+
+    /* A — subtle: image is atmosphere, cards fully opaque */
+    .a::before { opacity:.28; }
+    .a::after  { background:#F8F7F4; opacity:.55; }
+
+    /* B — medium: image clearly present, cream veil keeps text calm */
+    .b::before { opacity:.55; }
+    .b::after  { background:#F8F7F4; opacity:.30; }
+
+    /* C — full: photo forward, cards float on translucent white */
+    .c::before { opacity:1; }
+    .c::after  { background:linear-gradient(180deg, rgba(248,247,244,.30), rgba(248,247,244,.10)); }
+
+    .wrap { position:relative; z-index:2; max-width:720px; margin:0 auto; }
+
+    .card {
+      background:rgba(255,255,255,.94); backdrop-filter:blur(6px);
+      border:1px solid rgba(0,0,0,.05); border-radius:2rem;
+      box-shadow:0 4px 24px rgba(0,29,53,.08);
+      padding:24px; margin-bottom:16px;
+    }
+    .c .card { background:rgba(255,255,255,.90); }
+
+    .eyebrow { font-size:11px; letter-spacing:.12em; text-transform:uppercase; font-weight:600; color:#5b6470; margin:0 0 12px; }
+    .c .eyebrow { color:#3d4650; }
+    .q { font-family:'Newsreader',serif; font-weight:700; font-size:20px; line-height:1.4; color:#001d35; margin:0; flex:1; }
+    .row { display:flex; align-items:flex-start; gap:12px; }
+    .icon {
+      width:40px; height:40px; border-radius:9999px; border:none; flex:none;
+      background:#eef1f4; color:#41474f; display:grid; place-items:center; cursor:pointer;
+    }
+    .ta { width:100%; border:1px solid rgba(0,0,0,.12); border-radius:1rem; background:#f4f6f8; padding:14px; font:inherit; font-size:14px; resize:none; }
+    .bar { display:flex; align-items:center; justify-content:space-between; margin-top:12px; }
+    .send { background:#005b96; color:#fff; border:none; border-radius:9999px; padding:11px 26px; font:inherit; font-weight:600; font-size:14px; cursor:pointer; }
+  </style>
+</head>
+<body>
+
+  <div class="label">Option A — Subtle <span>image reads as texture; safest for legibility</span></div>
+  <section class="stage a">
+    <div class="wrap">
+      <p class="eyebrow">Parte 2 de 4 — Suas tarefas do dia a dia</p>
+      <div class="card">
+        <div class="row">
+          <p class="q">Vamos começar com o seu dia a dia. Qual é uma tarefa que você faz regularmente no seu negócio?</p>
+          <button class="icon"><span class="material-symbols-outlined">volume_up</span></button>
+        </div>
+      </div>
+      <div class="card">
+        <textarea class="ta" rows="4" placeholder="Escreva sua resposta aqui..."></textarea>
+        <div class="bar">
+          <button class="icon"><span class="material-symbols-outlined">mic</span></button>
+          <button class="send">Enviar</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="label">Option B — Medium <span>ocean clearly visible, still calm behind the text</span></div>
+  <section class="stage b">
+    <div class="wrap">
+      <p class="eyebrow">Parte 2 de 4 — Suas tarefas do dia a dia</p>
+      <div class="card">
+        <div class="row">
+          <p class="q">Vamos começar com o seu dia a dia. Qual é uma tarefa que você faz regularmente no seu negócio?</p>
+          <button class="icon"><span class="material-symbols-outlined">volume_up</span></button>
+        </div>
+      </div>
+      <div class="card">
+        <textarea class="ta" rows="4" placeholder="Escreva sua resposta aqui..."></textarea>
+        <div class="bar">
+          <button class="icon"><span class="material-symbols-outlined">mic</span></button>
+          <button class="send">Enviar</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="label">Option C — Full photo <span>most scenic; cards float on translucent white</span></div>
+  <section class="stage c">
+    <div class="wrap">
+      <p class="eyebrow">Parte 2 de 4 — Suas tarefas do dia a dia</p>
+      <div class="card">
+        <div class="row">
+          <p class="q">Vamos começar com o seu dia a dia. Qual é uma tarefa que você faz regularmente no seu negócio?</p>
+          <button class="icon"><span class="material-symbols-outlined">volume_up</span></button>
+        </div>
+      </div>
+      <div class="card">
+        <textarea class="ta" rows="4" placeholder="Escreva sua resposta aqui..."></textarea>
+        <div class="bar">
+          <button class="icon"><span class="material-symbols-outlined">mic</span></button>
+          <button class="send">Enviar</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</body>
+</html>
