@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Background strength preview — Resonate</title>
+  <title>Card translucency — Resonate</title>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700&family=Newsreader:opsz,wght@6..72,700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; }
@@ -16,53 +16,58 @@
     }
     .label span { opacity:.7; text-transform:none; letter-spacing:0; font-weight:400; margin-left:10px; }
 
+    /* Option C base: full photo, only a whisper of cream to take the harshest
+       glare off the sun so nothing blows out behind the cards. */
     .stage { position:relative; padding:56px 24px 72px; overflow:hidden; }
     .stage::before {
       content:''; position:absolute; inset:0;
       background-image:url('assets/images/intake-bg-ocean.jpg');
       background-size:cover; background-position:center 65%;
     }
-    .stage::after { content:''; position:absolute; inset:0; }
-
-    /* A — subtle: image is atmosphere, cards fully opaque */
-    .a::before { opacity:.28; }
-    .a::after  { background:#F8F7F4; opacity:.55; }
-
-    /* B — medium: image clearly present, cream veil keeps text calm */
-    .b::before { opacity:.55; }
-    .b::after  { background:#F8F7F4; opacity:.30; }
-
-    /* C — full: photo forward, cards float on translucent white */
-    .c::before { opacity:1; }
-    .c::after  { background:linear-gradient(180deg, rgba(248,247,244,.30), rgba(248,247,244,.10)); }
+    .stage::after {
+      content:''; position:absolute; inset:0;
+      background:linear-gradient(180deg, rgba(248,247,244,.30), rgba(248,247,244,.10));
+    }
 
     .wrap { position:relative; z-index:2; max-width:720px; margin:0 auto; }
 
     .card {
-      background:rgba(255,255,255,.94); backdrop-filter:blur(6px);
-      border:1px solid rgba(0,0,0,.05); border-radius:2rem;
-      box-shadow:0 4px 24px rgba(0,29,53,.08);
+      border:1px solid rgba(255,255,255,.55); border-radius:2rem;
+      box-shadow:0 6px 28px rgba(0,29,53,.10);
       padding:24px; margin-bottom:16px;
+      backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
     }
-    .c .card { background:rgba(255,255,255,.90); }
 
-    .eyebrow { font-size:11px; letter-spacing:.12em; text-transform:uppercase; font-weight:600; color:#5b6470; margin:0 0 12px; }
-    .c .eyebrow { color:#3d4650; }
+    /* The three candidates - only the card fill changes. */
+    .c1 .card { background:rgba(255,255,255,.90); }   /* barely translucent */
+    .c2 .card { background:rgba(255,255,255,.82); }   /* a little - the "slight" read */
+    .c3 .card { background:rgba(255,255,255,.72); }   /* noticeably glassy */
+
+    /* Eyebrow sits directly ON the photo in option C, so it needs its own
+       contrast help rather than relying on the card behind it. */
+    .eyebrow {
+      font-size:11px; letter-spacing:.12em; text-transform:uppercase; font-weight:600;
+      color:#0d2b3e; margin:0 0 12px;
+      text-shadow:0 1px 2px rgba(255,255,255,.85);
+    }
     .q { font-family:'Newsreader',serif; font-weight:700; font-size:20px; line-height:1.4; color:#001d35; margin:0; flex:1; }
     .row { display:flex; align-items:flex-start; gap:12px; }
     .icon {
       width:40px; height:40px; border-radius:9999px; border:none; flex:none;
-      background:#eef1f4; color:#41474f; display:grid; place-items:center; cursor:pointer;
+      background:rgba(238,241,244,.85); color:#41474f; display:grid; place-items:center; cursor:pointer;
     }
-    .ta { width:100%; border:1px solid rgba(0,0,0,.12); border-radius:1rem; background:#f4f6f8; padding:14px; font:inherit; font-size:14px; resize:none; }
+    .ta {
+      width:100%; border:1px solid rgba(0,0,0,.10); border-radius:1rem;
+      background:rgba(255,255,255,.55); padding:14px; font:inherit; font-size:14px; resize:none;
+    }
     .bar { display:flex; align-items:center; justify-content:space-between; margin-top:12px; }
     .send { background:#005b96; color:#fff; border:none; border-radius:9999px; padding:11px 26px; font:inherit; font-weight:600; font-size:14px; cursor:pointer; }
   </style>
 </head>
 <body>
 
-  <div class="label">Option A — Subtle <span>image reads as texture; safest for legibility</span></div>
-  <section class="stage a">
+  <div class="label">C1 — 90% <span>barely translucent; closest to solid white</span></div>
+  <section class="stage c1">
     <div class="wrap">
       <p class="eyebrow">Parte 2 de 4 — Suas tarefas do dia a dia</p>
       <div class="card">
@@ -81,8 +86,8 @@
     </div>
   </section>
 
-  <div class="label">Option B — Medium <span>ocean clearly visible, still calm behind the text</span></div>
-  <section class="stage b">
+  <div class="label">C2 — 82% <span>a little glass; photo reads through the edges</span></div>
+  <section class="stage c2">
     <div class="wrap">
       <p class="eyebrow">Parte 2 de 4 — Suas tarefas do dia a dia</p>
       <div class="card">
@@ -101,8 +106,8 @@
     </div>
   </section>
 
-  <div class="label">Option C — Full photo <span>most scenic; cards float on translucent white</span></div>
-  <section class="stage c">
+  <div class="label">C3 — 72% <span>clearly glassy; most photo, least contrast</span></div>
+  <section class="stage c3">
     <div class="wrap">
       <p class="eyebrow">Parte 2 de 4 — Suas tarefas do dia a dia</p>
       <div class="card">
