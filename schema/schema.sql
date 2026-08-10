@@ -34,6 +34,15 @@ CREATE TABLE users (
                                CHECK(language_preference IN ('en', 'pt')),
   first_name          TEXT,
   last_name           TEXT,
+  -- What this person does in the business ("owner", "back office",
+  -- "operations"). Free text: an intake export needs to say whose answers
+  -- these are and from what vantage point they saw the work.
+  interview_role      TEXT,
+  -- Whether THIS PERSON takes an intake interview. clients.intake_enabled
+  -- stays the overall on switch for the business; this is the per-person
+  -- choice within it, and both must be on. Defaults to 0 so creating a
+  -- login never silently enrolls someone in an interview.
+  intake_enabled      INTEGER  NOT NULL DEFAULT 0,
   created_at          DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at          DATETIME DEFAULT CURRENT_TIMESTAMP
 );

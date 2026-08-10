@@ -16,6 +16,14 @@
 CREATE TABLE IF NOT EXISTS intake_sessions (
   id              INTEGER  PRIMARY KEY AUTOINCREMENT,
   client_id       INTEGER  NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
+  -- Which PERSON took this interview. A business often has more than one
+  -- person worth interviewing (the owner and whoever runs the back office),
+  -- and keying a session on the client alone merged their answers into one
+  -- record. Nullable because sessions predating this column cannot always be
+  -- attributed to one person, and a guess would be a fabricated attribution.
+  -- ON DELETE SET NULL, never CASCADE: removing a portal login must not
+  -- destroy an interview that person already completed.
+  user_id         INTEGER  REFERENCES users(id) ON DELETE SET NULL,
   language        TEXT     NOT NULL DEFAULT 'en'
                            CHECK(language IN ('en', 'pt')),
   current_section TEXT     NOT NULL DEFAULT 'language'
@@ -131,9 +139,29 @@ CREATE TABLE IF NOT EXISTS intake_messages (
 );
 
 -- ----------------------------------------------------------
+-- INTAKE_TRANSLATIONS
+-- Cached English translation of one session, produced on read by the
+-- admin results page rather than at interview time: the client never
+-- waits on a model call mid-interview, and a translation that turns out
+-- wrong stays re-runnable. payload is the JSON translation document.
+-- One row per session; a refresh overwrites it in place.
+-- ----------------------------------------------------------
+CREATE TABLE IF NOT EXISTS intake_translations (
+  id            INTEGER  PRIMARY KEY AUTOINCREMENT,
+  session_id    INTEGER  NOT NULL REFERENCES intake_sessions(id) ON DELETE CASCADE,
+  payload       TEXT     NOT NULL,
+  model         TEXT,
+  generated_at  DATETIME DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(session_id)
+);
+
+-- ----------------------------------------------------------
 -- INDEXES
 -- ----------------------------------------------------------
 CREATE INDEX IF NOT EXISTS idx_intake_sessions_client_id  ON intake_sessions(client_id);
+CREATE INDEX IF NOT EXISTS idx_intake_sessions_user_id    ON intake_sessions(user_id);
+CREATE INDEX IF NOT EXISTS idx_intake_sessions_client_user ON intake_sessions(client_id, user_id);
+CREATE INDEX IF NOT EXISTS idx_intake_translations_session ON intake_translations(session_id);
 CREATE INDEX IF NOT EXISTS idx_intake_prefs_session_id    ON intake_preferences(session_id);
 CREATE INDEX IF NOT EXISTS idx_intake_entries_session_id  ON intake_entries(session_id);
 CREATE INDEX IF NOT EXISTS idx_intake_future_session_id   ON intake_future_vision(session_id);

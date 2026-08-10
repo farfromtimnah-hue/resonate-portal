@@ -307,14 +307,16 @@ async function handleListUsers(env) {
 
 async function handleUpsertUser(request, env) {
   const body = await request.json();
-  const { firebase_uid, email, role, client_id, language_preference, first_name, last_name } = body;
+  const { firebase_uid, email, role, client_id, language_preference, first_name, last_name,
+          interview_role, intake_enabled } = body;
   if (!firebase_uid || !email || !role) throw new ApiError('firebase_uid, email, role required', 400);
   if (!['admin', 'client'].includes(role)) throw new ApiError('role must be admin or client', 400);
 
   await env.DB.prepare(`
     INSERT INTO users (firebase_uid, email, role, client_id, language_preference, first_name, last_name,
+                       interview_role, intake_enabled,
                        must_change_password, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP)
     ON CONFLICT(firebase_uid) DO UPDATE SET
       email               = excluded.email,
       role                = excluded.role,
@@ -322,10 +324,13 @@ async function handleUpsertUser(request, env) {
       language_preference = excluded.language_preference,
       first_name          = excluded.first_name,
       last_name           = excluded.last_name,
+      interview_role      = excluded.interview_role,
+      intake_enabled      = excluded.intake_enabled,
       updated_at          = CURRENT_TIMESTAMP
       -- must_change_password intentionally NOT updated here: only reset by the user themselves
   `).bind(firebase_uid, email, role, client_id ?? null, language_preference ?? 'en',
-          first_name ?? null, last_name ?? null).run();
+          first_name ?? null, last_name ?? null,
+          interview_role ?? null, intake_enabled ? 1 : 0).run();
 
   const user = await env.DB.prepare('SELECT * FROM users WHERE firebase_uid = ?').bind(firebase_uid).first();
   return jsonResponse(user, 200, env);
@@ -486,14 +491,22 @@ async function handleGetClient(id, env, user) {
   // Clients can only view their own record
   if (user.role === 'client') {
     if (user.client_id !== parseInt(id)) throw new ApiError('Forbidden', 403);
-    return buildClientPortalResponse(client, env);
+    return buildClientPortalResponse(client, env, user);
   }
 
   // Admin gets full record
   return buildAdminClientResponse(client, env);
 }
 
-async function buildClientPortalResponse(client, env) {
+async function buildClientPortalResponse(client, env, viewer) {
+  // Intake is enabled per person now, with the client flag as the overall
+  // switch for the business. The portal card is offered only when both are on,
+  // so turning intake on for a client no longer offers it to everyone there.
+  const personIntakeEnabled = viewer && viewer.db_id
+    ? !!(await env.DB.prepare('SELECT intake_enabled FROM users WHERE id = ?')
+          .bind(viewer.db_id).first())?.intake_enabled
+    : false;
+
   const safeClient = {
     id: client.id,
     name: client.name,
@@ -505,7 +518,11 @@ async function buildClientPortalResponse(client, env) {
     email: client.email,
     website: client.website,
     logo_url: client.logo_url ?? null,
-    intake_enabled: !!client.intake_enabled,
+    // Both grains must be on for this person to be offered the interview.
+    intake_enabled: !!client.intake_enabled && personIntakeEnabled,
+    // The business-level switch on its own, so the portal can tell
+    // "not enabled here at all" from "enabled, but not for you".
+    client_intake_enabled: !!client.intake_enabled,
     updated_at: client.updated_at
   };
 
@@ -547,9 +564,36 @@ async function buildAdminClientResponse(client, env) {
     'SELECT * FROM client_resource_links WHERE client_id = ? ORDER BY project_id ASC, created_at ASC'
   ).bind(client.id).all();
 
-  const linkedUser = await env.DB.prepare(
-    'SELECT id, firebase_uid, email, role, language_preference FROM users WHERE client_id = ?'
+  // Every person on this client, not just one. A business often has more than
+  // one person worth interviewing (the owner and whoever runs the back
+  // office), and the previous .first() silently dropped everyone after the
+  // first row. Each carries their interview status so Nicole can see who she
+  // is still waiting on without opening anything.
+  const { results: people } = await env.DB.prepare(`
+    SELECT u.id, u.firebase_uid, u.email, u.role, u.language_preference,
+           u.first_name, u.last_name, u.interview_role, u.intake_enabled,
+           (SELECT s.status FROM intake_sessions s
+             WHERE s.user_id = u.id ORDER BY s.created_at DESC LIMIT 1) AS interview_status,
+           (SELECT s.completed_at FROM intake_sessions s
+             WHERE s.user_id = u.id AND s.status = 'completed'
+             ORDER BY s.completed_at DESC LIMIT 1) AS interview_completed_at,
+           (SELECT COUNT(*) FROM intake_sessions s WHERE s.user_id = u.id) AS session_count
+    FROM users u
+    WHERE u.client_id = ?
+    ORDER BY u.created_at ASC
+  `).bind(client.id).all();
+
+  // Whether this client has any interview at all, including sessions that
+  // predate the user_id column and belong to nobody. The results page link is
+  // shown only when this is non-zero, so a client who has never interviewed
+  // does not get a dead link.
+  const sessionCountRow = await env.DB.prepare(
+    'SELECT COUNT(*) AS n FROM intake_sessions WHERE client_id = ?'
   ).bind(client.id).first();
+
+  // Kept for backward compatibility with any caller still reading a single
+  // linked user. New code should read `people`.
+  const linkedUser = people.length ? people[0] : null;
 
   const { results: history } = await env.DB.prepare(
     'SELECT * FROM status_history WHERE client_id = ? ORDER BY changed_at DESC LIMIT 20'
@@ -557,7 +601,13 @@ async function buildAdminClientResponse(client, env) {
 
   projects.forEach(p => { try { p.urls = JSON.parse(p.urls); } catch { p.urls = []; } });
 
-  return jsonResponse({ client, projects, comments, notes, links, linked_user: linkedUser ?? null, history }, 200, null);
+  return jsonResponse({
+    client, projects, comments, notes, links,
+    people,
+    linked_user: linkedUser ?? null,
+    intake_session_count: sessionCountRow ? sessionCountRow.n : 0,
+    history,
+  }, 200, null);
 }
 
 async function handleUpdateClient(id, request, env, user) {

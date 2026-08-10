@@ -367,10 +367,67 @@ async function generateGuardedQuestion(env, session, section, convo, mockAnswer)
 async function getSessionForUser(env, user, sessionId) {
   var session = await env.DB.prepare('SELECT * FROM intake_sessions WHERE id = ?').bind(sessionId).first();
   if (!session) throw new ApiError('Session not found', 404);
-  if (user.role !== 'admin' && user.client_id !== session.client_id) {
-    throw new ApiError('Forbidden', 403);
+  if (user.role !== 'admin') {
+    if (user.client_id !== session.client_id) throw new ApiError('Forbidden', 403);
+    // A session that belongs to a named person is reachable only by that
+    // person. Without this, two people at one client could still write into
+    // each other's interview by passing a session id directly, which is the
+    // same merge the resolution fix prevents, one layer down.
+    if (session.user_id != null && user.db_id !== session.user_id) {
+      throw new ApiError('Forbidden', 403);
+    }
   }
   return session;
+}
+
+// Which PERSON is this interview request about.
+//
+// This is the fix for the merge bug. Resolution used to key on client_id
+// alone, so the second person at a client was handed the first person's
+// half-finished session and answered into it. It now keys on the person.
+//
+// For a client caller that is always their own user row: a client can never
+// be redirected to somebody else's interview by a query parameter. For an
+// admin previewing a client, ?asUser= names WHICH person's session to reach,
+// so an admin can open a specific person's interview rather than whichever
+// happens to be newest. An admin who names nobody gets null, and callers
+// treat that as "no specific person" rather than "anyone".
+function effectiveUserId(user, request) {
+  if (user.role !== 'admin') return user.db_id;
+  var url = new URL(request.url);
+  var asUser = url.searchParams.get('asUser');
+  return asUser ? parseInt(asUser) : null;
+}
+
+// Resolve the in-progress session for one person at one client.
+//
+// Keyed on (client_id, user_id) together. The client_id term is not
+// redundant: it keeps a mis-supplied asUser from reaching a session that
+// belongs to a different client entirely.
+async function findInProgressSession(env, clientId, userId) {
+  if (userId == null) return null;
+  return await env.DB.prepare(
+    "SELECT * FROM intake_sessions WHERE client_id = ? AND user_id = ? AND status = 'in_progress' ORDER BY created_at DESC LIMIT 1"
+  ).bind(clientId, userId).first();
+}
+
+// Intake is enabled per PERSON, with the client-level flag as the overall
+// on switch for the business. Nicole turns intake on for the client, then
+// chooses which people actually take it, so both must be on.
+//
+// The client flag alone is the wrong grain: it says this business does
+// interviews, not who takes one.
+async function requireIntakeEnabled(env, clientId, userId) {
+  var client = await env.DB.prepare('SELECT intake_enabled FROM clients WHERE id = ?').bind(clientId).first();
+  if (!client || client.intake_enabled !== 1) {
+    throw new ApiError('The intake interview is not enabled for this client.', 403);
+  }
+  if (userId == null) throw new ApiError('No portal user linked to this interview.', 403);
+
+  var person = await env.DB.prepare('SELECT intake_enabled FROM users WHERE id = ?').bind(userId).first();
+  if (!person || person.intake_enabled !== 1) {
+    throw new ApiError('The intake interview is not enabled for this person.', 403);
+  }
 }
 
 async function touchSession(env, sessionId) {
@@ -404,6 +461,26 @@ async function saveDimensions(env, entry, dims) {
     dims.pain_level != null ? dims.pain_level : entry.pain_level,
     entry.id
   ).run();
+}
+
+// Read the cached translation for a session, if one exists.
+// Returns null when the session has never been translated.
+async function getStoredTranslation(env, sessionId) {
+  var row = await env.DB.prepare(
+    'SELECT payload, model, generated_at FROM intake_translations WHERE session_id = ?'
+  ).bind(sessionId).first();
+  if (!row) return null;
+
+  var payload;
+  try {
+    payload = JSON.parse(row.payload);
+  } catch (e) {
+    // A corrupt cache row must not take down the results page. Treat it as
+    // "not translated yet" so Nicole still sees the Portuguese original.
+    console.error('[interview] corrupt translation payload for session ' + sessionId);
+    return null;
+  }
+  return { fields: payload, model: row.model, generated_at: row.generated_at };
 }
 
 // ------------------------------------------------------------
@@ -467,9 +544,18 @@ async function handleCreateSession(request, env, user) {
   if (user.role === 'admin' && !clientId) clientId = body.client_id;
   if (!clientId) throw new ApiError('client_id required', 400);
 
-  var existing = await env.DB.prepare(
-    "SELECT * FROM intake_sessions WHERE client_id = ? AND status = 'in_progress' ORDER BY created_at DESC LIMIT 1"
-  ).bind(clientId).first();
+  // Whose interview this is. Resuming is scoped to this person, so a second
+  // person at the same client starts their OWN session instead of being
+  // handed the first person's half-finished one.
+  var userId = effectiveUserId(user, request);
+
+  // Intake is enabled per person now, with the client flag as the overall
+  // switch. Both must be on. Admins bypass this so previewing still works.
+  if (user.role !== 'admin') {
+    await requireIntakeEnabled(env, clientId, userId);
+  }
+
+  var existing = await findInProgressSession(env, clientId, userId);
 
   if (existing) {
     // Resume - update language in case the client re-picked it
@@ -481,8 +567,8 @@ async function handleCreateSession(request, env, user) {
   }
 
   var result = await env.DB.prepare(
-    "INSERT INTO intake_sessions (client_id, language, current_section, status) VALUES (?, ?, 'preferences', 'in_progress')"
-  ).bind(clientId, language).run();
+    "INSERT INTO intake_sessions (client_id, user_id, language, current_section, status) VALUES (?, ?, ?, 'preferences', 'in_progress')"
+  ).bind(clientId, userId, language).run();
 
   var session = await env.DB.prepare('SELECT * FROM intake_sessions WHERE id = ?').bind(result.meta.last_row_id).first();
   return jsonResponse({ session: session, resumed: false }, 201, env);
@@ -496,9 +582,11 @@ async function handleGetCurrent(env, user, request) {
   var clientId = effectiveClientId(user, request);
   if (!clientId) return jsonResponse({ session: null }, 200, null);
 
-  var session = await env.DB.prepare(
-    "SELECT * FROM intake_sessions WHERE client_id = ? AND status = 'in_progress' ORDER BY created_at DESC LIMIT 1"
-  ).bind(clientId).first();
+  // Keyed on the PERSON, not just their client. This is the query that stops
+  // a second person at one client from being handed the first person's
+  // in-progress session and answering into it.
+  var userId = effectiveUserId(user, request);
+  var session = await findInProgressSession(env, clientId, userId);
   if (!session) return jsonResponse({ session: null }, 200, null);
 
   var prefs = await env.DB.prepare('SELECT * FROM intake_preferences WHERE session_id = ?').bind(session.id).first();
@@ -906,12 +994,29 @@ async function handleExport(clientId, env, user) {
     var entriesRes = await env.DB.prepare('SELECT * FROM intake_entries WHERE session_id = ? ORDER BY created_at ASC').bind(s.id).all();
     var future = await env.DB.prepare('SELECT * FROM intake_future_vision WHERE session_id = ?').bind(s.id).first();
     var messagesRes = await env.DB.prepare('SELECT * FROM intake_messages WHERE session_id = ? ORDER BY id ASC').bind(s.id).all();
+
+    // Whose answers these are and what their vantage point was. A session
+    // predating the user_id column has no person; that reads as unattributed
+    // rather than being quietly assigned to somebody.
+    var person = null;
+    if (s.user_id != null) {
+      person = await env.DB.prepare(
+        'SELECT id, email, first_name, last_name, interview_role FROM users WHERE id = ?'
+      ).bind(s.user_id).first();
+    }
+
+    // The stored translation, if one has been generated. Null means the
+    // results page has not translated this session yet.
+    var translation = await getStoredTranslation(env, s.id);
+
     sessions.push({
       session: s,
+      person: person || null,
       preferences: prefs || null,
       entries: entriesRes.results,
       future: future || null,
-      messages: messagesRes.results
+      messages: messagesRes.results,
+      translation: translation
     });
   }
 
