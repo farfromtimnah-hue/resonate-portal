@@ -10,7 +10,7 @@ import { esc, nl2br, formatDate, formatDateTime, formatDateFull,
          statusClass, invoiceStatusClass } from './utils.js?v=2';
 
 let _clientId = null;
-let _data     = null;          // { client, projects, comments, notes, links, linked_user, history }
+let _data     = null;          // { client, projects, comments, notes, links, people, intake_session_count, history }
 let _adminFeedback = {};       // keyed by `${projectId}_${comment_type}` → row
 let _editingProjectId = null;
 let _editingNoteId    = null;
