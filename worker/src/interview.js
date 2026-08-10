@@ -463,6 +463,155 @@ async function saveDimensions(env, entry, dims) {
   ).run();
 }
 
+// ------------------------------------------------------------
+// Translation (admin read path)
+//
+// Clients answer in Brazilian Portuguese; Nicole reads English. Translation
+// happens on READ, in the Worker, never at interview time: a translation that
+// turns out wrong stays re-runnable, and the client never waits on a model
+// call mid-interview.
+//
+// One model call per SESSION, not per field. Every field goes out in a single
+// structured request, so cost is one call per interview and the model has the
+// whole interview as context to translate consistently - the same task
+// described in two entries comes back worded the same way.
+// ------------------------------------------------------------
+
+// Which fields are worth translating, per structure. Everything else in a row
+// (ids, enums, counts, timestamps) is language-neutral and is left alone.
+var TRANSLATABLE_ENTRY_FIELDS = ['what', 'how', 'why_trigger', 'time_cost', 'pain_level', 'solution_jump_note'];
+
+function buildTranslationPrompt() {
+  var prompt = '';
+  prompt += 'You are translating a Brazilian Portuguese business intake interview into English for a consultant to read.\n\n';
+
+  prompt += 'TRANSLATE FAITHFULLY, DO NOT TIDY:\n';
+  prompt += 'Keep the client\'s own register and structure. If they wrote a run-on sentence, keep it a run-on sentence. ';
+  prompt += 'If they repeated themselves, keep the repetition. If they were vague, stay vague - do not resolve it. ';
+  prompt += 'Do not summarise, do not reorder, do not add connecting words to make it flow better, and do not make a rough answer sound polished. ';
+  prompt += 'How a person describes their own work is itself information the consultant reads: hesitation, repetition and disorder are signal, not noise to be cleaned up.\n\n';
+
+  prompt += 'DO NOT TRANSLATE PROPER NOUNS:\n';
+  prompt += 'Product names, tool names, company names, brand names and place names stay exactly as written. ';
+  prompt += 'WhatsApp stays WhatsApp, Excel stays Excel, Correios stays Correios, Instagram stays Instagram. ';
+  prompt += 'Never translate them and never localise them to an equivalent product.\n\n';
+
+  prompt += 'OUTPUT:\n';
+  prompt += 'You receive a JSON object mapping opaque field keys to Portuguese strings. ';
+  prompt += 'Return a JSON object with EXACTLY the same keys, each mapped to its English translation. ';
+  prompt += 'Never add keys, never drop keys, and never return a key whose value is not a string. ';
+  prompt += 'If a value is already in English, return it unchanged.';
+
+  return prompt;
+}
+
+// Flatten one session into { key: portugueseText } so the whole interview
+// travels in a single call. Keys encode where each string came from so the
+// result can be put back exactly where it belongs.
+function collectTranslatableFields(bundle) {
+  var fields = {};
+  var i, j;
+
+  var entries = bundle.entries || [];
+  for (i = 0; i < entries.length; i++) {
+    for (j = 0; j < TRANSLATABLE_ENTRY_FIELDS.length; j++) {
+      var name = TRANSLATABLE_ENTRY_FIELDS[j];
+      var value = entries[i][name];
+      if (value) fields['entry.' + entries[i].id + '.' + name] = String(value);
+    }
+  }
+
+  if (bundle.future && bundle.future.vision_text) {
+    fields['future.vision_text'] = String(bundle.future.vision_text);
+  }
+
+  var messages = bundle.messages || [];
+  for (i = 0; i < messages.length; i++) {
+    if (messages[i].content) {
+      fields['message.' + messages[i].id + '.content'] = String(messages[i].content);
+    }
+  }
+
+  return fields;
+}
+
+// One structured call for the whole session. Returns null on any failure -
+// callers must treat null as "translation unavailable" and still render.
+async function callTranslationModel(env, fields) {
+  var keys = Object.keys(fields);
+  if (!keys.length) return {};
+  if (!env.ANTHROPIC_API_KEY) return null;
+
+  // The schema pins the exact key set, so the model cannot drop a field or
+  // invent one; a mismatch is retried at the API layer rather than silently
+  // producing a half-translated interview.
+  var properties = {};
+  for (var i = 0; i < keys.length; i++) {
+    properties[keys[i]] = { type: 'string' };
+  }
+  var schema = {
+    type: 'object',
+    additionalProperties: false,
+    properties: properties,
+    required: keys
+  };
+
+  var body = {
+    model: CLAUDE_MODEL,
+    max_tokens: 8192,
+    system: buildTranslationPrompt(),
+    messages: [{ role: 'user', content: JSON.stringify(fields) }],
+    output_config: {
+      effort: 'low',
+      format: { type: 'json_schema', schema: schema }
+    }
+  };
+
+  var res;
+  try {
+    res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': env.ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify(body)
+    });
+  } catch (e) {
+    console.error('[interview] translation request failed:', e);
+    return null;
+  }
+
+  if (!res.ok) {
+    var errText = await res.text().catch(function () { return ''; });
+    console.error('[interview] translation API error', res.status, errText.slice(0, 500));
+    return null;
+  }
+
+  var data = await res.json().catch(function () { return null; });
+  if (!data || !data.content) return null;
+
+  var text = '';
+  for (var k = 0; k < data.content.length; k++) {
+    if (data.content[k].type === 'text') { text += data.content[k].text; }
+  }
+
+  try {
+    return JSON.parse(text);
+  } catch (e) {
+    console.error('[interview] failed to parse translation JSON:', text.slice(0, 300));
+    return null;
+  }
+}
+
+async function storeTranslation(env, sessionId, payload) {
+  await env.DB.prepare(
+    'INSERT INTO intake_translations (session_id, payload, model, generated_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP)' +
+    ' ON CONFLICT(session_id) DO UPDATE SET payload = excluded.payload, model = excluded.model, generated_at = CURRENT_TIMESTAMP'
+  ).bind(sessionId, JSON.stringify(payload), CLAUDE_MODEL).run();
+}
+
 // Read the cached translation for a session, if one exists.
 // Returns null when the session has never been translated.
 async function getStoredTranslation(env, sessionId) {
@@ -518,6 +667,9 @@ export async function routeInterview(request, env, user, url, method, path) {
 
   params = match('/api/interview/sessions/:sid/future/skip', path);
   if (params && method === 'POST') return handleFutureSkip(params.sid, request, env, user);
+
+  params = match('/api/interview/sessions/:sid/translated', path);
+  if (params && method === 'GET') return handleTranslatedSession(params.sid, request, env, user);
 
   params = match('/api/interview/clients/:cid/export', path);
   if (params && method === 'GET') return handleExport(params.cid, env, user);
@@ -977,6 +1129,76 @@ async function handleFutureSkip(sessionId, request, env, user) {
   ).bind(sessionId).run();
 
   return jsonResponse({ skipped: true, interview_complete: true }, 200, env);
+}
+
+// GET /api/interview/sessions/:sid/translated?refresh=1 - admin only.
+// Returns the same structures the export returns, with English ALONGSIDE
+// every Portuguese field rather than replacing it. The original is never
+// discarded: Nicole must be able to read the client's own words when a
+// translation seems off.
+async function handleTranslatedSession(sessionId, request, env, user) {
+  if (user.role !== 'admin') throw new ApiError('Forbidden - admin only', 403);
+
+  var session = await env.DB.prepare('SELECT * FROM intake_sessions WHERE id = ?').bind(sessionId).first();
+  if (!session) throw new ApiError('Session not found', 404);
+
+  var prefs = await env.DB.prepare('SELECT * FROM intake_preferences WHERE session_id = ?').bind(sessionId).first();
+  var entriesRes = await env.DB.prepare('SELECT * FROM intake_entries WHERE session_id = ? ORDER BY created_at ASC').bind(sessionId).all();
+  var future = await env.DB.prepare('SELECT * FROM intake_future_vision WHERE session_id = ?').bind(sessionId).first();
+  var messagesRes = await env.DB.prepare('SELECT * FROM intake_messages WHERE session_id = ? ORDER BY id ASC').bind(sessionId).all();
+
+  var person = null;
+  if (session.user_id != null) {
+    person = await env.DB.prepare(
+      'SELECT id, email, first_name, last_name, interview_role FROM users WHERE id = ?'
+    ).bind(session.user_id).first();
+  }
+
+  var bundle = {
+    session: session,
+    person: person || null,
+    preferences: prefs || null,
+    entries: entriesRes.results,
+    future: future || null,
+    messages: messagesRes.results
+  };
+
+  // An English interview needs no translation at all: skip the model call
+  // entirely rather than paying to translate English into English.
+  if (session.language !== 'pt') {
+    bundle.translation = null;
+    bundle.translation_status = 'not_needed';
+    return jsonResponse(bundle, 200, env);
+  }
+
+  var url = new URL(request.url);
+  var refresh = url.searchParams.get('refresh') === '1';
+
+  if (!refresh) {
+    var cached = await getStoredTranslation(env, sessionId);
+    if (cached) {
+      bundle.translation = cached;
+      bundle.translation_status = 'cached';
+      return jsonResponse(bundle, 200, env);
+    }
+  }
+
+  var fields = collectTranslatableFields(bundle);
+  var translated = await callTranslationModel(env, fields);
+
+  // A failed translation must never fail the request. Nicole reading
+  // Portuguese is far better than Nicole reading an error page.
+  if (!translated) {
+    var stale = await getStoredTranslation(env, sessionId);
+    bundle.translation = stale;
+    bundle.translation_status = stale ? 'stale_unavailable' : 'unavailable';
+    return jsonResponse(bundle, 200, env);
+  }
+
+  await storeTranslation(env, sessionId, translated);
+  bundle.translation = await getStoredTranslation(env, sessionId);
+  bundle.translation_status = refresh ? 'refreshed' : 'generated';
+  return jsonResponse(bundle, 200, env);
 }
 
 // GET /api/interview/clients/:cid/export - raw structured data for review (admin only)

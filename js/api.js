@@ -115,6 +115,9 @@ export const api = {
   interviewFuture:        (sid, d)    => req('POST', `/api/interview/sessions/${sid}/future`, d),
   interviewFutureSkip:    (sid)       => req('POST', `/api/interview/sessions/${sid}/future/skip`, {}),
   interviewExport:        (clientId)  => req('GET',  `/api/interview/clients/${clientId}/export`),
+  // Translated on read, cached in D1; refresh forces a new model call
+  interviewTranslated:    (sid, refresh) =>
+    req('GET', `/api/interview/sessions/${sid}/translated${refresh ? '?refresh=1' : ''}`),
 
   // Zoho Invoice integration (admin)
   zohoStatus:     () => req('GET',  '/api/zoho/status'),
