@@ -122,6 +122,12 @@
 
 </main>
 
-<script type="module" src="js/intake.js?v=1"></script>
+<!-- Bump this ?v= on EVERY change to js/intake.js or anything it imports.
+     It is a frozen cache key: Cloudflare and the browser serve the file keyed
+     on this URL, so leaving it unchanged means a returning client keeps the
+     old copy for hours regardless of what was deployed. This sat at v=1 from
+     July until Aug 9, 2026, so no intake change had ever reached a browser
+     that had already loaded the page once. -->
+<script type="module" src="js/intake.js?v=2"></script>
 </body>
 </html>
