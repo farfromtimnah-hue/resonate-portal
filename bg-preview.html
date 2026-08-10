@@ -24,10 +24,9 @@
       background-image:url('assets/images/intake-bg-ocean.jpg');
       background-size:cover; background-position:center 65%;
     }
-    .stage::after {
-      content:''; position:absolute; inset:0;
-      background:linear-gradient(180deg, rgba(248,247,244,.30), rgba(248,247,244,.10));
-    }
+    /* Veil removed - it was muting the photo more than the cards were. The
+       image now runs at full strength; contrast work happens on the cards. */
+    .stage::after { content:none; }
 
     .wrap { position:relative; z-index:2; max-width:720px; margin:0 auto; }
 
@@ -35,13 +34,13 @@
       border:1px solid rgba(255,255,255,.55); border-radius:2rem;
       box-shadow:0 6px 28px rgba(0,29,53,.10);
       padding:24px; margin-bottom:16px;
-      backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+      backdrop-filter:blur(18px) saturate(1.1); -webkit-backdrop-filter:blur(18px) saturate(1.1);
     }
 
     /* The three candidates - only the card fill changes. */
-    .c1 .card { background:rgba(255,255,255,.90); }   /* barely translucent */
-    .c2 .card { background:rgba(255,255,255,.82); }   /* a little - the "slight" read */
-    .c3 .card { background:rgba(255,255,255,.72); }   /* noticeably glassy */
+    .c1 .card { background:rgba(255,255,255,.60); }   /* clearly glass */
+    .c2 .card { background:rgba(255,255,255,.45); }   /* strong glass */
+    .c3 .card { background:rgba(255,255,255,.30); }   /* barely there - photo dominates */
 
     /* Eyebrow sits directly ON the photo in option C, so it needs its own
        contrast help rather than relying on the card behind it. */
@@ -58,7 +57,7 @@
     }
     .ta {
       width:100%; border:1px solid rgba(0,0,0,.10); border-radius:1rem;
-      background:rgba(255,255,255,.55); padding:14px; font:inherit; font-size:14px; resize:none;
+      background:rgba(255,255,255,.45); padding:14px; font:inherit; font-size:14px; resize:none;
     }
     .bar { display:flex; align-items:center; justify-content:space-between; margin-top:12px; }
     .send { background:#005b96; color:#fff; border:none; border-radius:9999px; padding:11px 26px; font:inherit; font-weight:600; font-size:14px; cursor:pointer; }
@@ -66,7 +65,7 @@
 </head>
 <body>
 
-  <div class="label">C1 — 90% <span>barely translucent; closest to solid white</span></div>
+  <div class="label">C1 — 60% <span>clearly glass; photo visible through the card</span></div>
   <section class="stage c1">
     <div class="wrap">
       <p class="eyebrow">Parte 2 de 4 — Suas tarefas do dia a dia</p>
@@ -86,7 +85,7 @@
     </div>
   </section>
 
-  <div class="label">C2 — 82% <span>a little glass; photo reads through the edges</span></div>
+  <div class="label">C2 — 45% <span>strong glass; ocean reads right through</span></div>
   <section class="stage c2">
     <div class="wrap">
       <p class="eyebrow">Parte 2 de 4 — Suas tarefas do dia a dia</p>
@@ -106,7 +105,7 @@
     </div>
   </section>
 
-  <div class="label">C3 — 72% <span>clearly glassy; most photo, least contrast</span></div>
+  <div class="label">C3 — 30% <span>barely there; photo dominates, text at its limit</span></div>
   <section class="stage c3">
     <div class="wrap">
       <p class="eyebrow">Parte 2 de 4 — Suas tarefas do dia a dia</p>
