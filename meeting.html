@@ -243,6 +243,12 @@
   }
   .mock .thumb img{width:100%;height:100%;object-fit:cover;object-position:center 18%;display:block;opacity:.9}
   .mock .thumb.agenda{display:flex;align-items:center;justify-content:center;gap:14px}
+  .mock .thumb.cal{
+    display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(4,1fr);
+    gap:3px;padding:16px 20px;
+  }
+  .mock .thumb.cal .g{background:rgba(255,255,255,.05);border-radius:1px;display:block}
+  .mock .thumb.cal .g.on{background:rgba(162,138,96,.4)}
   .mock .thumb.agenda .t{
     font-family:var(--serif);font-size:1.5rem;color:var(--gold-hi);opacity:.5;
     font-variant-numeric:tabular-nums;
@@ -752,6 +758,20 @@
               <b><span class="en">Client portal</span><span class="ptx">Portal da cliente</span></b>
               <span class="en">The whole journey — photos, profile, looks, before and after</span>
               <span class="ptx">A jornada completa — fotos, perfil, looks, antes e depois</span>
+            </span>
+          </button>
+
+          <button class="mock" data-mock="mock-calendar.html">
+            <span class="thumb cal">
+              <span class="g"></span><span class="g"></span><span class="g on"></span>
+              <span class="g"></span><span class="g"></span><span class="g"></span>
+              <span class="g"></span><span class="g on"></span><span class="g"></span>
+              <span class="g"></span><span class="g"></span><span class="g"></span>
+            </span>
+            <span class="lab">
+              <b><span class="en">Calendar</span><span class="ptx">Calendário</span></b>
+              <span class="en">Month and week, availability rules, add a meeting</span>
+              <span class="ptx">Mês e semana, regras de disponibilidade, novo compromisso</span>
             </span>
           </button>
 

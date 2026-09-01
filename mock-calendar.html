@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Calendário — exemplo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ground:#0A0A0A; --panel:#131313; --panel-2:#1A1A19;
+    --gold:#8A7048; --gold-hi:#A28A60; --gold-line:rgba(162,138,96,.22);
+    --cream:#D7D7C8; --ink:#E8E5DE; --dim:#8E8880; --dimmer:#65605A;
+    --ox:#7B2230; --ox-hi:#A8394A; --green:#3F7A5E;
+    --hair:rgba(255,255,255,.07);
+    --serif:"Cormorant Garamond",Georgia,serif;
+    --sans:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  }
+  *{box-sizing:border-box}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+  body{
+    margin:0;background:var(--ground);color:var(--ink);
+    font-family:var(--sans);font-weight:300;line-height:1.6;font-size:15px;
+    -webkit-font-smoothing:antialiased;
+  }
+  .stage{max-width:1180px;margin:0 auto;padding:26px 22px 90px}
+  .stagehead{
+    display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;
+    border-bottom:1px solid var(--hair);padding-bottom:14px;margin-bottom:26px;
+  }
+  .stagehead h1{font-family:var(--serif);font-weight:300;font-size:1.5rem;margin:0;color:#fff}
+  .stagehead h1 em{font-style:italic;color:var(--gold-hi)}
+  .stagehead .tag{
+    font-size:.62rem;letter-spacing:.2em;text-transform:uppercase;color:var(--dimmer);
+    border:1px solid var(--hair);padding:3px 9px;border-radius:2px;
+  }
+
+  .devices{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:30px;align-items:start}
+  @media (max-width:960px){.devices{grid-template-columns:1fr}}
+
+  .laptop{border:1px solid var(--hair);border-radius:6px;overflow:hidden;background:var(--panel)}
+  .chrome{
+    display:flex;align-items:center;gap:7px;padding:9px 13px;background:#0E0E0E;
+    border-bottom:1px solid var(--hair);
+  }
+  .chrome i{width:9px;height:9px;border-radius:50%;background:#2C2C2C;display:block}
+  .chrome .url{flex:1;text-align:center;font-size:.68rem;color:var(--dimmer)}
+
+  .phone{border:1px solid var(--hair);border-radius:26px;overflow:hidden;background:var(--panel);padding:9px}
+  .phone .screen{
+    border-radius:19px;overflow:hidden;background:var(--ground);
+    aspect-ratio:9/19.5;display:flex;flex-direction:column;
+  }
+  .phone .screen .body{overflow-y:auto;flex:1;min-height:0}
+  .phone .screen *::-webkit-scrollbar{width:0;height:0}
+  .phone .notch{height:22px;display:flex;align-items:center;justify-content:center}
+  .phone .notch i{width:52px;height:4px;border-radius:3px;background:#242424;display:block}
+
+  .pbar{display:flex;align-items:center;gap:12px;padding:13px 18px;border-bottom:1px solid var(--gold-line)}
+  .pbar .sig{height:19px;opacity:.92}
+  .pbar .spacer{flex:1}
+
+  /* month header */
+  .mhead{
+    display:flex;align-items:center;gap:14px;padding:16px 20px 12px;
+  }
+  .mhead h2{
+    font-family:var(--serif);font-weight:300;font-size:1.5rem;color:#fff;margin:0;
+  }
+  .mhead .spacer{flex:1}
+  .mhead button{
+    background:none;border:1px solid var(--hair);color:var(--dim);cursor:pointer;
+    font-size:.8rem;width:28px;height:28px;border-radius:2px;
+  }
+  .mhead button:hover{border-color:var(--gold-hi);color:var(--gold-hi)}
+
+  /* month grid */
+  .cal{padding:0 20px 20px}
+  .dows{
+    display:grid;grid-template-columns:repeat(7,1fr);gap:1px;margin-bottom:1px;
+  }
+  .dows span{
+    text-align:center;font-size:.58rem;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--dimmer);padding:6px 0;
+  }
+  .days{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:var(--hair)}
+  .day{
+    background:var(--ground);min-height:76px;padding:6px 6px 5px;position:relative;
+    cursor:pointer;
+  }
+  .day:hover{background:var(--panel)}
+  .day.out{opacity:.28}
+  .day .n{
+    font-size:.74rem;color:var(--dim);font-variant-numeric:tabular-nums;
+  }
+  .day.today .n{
+    color:var(--ground);background:var(--gold-hi);border-radius:50%;
+    width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;
+    font-weight:500;
+  }
+  .day .ev{
+    display:block;font-size:.58rem;line-height:1.3;margin-top:3px;padding:2px 4px;
+    border-left:2px solid var(--gold-hi);background:rgba(162,138,96,.09);
+    color:var(--cream);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    border-radius:0 2px 2px 0;
+  }
+  .day .ev.rem{border-left-color:var(--green);background:rgba(63,122,94,.1)}
+  .day .ev.grp{border-left-color:var(--ox-hi);background:rgba(168,57,74,.1)}
+  .day .blocked{
+    position:absolute;inset:0;
+    background:repeating-linear-gradient(45deg,transparent,transparent 5px,rgba(255,255,255,.025) 5px,rgba(255,255,255,.025) 10px);
+    pointer-events:none;
+  }
+
+  .views{display:flex;border:1px solid var(--hair);border-radius:2px;overflow:hidden}
+  .views button{
+    border:none;background:none;color:var(--dimmer);cursor:pointer;
+    font-family:var(--sans);font-size:.68rem;padding:6px 12px;width:auto;height:auto;
+  }
+  .views button.on{background:var(--gold-hi);color:var(--ground)}
+  .mhead button.add{
+    width:auto;height:auto;padding:6px 13px;font-size:.68rem;font-family:var(--sans);
+    border-color:var(--gold-line);color:var(--gold-hi);
+  }
+  .mhead button.add:hover{background:var(--gold-hi);color:var(--ground)}
+
+  /* week view */
+  .week{display:none}
+  .week.on{display:block}
+  .days.off{display:none}
+  .wgrid{display:grid;grid-template-columns:34px 1fr;gap:0}
+  .wtimes{display:grid;grid-auto-rows:44px}
+  .wtimes span{
+    font-size:.6rem;color:var(--dimmer);text-align:right;padding-right:7px;
+    transform:translateY(-6px);font-variant-numeric:tabular-nums;
+  }
+  .wcols{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:var(--hair)}
+  .wcol{background:var(--ground);position:relative}
+  .wcol .wh{
+    font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;color:var(--dimmer);
+    text-align:center;padding:5px 0;border-bottom:1px solid var(--hair);
+  }
+  .wcol .wh b{display:block;font-size:.8rem;color:var(--dim);font-weight:400;letter-spacing:0}
+  .wcol.today .wh b{color:var(--gold-hi)}
+  .wslot{height:44px;border-bottom:1px solid rgba(255,255,255,.03)}
+  .wev{
+    position:absolute;left:2px;right:2px;border-left:2px solid var(--gold-hi);
+    background:rgba(162,138,96,.14);color:var(--cream);border-radius:0 2px 2px 0;
+    font-size:.58rem;padding:3px 5px;overflow:hidden;line-height:1.25;
+  }
+  .wev.rem{border-left-color:var(--green);background:rgba(63,122,94,.14)}
+  .wev.grp{border-left-color:var(--ox-hi);background:rgba(168,57,74,.14)}
+
+  /* add-meeting dialog */
+  .dlg{
+    position:fixed;inset:0;z-index:350;background:rgba(6,6,6,.82);
+    display:none;align-items:center;justify-content:center;padding:24px;
+  }
+  .dlg.on{display:flex}
+  .dlg .box{
+    background:var(--panel);border:1px solid var(--gold-line);border-radius:3px;
+    width:100%;max-width:430px;padding:26px 28px 24px;
+  }
+  .dlg h3{
+    font-family:var(--serif);font-weight:300;font-size:1.42rem;color:#fff;margin:0 0 18px;
+    letter-spacing:.01em;
+  }
+  .dlg h3 em{font-style:italic;color:var(--gold-hi)}
+  .fld{margin-bottom:14px}
+  .fld label{
+    display:block;font-size:.6rem;letter-spacing:.17em;text-transform:uppercase;
+    color:var(--dimmer);margin-bottom:6px;
+  }
+  .fld input,.fld select{
+    width:100%;background:var(--ground);border:1px solid var(--hair);border-radius:2px;
+    color:var(--ink);font-family:var(--sans);font-size:.88rem;font-weight:300;padding:9px 11px;
+  }
+  .fld input:focus,.fld select:focus{outline:none;border-color:var(--gold-line)}
+  .fld.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .seg{display:flex;border:1px solid var(--hair);border-radius:2px;overflow:hidden}
+  .seg button{
+    flex:1;border:none;background:none;color:var(--dimmer);cursor:pointer;
+    font-family:var(--sans);font-size:.74rem;padding:8px 0;
+  }
+  .seg button.on{background:var(--gold-hi);color:var(--ground)}
+  .hint{
+    font-size:.72rem;color:var(--gold-hi);background:rgba(162,138,96,.07);
+    border-left:2px solid var(--gold-hi);padding:8px 11px;margin-top:4px;border-radius:0 2px 2px 0;
+  }
+  .dlgacts{display:flex;gap:8px;justify-content:flex-end;margin-top:20px}
+  .dlgacts button{
+    background:transparent;border:1px solid var(--hair);color:var(--dim);cursor:pointer;
+    font-family:var(--sans);font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;
+    padding:9px 16px;border-radius:2px;
+  }
+  .dlgacts button.prim{border-color:var(--gold-hi);color:var(--gold-hi)}
+  .dlgacts button.prim:hover{background:var(--gold-hi);color:var(--ground)}
+  .dlgacts button:hover{border-color:var(--gold-hi);color:var(--gold-hi)}
+
+  /* legend */
+  .legend{display:flex;flex-wrap:wrap;gap:16px;padding:14px 20px;border-top:1px solid var(--hair)}
+  .legend span{font-size:.7rem;color:var(--dimmer);display:flex;align-items:center;gap:6px}
+  .legend i{width:9px;height:9px;border-radius:1px;display:block}
+
+  /* availability panel */
+  .avail{
+    border-top:1px solid var(--hair);padding:18px 20px 22px;
+  }
+  .avail h3{
+    font-size:.62rem;letter-spacing:.2em;text-transform:uppercase;color:var(--gold-hi);
+    margin:0 0 12px;font-weight:500;
+  }
+  .rules{display:grid;gap:8px}
+  .rule{
+    display:flex;align-items:center;gap:12px;padding:10px 13px;
+    border:1px solid var(--hair);border-radius:2px;background:var(--panel-2);
+  }
+  .rule .lab{flex:1;font-size:.84rem;color:var(--ink)}
+  .rule .lab small{display:block;font-size:.72rem;color:var(--dimmer);margin-top:1px}
+  .rule .val{
+    font-size:.8rem;color:var(--gold-hi);font-variant-numeric:tabular-nums;white-space:nowrap;
+  }
+  .sw{
+    width:34px;height:19px;border-radius:11px;background:var(--panel);border:1px solid var(--hair);
+    position:relative;cursor:pointer;flex:0 0 auto;
+  }
+  .sw i{
+    position:absolute;top:2px;left:2px;width:13px;height:13px;border-radius:50%;
+    background:var(--dimmer);transition:.15s;
+  }
+  .sw.on{background:rgba(162,138,96,.25);border-color:var(--gold-line)}
+  .sw.on i{left:17px;background:var(--gold-hi)}
+
+  .note{
+    border-left:2px solid var(--ox-hi);background:rgba(123,34,48,.09);
+    padding:11px 15px;margin:16px 20px 0;border-radius:0 2px 2px 0;
+  }
+  .note p{margin:0;font-size:.8rem;color:var(--dim)}
+  .note b{color:var(--ink);font-weight:500}
+
+  /* phone list view */
+  .plist{padding:14px 12px}
+  .pday{margin-bottom:16px}
+  .pday .dh{
+    font-size:.6rem;letter-spacing:.18em;text-transform:uppercase;color:var(--gold-hi);
+    margin-bottom:7px;
+  }
+  .pev{
+    display:flex;gap:10px;padding:9px 11px;border:1px solid var(--hair);
+    border-left:2px solid var(--gold-hi);border-radius:0 2px 2px 0;
+    background:var(--panel-2);margin-bottom:6px;
+  }
+  .pev.rem{border-left-color:var(--green)}
+  .pev.grp{border-left-color:var(--ox-hi)}
+  .pev .t{
+    font-family:var(--serif);font-size:.98rem;color:#fff;font-variant-numeric:tabular-nums;
+    flex:0 0 auto;
+  }
+  .pev .d{flex:1;min-width:0}
+  .pev .d b{display:block;font-size:.8rem;color:var(--ink);font-weight:400}
+  .pev .d span{display:block;font-size:.7rem;color:var(--dimmer)}
+
+  .langtoggle{
+    position:fixed;top:14px;right:16px;z-index:400;display:flex;gap:0;
+    border:1px solid var(--gold-line);border-radius:2px;overflow:hidden;
+    background:rgba(10,10,10,.9);backdrop-filter:blur(6px);
+  }
+  .langtoggle button{
+    background:none;border:none;cursor:pointer;color:var(--dimmer);
+    font-family:var(--sans);font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;
+    padding:7px 12px;
+  }
+  .langtoggle button.on{background:var(--gold-hi);color:var(--ground)}
+  .langtoggle button:not(.on):hover{color:var(--gold-hi)}
+</style>
+</head>
+<body>
+<div class="langtoggle">
+  <button data-lang="pt" class="on">PT</button>
+  <button data-lang="en">EN</button>
+</div>
+
+<div class="stage">
+  <div class="stagehead">
+    <h1>Calendário e <em>disponibilidade</em></h1>
+    <span class="tag">Exemplo · dados fictícios</span>
+  </div>
+
+  <div class="devices">
+
+    <!-- ============ DESKTOP ============ -->
+    <div class="laptop">
+      <div class="chrome">
+        <i></i><i></i><i></i>
+        <span class="url">portal.suellensartorato.com / calendario</span>
+      </div>
+      <div class="pbar">
+        <img class="sig" src="assets/sig-white-tight.png" alt="Suellen Sartorato">
+        <span class="spacer"></span>
+      </div>
+
+      <div class="mhead">
+        <h2>Setembro 2026</h2>
+        <span class="spacer"></span>
+        <div class="views">
+          <button class="on" data-view="month">Mês</button>
+          <button data-view="week">Semana</button>
+        </div>
+        <button class="nav">‹</button>
+        <button class="nav">›</button>
+        <button class="add" id="addbtn">＋ Novo</button>
+      </div>
+
+      <div class="cal">
+        <div class="dows">
+          <span>Dom</span><span>Seg</span><span>Ter</span><span>Qua</span>
+          <span>Qui</span><span>Sex</span><span>Sáb</span>
+        </div>
+        <div class="days" id="days"></div>
+        <div class="week" id="week">
+          <div class="wgrid">
+            <div class="wtimes">
+              <span>09</span><span>10</span><span>11</span><span>12</span>
+              <span>13</span><span>14</span><span>15</span><span>16</span>
+              <span>17</span><span>18</span><span>19</span><span>20</span>
+            </div>
+            <div class="wcols" id="wcols"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="legend">
+        <span><i style="background:#A28A60"></i>Presencial</span>
+        <span><i style="background:#3F7A5E"></i>Online</span>
+        <span><i style="background:#A8394A"></i>Mentoria / turma</span>
+        <span><i style="background:rgba(255,255,255,.08)"></i>Indisponível</span>
+      </div>
+
+      <div class="avail">
+        <h3>Disponibilidade</h3>
+        <div class="rules">
+          <div class="rule">
+            <div class="sw on" data-sw><i></i></div>
+            <div class="lab">Atendimento presencial
+              <small>Terças e quintas, 10h às 17h</small>
+            </div>
+            <div class="val">2 dias / semana</div>
+          </div>
+          <div class="rule">
+            <div class="sw on" data-sw><i></i></div>
+            <div class="lab">Atendimento online
+              <small>Segunda a sexta, 9h às 18h</small>
+            </div>
+            <div class="val">5 dias / semana</div>
+          </div>
+          <div class="rule">
+            <div class="sw on" data-sw><i></i></div>
+            <div class="lab">Deslocamento calculado no horário da consulta
+              <small>Usa o trânsito previsto para o dia e a hora reais</small>
+            </div>
+            <div class="val">automático</div>
+          </div>
+          <div class="rule">
+            <div class="sw" data-sw><i></i></div>
+            <div class="lab">Aceitar agendamento no mesmo dia
+              <small>Desligado — a cliente só vê horários a partir de amanhã</small>
+            </div>
+            <div class="val">desligado</div>
+          </div>
+          <div class="rule">
+            <div class="sw on" data-sw><i></i></div>
+            <div class="lab">Lembrete por WhatsApp
+              <small>24 horas antes, com endereço ou link</small>
+            </div>
+            <div class="val">24 h antes</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="note">
+        <p>
+          <b>Nota para a reunião:</b> os dias de mentoria bloqueiam a agenda sozinhos. A cliente
+          nunca vê um horário que não existe.
+        </p>
+      </div>
+    </div>
+
+    <!-- ============ PHONE ============ -->
+    <div class="phone">
+      <div class="screen">
+        <div class="notch"><i></i></div>
+        <div class="pbar">
+          <img class="sig" src="assets/sig-white-tight.png" alt="Suellen Sartorato" style="height:15px">
+          <span class="spacer"></span>
+        </div>
+        <div class="body">
+          <div class="plist">
+            <div class="pday">
+              <p class="dh">Quarta, 2 set</p>
+              <div class="pev rem">
+                <span class="t">09:30</span>
+                <span class="d"><b>Marina Costa</b><span>Análise · online</span></span>
+              </div>
+              <div class="pev">
+                <span class="t">14:00</span>
+                <span class="d"><b>Renata Alves</b><span>Looks · Iguatemi</span></span>
+              </div>
+              <div class="pev grp">
+                <span class="t">20:00</span>
+                <span class="d"><b>Mentoria CI</b><span>6 alunas</span></span>
+              </div>
+            </div>
+
+            <div class="pday">
+              <p class="dh">Quinta, 3 set</p>
+              <div class="pev">
+                <span class="t">10:00</span>
+                <span class="d"><b>Camila Duarte</b><span>Guarda-roupa · casa</span></span>
+              </div>
+            </div>
+
+            <div class="pday">
+              <p class="dh">Sexta, 4 set</p>
+              <div class="pev rem">
+                <span class="t">15:30</span>
+                <span class="d"><b>Beatriz Lima</b><span>Primeira conversa · online</span></span>
+              </div>
+            </div>
+
+            <div class="pday">
+              <p class="dh">Segunda, 7 set</p>
+              <div class="pev grp">
+                <span class="t">20:00</span>
+                <span class="d"><b>Mentoria CI</b><span>encontro 3 de 3</span></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="dlg" id="dlg">
+  <div class="box">
+    <h3>Novo <em>compromisso</em></h3>
+    <div class="fld">
+      <label>Cliente</label>
+      <select><option>Marina Costa</option><option>Renata Alves</option><option>Camila Duarte</option><option>+ nova cliente</option></select>
+    </div>
+    <div class="fld">
+      <label>Tipo</label>
+      <div class="seg">
+        <button class="on" data-kind="pres">Presencial</button>
+        <button data-kind="rem">Online</button>
+      </div>
+    </div>
+    <div class="fld row">
+      <div><label>Data</label><input value="04/09/2026"></div>
+      <div><label>Hora</label><input value="14:00"></div>
+    </div>
+    <div class="fld" id="locfld">
+      <label>Local</label>
+      <input value="Shopping Iguatemi, Faria Lima 2232">
+      <p class="hint" id="hint">Sair às 13:05 · 55 min no trânsito previsto para as 14h de uma sexta</p>
+    </div>
+    <div class="fld">
+      <label>Etapa</label>
+      <select><option>Montagem de looks</option><option>Análise da comunicação da imagem</option><option>Guarda-roupa</option><option>Primeira conversa</option></select>
+    </div>
+    <div class="dlgacts">
+      <button id="dlgx">Cancelar</button>
+      <button class="prim">Salvar e avisar no WhatsApp</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ---- month grid (September 2026: 1st is a Tuesday) ----
+const EVENTS = {
+  2:  [['Marina Costa','rem'], ['Renata Alves',''], ['Mentoria CI','grp']],
+  3:  [['Camila Duarte','']],
+  4:  [['Beatriz Lima','rem']],
+  7:  [['Mentoria CI','grp']],
+  9:  [['Helena Prado',''], ['Ana Ribeiro','rem']],
+  10: [['Sofia Martins','rem']],
+  14: [['Mentoria CI','grp']],
+  16: [['Larissa Gomes','']],
+  17: [['Júlia Barros','rem']],
+  21: [['Mentoria CI','grp']],
+  23: [['Patrícia Nunes','']],
+  24: [['Marina Costa','rem']],
+  28: [['Imersão Magna','grp']],
+  29: [['Imersão Magna','grp']],
+  30: [['Imersão Magna','grp']],
+};
+const BLOCKED = [5,6,12,13,19,20,26,27];  // weekends
+
+const days = document.getElementById('days');
+let html = '';
+// August tail — Sun 30, Mon 31
+html += '<div class="day out"><span class="n">30</span></div>';
+html += '<div class="day out"><span class="n">31</span></div>';
+for (let d = 1; d <= 30; d++) {
+  const evs = EVENTS[d] || [];
+  const today = d === 2 ? ' today' : '';
+  const blocked = BLOCKED.includes(d) ? '<span class="blocked"></span>' : '';
+  html += `<div class="day${today}">${blocked}<span class="n">${d}</span>` +
+          evs.map(([name, cls]) => `<span class="ev ${cls}">${name}</span>`).join('') +
+          '</div>';
+}
+// October head to fill the row
+for (let d = 1; d <= 3; d++) html += `<div class="day out"><span class="n">${d}</span></div>`;
+days.innerHTML = html;
+
+// ---- week view ----
+const WEEK = [
+  {d:'Dom', n:30, evs:[]},
+  {d:'Seg', n:31, evs:[]},
+  {d:'Ter', n:1,  evs:[[10,1.5,'Helena Prado','']]},
+  {d:'Qua', n:2,  today:true, evs:[[9.5,1,'Marina Costa','rem'],[14,3,'Renata Alves',''],[20,1.5,'Mentoria CI','grp']]},
+  {d:'Qui', n:3,  evs:[[10,2,'Camila Duarte','']]},
+  {d:'Sex', n:4,  evs:[[15.5,1,'Beatriz Lima','rem']]},
+  {d:'Sáb', n:5,  evs:[]},
+];
+const wcols = document.getElementById('wcols');
+wcols.innerHTML = WEEK.map(c => {
+  const evs = c.evs.map(([start, len, name, cls]) => {
+    const top = 27 + (start - 9) * 44;
+    return `<div class="wev ${cls}" style="top:${top}px;height:${len*44 - 3}px">${name}</div>`;
+  }).join('');
+  const slots = Array(12).fill('<div class="wslot"></div>').join('');
+  return `<div class="wcol${c.today ? ' today' : ''}">
+            <div class="wh">${c.d}<b>${c.n}</b></div>${slots}${evs}
+          </div>`;
+}).join('');
+
+document.querySelectorAll('[data-view]').forEach(b =>
+  b.addEventListener('click', () => {
+    const v = b.dataset.view;
+    document.querySelectorAll('[data-view]').forEach(x => x.classList.toggle('on', x === b));
+    document.getElementById('days').classList.toggle('off', v === 'week');
+    document.querySelector('.dows').style.display = v === 'week' ? 'none' : '';
+    document.getElementById('week').classList.toggle('on', v === 'week');
+  }));
+
+// ---- add-meeting dialog ----
+const dlg = document.getElementById('dlg');
+document.getElementById('addbtn').onclick = () => dlg.classList.add('on');
+document.getElementById('dlgx').onclick = () => dlg.classList.remove('on');
+dlg.addEventListener('click', e => { if (e.target === dlg) dlg.classList.remove('on'); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') dlg.classList.remove('on'); });
+
+// in person vs online changes what the dialog asks for
+document.querySelectorAll('[data-kind]').forEach(b =>
+  b.addEventListener('click', () => {
+    document.querySelectorAll('[data-kind]').forEach(x => x.classList.toggle('on', x === b));
+    const remote = b.dataset.kind === 'rem';
+    document.getElementById('locfld').style.display = remote ? 'none' : '';
+  }));
+
+// switches
+document.querySelectorAll('[data-sw]').forEach(sw =>
+  sw.addEventListener('click', () => sw.classList.toggle('on')));
+
+// ---- language toggle (mockup only) ----
+const DICT = {
+"Calendário e":"Calendar and","disponibilidade":"availability",
+"Exemplo · dados fictícios":"Example · fictional data",
+"Setembro 2026":"September 2026",
+"Dom":"Sun","Seg":"Mon","Ter":"Tue","Qua":"Wed","Qui":"Thu","Sex":"Fri","Sáb":"Sat",
+"Presencial":"In person","Online":"Online","Mentoria / turma":"Mentorship / group","Indisponível":"Unavailable",
+"Disponibilidade":"Availability",
+"Atendimento presencial":"In-person appointments",
+"Terças e quintas, 10h às 17h":"Tuesdays and Thursdays, 10am to 5pm",
+"2 dias / semana":"2 days / week",
+"Atendimento online":"Online appointments",
+"Segunda a sexta, 9h às 18h":"Monday to Friday, 9am to 6pm",
+"5 dias / semana":"5 days / week",
+"Deslocamento calculado no horário da consulta":"Travel time calculated at the appointment hour",
+"Usa o trânsito previsto para o dia e a hora reais":"Uses predicted traffic for the actual day and time",
+"automático":"automatic",
+"Aceitar agendamento no mesmo dia":"Accept same-day booking",
+"Desligado — a cliente só vê horários a partir de amanhã":"Off — the client only sees slots from tomorrow",
+"desligado":"off",
+"Lembrete por WhatsApp":"WhatsApp reminder",
+"24 horas antes, com endereço ou link":"24 hours before, with the address or link",
+"24 h antes":"24 h before",
+"Nota para a reunião:":"Meeting note:",
+"os dias de mentoria bloqueiam a agenda sozinhos. A cliente nunca vê um horário que não existe.":"mentorship days block the calendar on their own. The client never sees a slot that doesn't exist.",
+"Quarta, 2 set":"Wednesday, 2 Sep","Quinta, 3 set":"Thursday, 3 Sep",
+"Sexta, 4 set":"Friday, 4 Sep","Segunda, 7 set":"Monday, 7 Sep",
+"Análise · online":"Analysis · online","Looks · Iguatemi":"Looks · Iguatemi",
+"6 alunas":"6 students","Guarda-roupa · casa":"Wardrobe · at home",
+"Primeira conversa · online":"First conversation · online","encontro 3 de 3":"session 3 of 3",
+};
+
+const PH = [...document.querySelectorAll('[placeholder]')].map(el => [el, el.placeholder]);
+const originals = [];
+function walk(node, fn) {
+  for (const n of node.childNodes) {
+    if (n.nodeType === 3) fn(n);
+    else if (n.nodeType === 1 && !n.closest('.langtoggle')) walk(n, fn);
+  }
+}
+walk(document.body, t => { if (t.nodeValue.trim()) originals.push([t, t.nodeValue]); });
+
+function setLang(lang) {
+  for (const [node, pt] of originals) {
+    if (lang === 'pt') { node.nodeValue = pt; continue; }
+    const key = pt.trim();
+    const hit = DICT[key];
+    node.nodeValue = hit ? pt.replace(key, hit) : pt;
+  }
+  for (const [el, pt] of PH) el.placeholder = (lang === 'en' && DICT[pt]) ? DICT[pt] : pt;
+  document.querySelectorAll('.langtoggle button')
+    .forEach(b => b.classList.toggle('on', b.dataset.lang === lang));
+  document.documentElement.lang = lang === 'pt' ? 'pt-BR' : 'en';
+}
+document.querySelector('.langtoggle').addEventListener('click', e => {
+  const b = e.target.closest('button');
+  if (b) setLang(b.dataset.lang);
+});
+</script>
+</body>
+</html>
