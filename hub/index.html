@@ -107,7 +107,7 @@
     flex:0 0 auto;width:44px;height:44px;border-radius:13px;
     display:grid;place-items:center;
     background:rgba(0,91,150,.22);border:1px solid rgba(156,202,255,.25);
-    font-family:"Newsreader",serif;font-weight:600;font-size:1.35rem;
+    font-family:"Newsreader",serif;font-weight:600;font-size:1.1rem;
     color:var(--accent-light);
   }
   .tile-body{flex:1 1 auto;min-width:0;}
@@ -212,11 +212,11 @@
 
 <script>
   var PROJECTS = [
-    { name:"Music-Practice",      desc:"Student music-theory & practice app",           url:"https://farfromtimnah-hue.github.io/Music-Practice/",  badge:"M" },
-    { name:"Resonate Portal",     desc:"Client portal & Resonate Business Systems home", url:"https://farfromtimnah-hue.github.io/resonate-portal/", badge:"R" },
-    { name:"LTC Dashboard",       desc:"Ministry volunteers, scheduling & attendance",   url:"https://farfromtimnah-hue.github.io/ltc-dashboard/",   badge:"L" },
-    { name:"LTC Assessment",      desc:"Gifting & DISC assessment form",                 url:"https://farfromtimnah-hue.github.io/ministry-gifting/",badge:"L" },
-    { name:"Alice Prata",         desc:"Insurance tools, guides & CRM",                  badge:"A", pages:[
+    { name:"Music-Practice",      desc:"Student music-theory & practice app",            url:"https://farfromtimnah-hue.github.io/Music-Practice/",   badge:"M" },
+    { name:"Resonate Portal",     desc:"Client portal & Resonate Business Systems home",  url:"https://farfromtimnah-hue.github.io/resonate-portal/",  badge:"R" },
+    { name:"LTC Dashboard",       desc:"Ministry volunteers, scheduling & attendance",    url:"https://farfromtimnah-hue.github.io/ltc-dashboard/",    badge:"L" },
+    { name:"LTC Assessment",      desc:"Gifting & DISC assessment form",                  url:"https://farfromtimnah-hue.github.io/ministry-gifting/", badge:"L" },
+    { name:"Alice Prata",         desc:"Insurance tools, guides & CRM",                   badge:"AP", pages:[
         { label:"Insurance Landing",      url:"https://farfromtimnah-hue.github.io/Alice-Prata/landing-insurance.html" },
         { label:"Resources Landing",      url:"https://farfromtimnah-hue.github.io/Alice-Prata/landing-resources.html" },
         { label:"Will Kit",               url:"https://farfromtimnah-hue.github.io/Alice-Prata/will-kit.html" },
@@ -225,9 +225,10 @@
         { label:"Carrier Reference",      url:"https://farfromtimnah-hue.github.io/Alice-Prata/carrier-reference.html" },
         { label:"CRM (sign-in)",          url:"https://farfromtimnah-hue.github.io/Alice-Prata/crm/" }
     ] },
-    { name:"ResonateBrasil",      desc:"Brazilian-American Etsy shop",                   url:"https://www.etsy.com/shop/ResonateBrasil", badge:"B" },
-    { name:"Insurance Agent App", desc:"Goal tracker — in planning",                     url:"", badge:"I" },
-    { name:"Personal OS",         desc:"Life & devotional dashboard",                    url:"", badge:"P" }
+    { name:"Apex Command Center", desc:"Coaching business ops (client · sign-in)",        url:"https://farfromtimnah-hue.github.io/apex-command-center/", badge:"AC" },
+    { name:"ResonateBrasil",      desc:"Brazilian-American Etsy shop",                    url:"https://www.etsy.com/shop/ResonateBrasil", badge:"B" },
+    { name:"Insurance Agent App", desc:"Goal tracker — in planning",                      url:"", badge:"I" },
+    { name:"Personal OS",         desc:"Life & devotional dashboard — not built yet",     url:"", badge:"P" }
   ];
 
   function tileAnchor(p){

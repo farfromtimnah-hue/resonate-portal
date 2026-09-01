@@ -61,6 +61,13 @@ export default {
         return handleZohoOAuthCallback(url, env);
       }
 
+      // ---- CLIENT USERNAME/PASSWORD AUTH (public) ----
+      // Must sit BEFORE authenticate(): a client signing in has no Firebase
+      // token and never will. Clients authenticate with a username.
+      if (method === 'POST' && path === '/api/auth/client-login') {
+        return handlePostClientLogin(request, env);
+      }
+
       // All other routes require a valid Firebase token
       const user = await authenticate(request, env);
 
@@ -167,6 +174,23 @@ async function router(request, env, user, url, method, path) {
   if (params && method === 'PUT') {
     requireAdmin(user);
     return handleUpdatePerson(params.id, params.pid, request, env);
+  }
+
+  // ---- CLIENT LOGINS (username/password, admin-issued) ----
+  // GET  lists the logins for a client (never returns a password).
+  // POST issues a new one and returns the plaintext password EXACTLY ONCE.
+  params = match('/api/clients/:id/logins', path);
+  if (params) {
+    requireAdmin(user);
+    if (method === 'GET')  return handleListClientLogins(params.id, env);
+    if (method === 'POST') return handleCreateClientLogin(params.id, request, env, user);
+  }
+
+  // Reset an existing login's password. Same contract: plaintext once, hash stored.
+  params = match('/api/clients/:id/logins/:username/reset', path);
+  if (params && method === 'POST') {
+    requireAdmin(user);
+    return handleResetClientLogin(params.id, params.username, env);
   }
 
   params = match('/api/clients/:id/archive', path);
@@ -1565,4 +1589,294 @@ function corsPreflightResponse(env) {
       'Access-Control-Max-Age': '86400',
     }
   });
+}
+
+// ============================================================================
+// CLIENT USERNAME/PASSWORD AUTH
+//
+// Ported from Apex (apex-command-center/worker/index.js), which has run this
+// in production with real pt-BR clients since 2026. Ported deliberately whole:
+// the security properties live in the details, not the happy path.
+//
+// WHY NOT FIREBASE FOR CLIENTS: users.firebase_uid is UNIQUE NOT NULL, so a
+// portal user needs a Firebase account, which means owning their email address.
+// An address that already has a Google account returns EMAIL_EXISTS and can
+// only be linked by a UID the client produces by signing in first. Clients get
+// a USERNAME instead. Admins stay on Firebase; clients never touch it.
+// ============================================================================
+
+const PBKDF2_ITERATIONS = 100000;
+
+async function pbkdf2Hash(password, saltBytes, iterations) {
+  const keyMaterial = await crypto.subtle.importKey(
+    'raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveBits']);
+  const bits = await crypto.subtle.deriveBits(
+    { name: 'PBKDF2', hash: 'SHA-256', salt: saltBytes, iterations },
+    keyMaterial, 256);
+  return new Uint8Array(bits);
+}
+
+function bytesToB64(bytes) {
+  let bin = '';
+  for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+  return btoa(bin);
+}
+
+function b64ToBytes(b64) {
+  const bin = atob(b64);
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
+
+async function hashPassword(password) {
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const hash = await pbkdf2Hash(password, salt, PBKDF2_ITERATIONS);
+  return 'pbkdf2$' + PBKDF2_ITERATIONS + '$' + bytesToB64(salt) + '$' + bytesToB64(hash);
+}
+
+// Constant-time comparison: XOR-accumulate every byte rather than returning
+// early on the first mismatch, so response timing does not leak how much of
+// the hash matched.
+async function verifyPassword(password, stored) {
+  const parts = (stored || '').split('$');
+  if (parts.length !== 4 || parts[0] !== 'pbkdf2') return false;
+  const iterations = parseInt(parts[1], 10);
+  if (!iterations || iterations < 1000 || iterations > 1000000) return false;
+  const expected = b64ToBytes(parts[3]);
+  const actual = await pbkdf2Hash(password, b64ToBytes(parts[2]), iterations);
+  if (actual.length !== expected.length) return false;
+  let diff = 0;
+  for (let i = 0; i < actual.length; i++) diff |= actual[i] ^ expected[i];
+  return diff === 0;
+}
+
+async function sha256Hex(str) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  const bytes = new Uint8Array(buf);
+  let out = '';
+  for (let i = 0; i < bytes.length; i++) out += bytes[i].toString(16).padStart(2, '0');
+  return out;
+}
+
+// Password policy — length-plus-blocklist per current NIST guidance, NOT
+// character-class complexity: kinder for clients typing on a phone, and
+// stronger in practice. Clients are pt-BR, so copy is Portuguese-first.
+const PASSWORD_MIN_LENGTH = 10;
+
+const COMMON_PASSWORDS = [
+  'senha', 'senha123', 'senha1234', 'minhasenha', 'mudar123', 'mudar@123',
+  '123mudar', 'brasil', 'brasil123', 'futebol', 'flamengo', 'corinthians',
+  'deusefiel', 'deusnocontrole', 'amordeus', 'familia', 'familia123',
+  'teamo', 'euteamo', 'princesa', 'gatinha', 'amor123', 'senhaforte',
+  'password', 'password1', 'password123', '12345678', '123456789',
+  '1234567890', 'qwerty', 'qwerty123', '111111', '000000', 'abc123',
+  'iloveyou', 'admin', 'administrator', 'letmein', 'welcome', 'monkey',
+  '1q2w3e4r', 'qwertyuiop', 'aaaaaaaa',
+  'resonate', 'resonate123', 'portal', 'portal123', 'gestao', 'gestao123',
+];
+
+function passwordPolicyError(newPassword, username) {
+  const pw = newPassword || '';
+  if (pw.length < PASSWORD_MIN_LENGTH) {
+    return 'A senha deve ter pelo menos ' + PASSWORD_MIN_LENGTH +
+      ' caracteres. / Password must be at least ' + PASSWORD_MIN_LENGTH + ' characters.';
+  }
+  const lower = pw.toLowerCase();
+  if (COMMON_PASSWORDS.indexOf(lower) !== -1) {
+    return 'Essa senha é muito comum. Escolha algo mais difícil de adivinhar. / ' +
+      'That password is too common. Choose something harder to guess.';
+  }
+  if (username && lower === (username || '').toLowerCase()) {
+    return 'A senha não pode ser igual ao seu usuário. / Password cannot be the same as your username.';
+  }
+  if (/^(.)\1+$/.test(pw)) {
+    return 'Essa senha é muito simples. Escolha algo mais difícil de adivinhar. / ' +
+      'That password is too simple. Choose something harder to guess.';
+  }
+  return null;
+}
+
+// Unambiguous alphabet (no 0/O/1/l/I) — these are read off a WhatsApp message
+// and typed on a phone.
+function generateClientTempPassword() {
+  const alphabet = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789';
+  const bytes = crypto.getRandomValues(new Uint8Array(12));
+  let out = '';
+  for (let i = 0; i < bytes.length; i++) out += alphabet[bytes[i] % alphabet.length];
+  return out;
+}
+
+function generateClientToken() {
+  const bytes = crypto.getRandomValues(new Uint8Array(32));
+  let out = 'rcpt_';
+  for (let i = 0; i < bytes.length; i++) out += bytes[i].toString(16).padStart(2, '0');
+  return out;
+}
+
+function usernameFromName(name) {
+  const base = (name || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase().replace(/[^a-z0-9]/g, '');
+  return base || 'cliente';
+}
+
+// Creates a username/password login for a person at a client. Returns the
+// plaintext password EXACTLY ONCE — only the hash is stored.
+async function createClientLogin(env, { clientId, clientName, personName, role, createdBy }) {
+  let base = usernameFromName(clientName);
+  if (personName) base += '.' + usernameFromName(personName);
+
+  let username = base;
+  for (let n = 2; n < 1000; n++) {
+    const taken = await env.DB.prepare('SELECT username FROM client_logins WHERE username = ?')
+      .bind(username).first();
+    if (!taken) break;
+    username = base + n;
+  }
+
+  const tempPassword = generateClientTempPassword();
+  const passwordHash = await hashPassword(tempPassword);
+
+  await env.DB.prepare(
+    'INSERT INTO client_logins (username, client_id, password_hash, must_change_password, created_by, role, person_name) ' +
+    'VALUES (?, ?, ?, 1, ?, ?, ?)'
+  ).bind(username, clientId, passwordHash, createdBy || null, role || 'client', personName || null).run();
+
+  return { username, temp_password: tempPassword };
+}
+
+// ---------------------------------------------------------------------------
+// POST /api/auth/client-login  (PUBLIC) — { username, password }
+//
+// Rate limit runs BEFORE the password check so failed attempts still count;
+// checking after would mean a brute-force run never trips the counter.
+// 10/hour per username stops guessing one account; 30/hour per IP stops one
+// host spraying many usernames. Every attempt is a hit, valid or not.
+// ---------------------------------------------------------------------------
+async function handlePostClientLogin(request, env) {
+  let body;
+  try { body = await request.json(); } catch { body = {}; }
+  const username = (body.username || '').trim().toLowerCase();
+  const password = body.password || '';
+  if (!username || !password) {
+    return jsonResponse({ error: 'Usuário e senha são obrigatórios. / Username and password are required.' }, 400, env);
+  }
+
+  const ip = request.headers.get('CF-Connecting-IP') || '';
+
+  await env.DB.prepare(
+    "DELETE FROM client_login_attempts WHERE created_at < datetime('now', '-2 days')"
+  ).run();
+
+  const userHits = await env.DB.prepare(
+    "SELECT COUNT(*) AS c FROM client_login_attempts WHERE username = ? AND created_at > datetime('now', '-1 hour')"
+  ).bind(username).first();
+
+  const ipHits = ip ? await env.DB.prepare(
+    "SELECT COUNT(*) AS c FROM client_login_attempts WHERE ip = ? AND created_at > datetime('now', '-1 hour')"
+  ).bind(ip).first() : { c: 0 };
+
+  if ((userHits && userHits.c >= 10) || (ipHits && ipHits.c >= 30)) {
+    return jsonResponse({
+      error: 'Muitas tentativas de login. Tente novamente mais tarde. / Too many login attempts. Try again later.'
+    }, 429, env);
+  }
+
+  await env.DB.prepare(
+    'INSERT INTO client_login_attempts (id, username, ip) VALUES (?, ?, ?)'
+  ).bind(crypto.randomUUID(), username, ip || null).run();
+
+  const row = await env.DB.prepare(
+    'SELECT l.username, l.client_id, l.password_hash, l.must_change_password, l.person_name, ' +
+    '       c.business_display_name AS client_name, c.language_preference ' +
+    'FROM client_logins l LEFT JOIN clients c ON c.id = l.client_id WHERE l.username = ?'
+  ).bind(username).first();
+
+  const ok = row ? await verifyPassword(password, row.password_hash) : false;
+  if (!ok) {
+    return jsonResponse({ error: 'Usuário ou senha inválidos. / Invalid username or password.' }, 401, env);
+  }
+
+  await env.DB.prepare("DELETE FROM client_auth_tokens WHERE expires_at <= datetime('now')").run();
+
+  const token = generateClientToken();
+  const tokenHash = await sha256Hex(token);
+  const expires = new Date(Date.now() + 30 * 24 * 3600 * 1000).toISOString();
+
+  await env.DB.prepare(
+    'INSERT INTO client_auth_tokens (token_hash, client_id, username, expires_at) VALUES (?, ?, ?, ?)'
+  ).bind(tokenHash, row.client_id, row.username, expires).run();
+
+  await env.DB.prepare("UPDATE client_logins SET last_login_at = datetime('now') WHERE username = ?")
+    .bind(row.username).run();
+
+  return jsonResponse({
+    token,
+    client_id: row.client_id,
+    client_name: row.client_name,
+    person_name: row.person_name,
+    language_preference: row.language_preference || 'pt',
+    must_change_password: !!row.must_change_password,
+  }, 200, env);
+}
+
+// ---------------------------------------------------------------------------
+// GET /api/clients/:id/logins — admin. Never returns a password.
+// ---------------------------------------------------------------------------
+async function handleListClientLogins(clientId, env) {
+  const { results } = await env.DB.prepare(
+    'SELECT username, client_id, must_change_password, person_name, role, ' +
+    '       created_at, last_login_at, password_changed_at ' +
+    'FROM client_logins WHERE client_id = ? ORDER BY created_at'
+  ).bind(clientId).all();
+  return jsonResponse(results || [], 200, env);
+}
+
+// ---------------------------------------------------------------------------
+// POST /api/clients/:id/logins — admin. { person_name?, role? }
+// Returns { username, temp_password } — the plaintext exactly once.
+// ---------------------------------------------------------------------------
+async function handleCreateClientLogin(clientId, request, env, user) {
+  let body;
+  try { body = await request.json(); } catch { body = {}; }
+
+  const client = await env.DB.prepare(
+    'SELECT id, business_display_name, name FROM clients WHERE id = ?'
+  ).bind(clientId).first();
+  if (!client) throw new ApiError('Client not found', 404);
+
+  const creds = await createClientLogin(env, {
+    clientId: client.id,
+    clientName: client.business_display_name || client.name,
+    personName: (body.person_name || '').trim() || null,
+    role: body.role || 'client',
+    createdBy: user?.email || null,
+  });
+
+  return jsonResponse(creds, 201, env);
+}
+
+// ---------------------------------------------------------------------------
+// POST /api/clients/:id/logins/:username/reset — admin.
+// Issues a fresh temp password and forces a change at next sign-in.
+// ---------------------------------------------------------------------------
+async function handleResetClientLogin(clientId, username, env) {
+  const row = await env.DB.prepare(
+    'SELECT username FROM client_logins WHERE username = ? AND client_id = ?'
+  ).bind(username, clientId).first();
+  if (!row) throw new ApiError('Login not found for this client', 404);
+
+  const tempPassword = generateClientTempPassword();
+  const passwordHash = await hashPassword(tempPassword);
+
+  await env.DB.prepare(
+    'UPDATE client_logins SET password_hash = ?, must_change_password = 1, ' +
+    "password_changed_at = datetime('now') WHERE username = ? AND client_id = ?"
+  ).bind(passwordHash, username, clientId).run();
+
+  // Every existing session for this login is revoked: a password reset that
+  // leaves old sessions alive is not a reset.
+  await env.DB.prepare('DELETE FROM client_auth_tokens WHERE username = ?').bind(username).run();
+
+  return jsonResponse({ username, temp_password: tempPassword }, 200, env);
 }

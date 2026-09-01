@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Meeting — Resonate</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ground:#0A0A0A;
+    --panel:#131313;
+    --panel-2:#191918;
+    --gold:#8A7048;
+    --gold-hi:#A28A60;
+    --gold-line:rgba(162,138,96,.22);
+    --cream:#D7D7C8;
+    --ink:#E8E5DE;
+    --dim:#8E8880;
+    --dimmer:#65605A;
+    --ox:#7B2230;
+    --ox-hi:#A8394A;
+    --hair:rgba(255,255,255,.07);
+    --serif:"Cormorant Garamond",Georgia,serif;
+    --sans:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{animation:none!important;transition:none!important}}
+  body{
+    margin:0;background:var(--ground);color:var(--ink);
+    font-family:var(--sans);font-weight:300;line-height:1.62;font-size:15.5px;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  /* ===================== top bar ===================== */
+  .bar{
+    position:sticky;top:0;z-index:60;background:rgba(10,10,10,.94);
+    backdrop-filter:saturate(140%) blur(8px);
+    border-bottom:1px solid var(--hair);
+    display:flex;align-items:center;gap:18px;padding:11px 22px;
+  }
+  .bar .who{
+    font-family:var(--serif);font-size:1.16rem;color:var(--ink);letter-spacing:.01em;
+  }
+  .bar .who span{color:var(--gold-hi);font-style:italic}
+  .bar .when{font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--dimmer)}
+  .bar .spacer{flex:1}
+  .bar .status{font-size:.72rem;color:var(--dimmer);min-width:96px;text-align:right}
+  .bar .status.ok{color:var(--gold-hi)}
+  .bar .status.err{color:var(--ox-hi)}
+  .langbtn{
+    background:transparent;border:1px solid var(--gold-line);color:var(--dim);
+    font-family:var(--sans);font-size:.7rem;letter-spacing:.13em;text-transform:uppercase;
+    padding:6px 13px;cursor:pointer;border-radius:2px;
+  }
+  .langbtn:hover,.langbtn:focus-visible{color:var(--gold-hi);border-color:var(--gold-hi)}
+  .langbtn:focus-visible{outline:1px solid var(--gold-hi);outline-offset:2px}
+
+  /* ===================== layout ===================== */
+  .shell{display:grid;grid-template-columns:196px minmax(0,1fr);max-width:1240px;margin:0 auto}
+  nav{
+    position:sticky;top:49px;align-self:start;height:calc(100vh - 49px);overflow-y:auto;
+    padding:28px 16px 40px 22px;border-right:1px solid var(--hair);
+  }
+  nav p.grp{
+    font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:var(--dimmer);
+    margin:20px 0 6px;
+  }
+  nav p.grp:first-child{margin-top:0}
+  nav a{
+    display:block;padding:5px 0 5px 11px;margin-left:-11px;color:var(--dim);
+    text-decoration:none;font-size:.82rem;border-left:2px solid transparent;
+  }
+  nav a:hover,nav a:focus-visible{color:var(--gold-hi);border-left-color:var(--gold-hi)}
+  main{padding:34px 40px 140px;min-width:0}
+
+  /* ===================== sections ===================== */
+  section{
+    margin:0 0 30px;scroll-margin-top:62px;position:relative;
+    border:1px solid var(--hair);background:var(--panel);border-radius:2px;
+  }
+  .shead{
+    display:flex;align-items:flex-start;gap:16px;
+    padding:22px 24px 0;
+  }
+  .shead .txt{flex:1;min-width:0}
+  .eyebrow{
+    font-size:.62rem;letter-spacing:.22em;text-transform:uppercase;color:var(--gold-hi);
+    margin:0 0 7px;
+  }
+  h2{
+    font-family:var(--serif);font-weight:300;font-size:1.92rem;line-height:1.12;
+    margin:0;color:#fff;text-wrap:balance;
+  }
+  h2 em{font-style:italic;color:var(--gold-hi)}
+  .sbody{padding:18px 24px 24px}
+  p{margin:0 0 12px;color:var(--dim);max-width:70ch}
+  p:last-child{margin-bottom:0}
+  strong{color:var(--ink);font-weight:500}
+  .pt{font-family:var(--serif);font-style:italic;color:var(--gold-hi);font-size:1.07em}
+
+  h3{
+    font-size:.68rem;letter-spacing:.17em;text-transform:uppercase;color:var(--gold-hi);
+    margin:22px 0 10px;font-weight:500;
+  }
+  h3:first-child{margin-top:0}
+
+  ul.b{margin:0;padding:0;list-style:none}
+  ul.b li{
+    font-size:.9rem;color:var(--dim);padding:5px 0 5px 15px;position:relative;line-height:1.55;
+  }
+  ul.b li::before{
+    content:"";position:absolute;left:0;top:14px;width:6px;height:1px;
+    background:var(--gold-hi);opacity:.6;
+  }
+  ul.b li b{color:var(--ink);font-weight:500}
+
+  .two{display:grid;grid-template-columns:repeat(auto-fit,minmax(272px,1fr));gap:26px}
+
+  /* present button */
+  .presentbtn{
+    flex:0 0 auto;background:transparent;border:1px solid var(--gold-line);
+    color:var(--dimmer);cursor:pointer;border-radius:2px;
+    font-family:var(--sans);font-size:.63rem;letter-spacing:.15em;text-transform:uppercase;
+    padding:6px 11px;white-space:nowrap;
+  }
+  .presentbtn:hover,.presentbtn:focus-visible{color:var(--gold-hi);border-color:var(--gold-hi)}
+  .presentbtn:focus-visible{outline:1px solid var(--gold-hi);outline-offset:2px}
+
+  /* ===================== notes ===================== */
+  .notes{margin:20px 24px 24px;border-top:1px solid var(--hair);padding-top:16px}
+  .notes label{
+    display:block;font-size:.62rem;letter-spacing:.2em;text-transform:uppercase;
+    color:var(--dimmer);margin-bottom:8px;
+  }
+  .notes textarea{
+    width:100%;min-height:74px;resize:vertical;background:var(--ground);
+    border:1px solid var(--hair);border-radius:2px;color:var(--ink);
+    font-family:var(--sans);font-size:.88rem;font-weight:300;line-height:1.6;
+    padding:11px 13px;
+  }
+  .notes textarea:focus{outline:none;border-color:var(--gold-line)}
+  .notes textarea::placeholder{color:#4E4A45}
+
+  /* ===================== brand block ===================== */
+  .sig{
+    display:block;width:280px;max-width:74%;margin:0 0 24px;
+  }
+  .swatches{display:flex;flex-wrap:wrap;gap:10px;margin:0 0 8px;padding:0;list-style:none}
+  .sw{width:118px}
+  .sw i{display:block;height:54px;border-radius:2px;border:1px solid rgba(255,255,255,.09)}
+  .sw input{
+    width:100%;margin-top:7px;background:var(--ground);border:1px solid var(--hair);
+    color:var(--ink);font-family:var(--sans);font-size:.74rem;font-weight:500;
+    padding:5px 7px;border-radius:2px;font-variant-numeric:tabular-nums;
+  }
+  .sw input:focus{outline:none;border-color:var(--gold-line)}
+  .sw span{display:block;font-size:.64rem;color:var(--dimmer);margin-top:4px;line-height:1.4}
+  .sw span.unconf{color:var(--ox-hi)}
+
+  .savebtn{
+    margin-top:16px;background:transparent;border:1px solid var(--gold-hi);color:var(--gold-hi);
+    font-family:var(--sans);font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;
+    padding:9px 18px;cursor:pointer;border-radius:2px;
+  }
+  .savebtn:hover{background:var(--gold-hi);color:var(--ground)}
+  .savebtn:focus-visible{outline:1px solid var(--gold-hi);outline-offset:2px}
+
+  /* ===================== caution ===================== */
+  .caution{
+    border-left:2px solid var(--ox-hi);background:rgba(123,34,48,.10);
+    padding:12px 16px;margin:14px 0;border-radius:0 2px 2px 0;
+  }
+  .caution p{margin:0;color:var(--ink);font-size:.87rem;max-width:64ch}
+  .caution .t{
+    display:block;font-size:.6rem;letter-spacing:.18em;text-transform:uppercase;
+    color:var(--ox-hi);margin-bottom:4px;font-weight:600;
+  }
+
+  /* ===================== facts ===================== */
+  .facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(104px,1fr));gap:1px;background:var(--hair);border:1px solid var(--hair)}
+  .facts div{background:var(--panel);padding:14px 10px;text-align:center}
+  .facts b{display:block;font-family:var(--serif);font-size:1.55rem;color:var(--gold-hi);line-height:1;font-variant-numeric:tabular-nums}
+  .facts span{display:block;font-size:.6rem;letter-spacing:.11em;text-transform:uppercase;color:var(--dimmer);margin-top:6px}
+
+  /* ===================== PRESENTATION MODE ===================== */
+  body.presenting{overflow:hidden}
+  body.presenting .bar,
+  body.presenting nav{display:none}
+  body.presenting .shell{grid-template-columns:1fr;max-width:none}
+  body.presenting main{padding:0}
+  body.presenting section{display:none}
+  body.presenting section.on{
+    display:block;position:fixed;inset:0;z-index:100;margin:0;border:none;
+    background:var(--ground);overflow-y:auto;
+    padding:clamp(38px,6vh,80px) clamp(28px,7vw,110px);
+  }
+  body.presenting section.on .presentbtn{display:none}
+  body.presenting section.on .notes{display:none}
+  body.presenting section.on .en{display:none}
+  body.presenting section.on .ptx{display:revert}
+  body.presenting section.on .sbody{padding:0}
+  body.presenting section.on .shead{padding:0 0 6px}
+  body.presenting section.on h2{font-size:clamp(2.3rem,5.2vw,3.5rem)}
+  body.presenting section.on .eyebrow{font-size:.72rem;margin-bottom:12px}
+  body.presenting section.on p,
+  body.presenting section.on ul.b li{font-size:clamp(1rem,1.5vw,1.22rem);line-height:1.62}
+  body.presenting section.on .sig{width:min(360px,60%);margin-bottom:38px}
+  body.presenting section.on .sw{width:150px}
+  body.presenting section.on .sw i{height:76px}
+  body.presenting section.on .facts b{font-size:2.4rem}
+  body.presenting section.on h3{font-size:.8rem;margin-top:34px}
+  body.presenting section.on .caution{display:none}
+  body.presenting section.on .private{display:none}
+
+  .exit{
+    position:fixed;top:20px;right:24px;z-index:110;display:none;
+    background:transparent;border:1px solid var(--gold-line);color:var(--dimmer);
+    font-family:var(--sans);font-size:.66rem;letter-spacing:.15em;text-transform:uppercase;
+    padding:8px 14px;cursor:pointer;border-radius:2px;
+  }
+  body.presenting .exit{display:block}
+  .exit:hover{color:var(--gold-hi);border-color:var(--gold-hi)}
+
+  /* language: English by default, Portuguese only when presenting */
+  .ptx{display:none}
+
+  @media (max-width:880px){
+    .shell{grid-template-columns:1fr}
+    nav{position:static;height:auto;border-right:none;border-bottom:1px solid var(--hair);padding:18px 22px}
+    main{padding:24px 20px 100px}
+  }
+</style>
+</head>
+<body>
+
+<div class="bar">
+  <span class="who">Suellen <span>Sartorato</span></span>
+  <span class="when">Qua 2 Set · 4:15 PM</span>
+  <span class="spacer"></span>
+  <span class="status" id="status"></span>
+</div>
+
+<button class="exit" id="exit">Fechar · Esc</button>
+
+<div class="shell">
+  <nav>
+    <p class="grp">Confirmar</p>
+    <a href="#brand">Marca e cores</a>
+    <p class="grp">Ela</p>
+    <a href="#facts">Números</a>
+    <a href="#consultoria">Consultoria 1:1</a>
+    <a href="#mentoria">Mentoria CI</a>
+    <a href="#cursos">Cursos</a>
+    <a href="#eventos">Eventos</a>
+    <p class="grp">Processo</p>
+    <a href="#processo">Como funciona</a>
+    <p class="grp">Privado</p>
+    <a href="#gap">A lacuna</a>
+    <a href="#nunca">Não dizer</a>
+  </nav>
+
+  <main>
+
+    <!-- ============ BRAND ============ -->
+    <section id="brand" data-sec="brand">
+      <div class="shead">
+        <div class="txt">
+          <p class="eyebrow"><span class="en">Confirm first</span><span class="ptx">Confirmar primeiro</span></p>
+          <h2><span class="en">Is this <em>yours</em>?</span><span class="ptx">Isto é <em>seu</em>?</span></h2>
+        </div>
+        <button class="presentbtn" data-present="brand">Mostrar</button>
+      </div>
+      <div class="sbody">
+        <img class="sig" src="assets/sig-white-tight.png" alt="Suellen Sartorato">
+
+        <p class="en">
+          Colours sampled from her own Imersão Magna artwork. Editable — correct them live and save
+          to her record.
+        </p>
+        <p class="ptx">
+          Estas cores foram extraídas da sua própria arte da Imersão Magna.
+          <strong>Estão corretas?</strong>
+        </p>
+
+        <ul class="swatches">
+          <li class="sw">
+            <i style="background:#0A0A0A"></i>
+            <input id="c1" value="#0A0A0A">
+            <span><span class="en">Ground</span><span class="ptx">Fundo</span></span>
+          </li>
+          <li class="sw">
+            <i style="background:#8A7048"></i>
+            <input id="c2" value="#8A7048">
+            <span><span class="en">Gold / accent</span><span class="ptx">Dourado</span></span>
+          </li>
+          <li class="sw">
+            <i style="background:#A28A60"></i>
+            <input id="c3" value="#A28A60" disabled>
+            <span><span class="en">Gold highlight</span><span class="ptx">Dourado claro</span></span>
+          </li>
+          <li class="sw">
+            <i style="background:#D7D7C8"></i>
+            <input id="c4" value="#D7D7C8" disabled>
+            <span><span class="en">Cream</span><span class="ptx">Creme</span></span>
+          </li>
+          <li class="sw">
+            <i style="background:#7B2230"></i>
+            <input id="c5" value="#7B2230" disabled>
+            <span class="unconf"><span class="en">Oxblood · unconfirmed</span><span class="ptx">Vinho</span></span>
+          </li>
+        </ul>
+
+        <button class="savebtn" id="saveBrand">Salvar cores</button>
+
+        <div class="caution private">
+          <span class="t">Private</span>
+          <p>
+            The wordmark above is her real file, pulled from her own CDN. The wax seal only exists
+            at story-cover resolution — <strong>ask her for the source files</strong>. Typography
+            is unknown: her site is Inter (a GoHighLevel default), her artwork uses a display serif
+            baked into images. <strong>Ask whether she has brand fonts.</strong>
+          </p>
+        </div>
+
+        <h3><span class="en">Also ask</span><span class="ptx">Perguntar também</span></h3>
+        <ul class="b">
+          <li class="en">Do you have the logo files and brand fonts?</li>
+          <li class="ptx">Você tem os arquivos do logo e as fontes da marca?</li>
+          <li class="en">Is <b>@suesartorato</b> still in use, or only <b>@suellensartorato</b>?</li>
+          <li class="ptx">O <b>@suesartorato</b> ainda é usado, ou só o <b>@suellensartorato</b>?</li>
+        </ul>
+      </div>
+      <div class="notes"><label>Notas</label><textarea data-note="brand" placeholder="Cores, fontes, arquivos…"></textarea></div>
+    </section>
+
+    <!-- ============ FACTS ============ -->
+    <section id="facts" data-sec="facts">
+      <div class="shead">
+        <div class="txt">
+          <p class="eyebrow"><span class="en">Reference</span><span class="ptx">Referência</span></p>
+          <h2><span class="en">The <em>numbers</em></span><span class="ptx">Os <em>números</em></span></h2>
+        </div>
+        <button class="presentbtn" data-present="facts">Mostrar</button>
+      </div>
+      <div class="sbody">
+        <div class="facts">
+          <div><b>154K</b><span>Seguidores</span></div>
+          <div><b>1.766</b><span>Posts</span></div>
+          <div><b>19</b><span>Países</span></div>
+          <div><b>1.000+</b><span>Mulheres</span></div>
+          <div><b>30</b><span>Orlando</span></div>
+        </div>
+        <div class="caution private">
+          <span class="t">Careful</span>
+          <p>
+            Her numbers don't reconcile — 19 países in the bio, 14 for the method, 2.000+ alunos
+            on the site. <strong>Don't quote a figure without knowing which one she means.</strong>
+          </p>
+        </div>
+      </div>
+      <div class="notes"><label>Notas</label><textarea data-note="facts" placeholder="Números corretos…"></textarea></div>
+    </section>
+
+    <!-- ============ CONSULTORIA ============ -->
+    <section id="consultoria" data-sec="consultoria">
+      <div class="shead">
+        <div class="txt">
+          <p class="eyebrow"><span class="en">Business one</span><span class="ptx">Negócio um</span></p>
+          <h2><span class="en">Consultoria <em>1:1</em></span><span class="ptx">Consultoria <em>1:1</em></span></h2>
+        </div>
+        <button class="presentbtn" data-present="consultoria">Mostrar</button>
+      </div>
+      <div class="sbody">
+        <div class="two">
+          <div>
+            <h3><span class="en">What we understand</span><span class="ptx">O que entendemos</span></h3>
+            <ul class="b">
+              <li class="en"><b>Two tracks</b> — Clientes H (homens) and Clientes CI (mulheres), kept separate</li>
+              <li class="ptx"><b>Duas trilhas</b> — Clientes H e Clientes CI, separadas</li>
+              <li class="en"><b>Clients are professionals</b> — doctors, psychiatrists, psychologists, business owners</li>
+              <li class="ptx"><b>Clientes são profissionais</b> — médicos, psiquiatras, psicólogos, empresários</li>
+              <li class="en"><b>Multi-session</b>, not one appointment</li>
+              <li class="ptx"><b>Várias sessões</b>, não um atendimento único</li>
+              <li class="en"><b>In person and remote</b> — shopping trips, and video calls</li>
+              <li class="ptx"><b>Presencial e remoto</b> — compras e chamadas de vídeo</li>
+              <li class="en"><b>Before / after</b> documented</li>
+              <li class="ptx"><b>Antes / depois</b> documentado</li>
+            </ul>
+          </div>
+          <div>
+            <h3><span class="en">To confirm</span><span class="ptx">Confirmar</span></h3>
+            <ul class="b">
+              <li class="en">How many sessions in a full engagement?</li>
+              <li class="ptx">Quantas sessões tem um trabalho completo?</li>
+              <li class="en">What does the client receive at the end?</li>
+              <li class="ptx">O que o cliente recebe no final?</li>
+              <li class="en">Where do the photos and analysis live now?</li>
+              <li class="ptx">Onde ficam hoje as fotos e a análise?</li>
+              <li class="en">How do people book and pay?</li>
+              <li class="ptx">Como as pessoas agendam e pagam?</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="notes"><label>Notas</label><textarea data-note="consultoria" placeholder="Processo, sessões, entrega…"></textarea></div>
+    </section>
+
+    <!-- ============ MENTORIA ============ -->
+    <section id="mentoria" data-sec="mentoria">
+      <div class="shead">
+        <div class="txt">
+          <p class="eyebrow"><span class="en">Business two</span><span class="ptx">Negócio dois</span></p>
+          <h2><span class="en">Mentoria <em>CI</em></span><span class="ptx">Mentoria <em>CI</em></span></h2>
+        </div>
+        <button class="presentbtn" data-present="mentoria">Mostrar</button>
+      </div>
+      <div class="sbody">
+        <div class="two">
+          <div>
+            <h3><span class="en">What we understand</span><span class="ptx">O que entendemos</span></h3>
+            <ul class="b">
+              <li class="en"><b>She trains image consultants</b> in Método I.S® — the Alunas M.I.S</li>
+              <li class="ptx"><b>Ela forma consultoras de imagem</b> no Método I.S® — as Alunas M.I.S</li>
+              <li class="en"><b>International</b> — 14 countries</li>
+              <li class="ptx"><b>Internacional</b> — 14 países</li>
+              <li class="en"><b>Live video cohorts</b>, in the evening</li>
+              <li class="ptx"><b>Turmas ao vivo por vídeo</b>, à noite</li>
+              <li class="en"><b>WhatsApp between sessions</b> — voice notes, one to one</li>
+              <li class="ptx"><b>WhatsApp entre as sessões</b> — áudios, individual</li>
+              <li class="en"><b>Short and structured</b> — results in around 3 meetings</li>
+              <li class="ptx"><b>Curta e estruturada</b> — resultados em cerca de 3 encontros</li>
+            </ul>
+          </div>
+          <div>
+            <h3><span class="en">To confirm</span><span class="ptx">Confirmar</span></h3>
+            <ul class="b">
+              <li class="en">Do the alunas work with you, or build their own practices?</li>
+              <li class="ptx">As alunas trabalham com você, ou têm o próprio negócio?</li>
+              <li class="en">How many are active right now?</li>
+              <li class="ptx">Quantas estão ativas hoje?</li>
+              <li class="en">Is there certification, or a licence to use the method?</li>
+              <li class="ptx">Existe certificação ou licença para usar o método?</li>
+            </ul>
+            <div class="caution private">
+              <span class="t">This decides the architecture</span>
+              <p>
+                Licensed network = multi-tenant with her on top. Independent alumnae = a system for
+                her practice only. Evidence points both ways.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="notes"><label>Notas</label><textarea data-note="mentoria" placeholder="Alunas, certificação, turmas…"></textarea></div>
+    </section>
+
+    <!-- ============ CURSOS ============ -->
+    <section id="cursos" data-sec="cursos">
+      <div class="shead">
+        <div class="txt">
+          <p class="eyebrow"><span class="en">Business three</span><span class="ptx">Negócio três</span></p>
+          <h2><span class="en">Cursos e <em>alunos</em></span><span class="ptx">Cursos e <em>alunos</em></span></h2>
+        </div>
+        <button class="presentbtn" data-present="cursos">Mostrar</button>
+      </div>
+      <div class="sbody">
+        <ul class="b">
+          <li class="en"><b>21 dias</b> — Treinamento de Presença Estratégica. Three modules, 15–20 min a day, one year of access</li>
+          <li class="ptx"><b>21 dias</b> — Treinamento de Presença Estratégica. Três módulos, 15–20 min por dia, um ano de acesso</li>
+          <li class="en"><b>Free class</b> is the entry point, reached by commenting a keyword</li>
+          <li class="ptx"><b>Aula gratuita</b> é a porta de entrada, por palavra-chave nos comentários</li>
+          <li class="en"><b>A Corte</b> — a community on WhatsApp</li>
+          <li class="ptx"><b>A Corte</b> — comunidade no WhatsApp</li>
+          <li class="en"><b>2.000+ students</b> claimed on the site</li>
+          <li class="ptx"><b>2.000+ alunos</b> segundo o site</li>
+        </ul>
+        <h3><span class="en">To confirm</span><span class="ptx">Confirmar</span></h3>
+        <ul class="b">
+          <li class="en">Which platform hosts the course?</li>
+          <li class="ptx">Qual plataforma hospeda o curso?</li>
+          <li class="en">How do students get access after paying?</li>
+          <li class="ptx">Como o aluno recebe o acesso depois de pagar?</li>
+          <li class="en">Who answers when someone comments the keyword?</li>
+          <li class="ptx">Quem responde quando alguém comenta a palavra-chave?</li>
+        </ul>
+      </div>
+      <div class="notes"><label>Notas</label><textarea data-note="cursos" placeholder="Plataforma, acesso, alunos…"></textarea></div>
+    </section>
+
+    <!-- ============ EVENTOS ============ -->
+    <section id="eventos" data-sec="eventos">
+      <div class="shead">
+        <div class="txt">
+          <p class="eyebrow"><span class="en">Business four</span><span class="ptx">Negócio quatro</span></p>
+          <h2><span class="en">Imersão <em>Magna</em></span><span class="ptx">Imersão <em>Magna</em></span></h2>
+        </div>
+        <button class="presentbtn" data-present="eventos">Mostrar</button>
+      </div>
+      <div class="sbody">
+        <ul class="b">
+          <li class="en"><b>Next edition in Orlando, Florida</b> — 30 women, capped</li>
+          <li class="ptx"><b>Próxima edição em Orlando, Flórida</b> — 30 mulheres</li>
+          <li class="en"><b>Multi-module immersion</b> — Momento de Conexão, Momento Etiqueta</li>
+          <li class="ptx"><b>Imersão com módulos</b> — Momento de Conexão, Momento Etiqueta</li>
+          <li class="en"><b>Tickets selling now</b> through her site</li>
+          <li class="ptx"><b>Ingressos à venda agora</b> pelo site</li>
+        </ul>
+        <h3><span class="en">To confirm</span><span class="ptx">Confirmar</span></h3>
+        <ul class="b">
+          <li class="en">How are registrations and attendees managed today?</li>
+          <li class="ptx">Como são gerenciadas as inscrições e as participantes hoje?</li>
+          <li class="en">Is the US work staying in Portuguese, or do you need English too?</li>
+          <li class="ptx">O trabalho nos EUA continua em português, ou vai precisar de inglês também?</li>
+          <li class="en">What happens with attendees after the event?</li>
+          <li class="ptx">O que acontece com as participantes depois do evento?</li>
+        </ul>
+      </div>
+      <div class="notes"><label>Notas</label><textarea data-note="eventos" placeholder="Inscrições, logística, pós-evento…"></textarea></div>
+    </section>
+
+    <!-- ============ PROCESSO ============ -->
+    <section id="processo" data-sec="processo">
+      <div class="shead">
+        <div class="txt">
+          <p class="eyebrow"><span class="en">Reconstructed — check it with her</span><span class="ptx">Como entendemos o processo</span></p>
+          <h2><span class="en">The 1:1 <em>process</em></span><span class="ptx">O <em>processo</em></span></h2>
+        </div>
+        <button class="presentbtn" data-present="processo">Mostrar</button>
+      </div>
+      <div class="sbody">
+        <p class="en">Assembled from what clients describe. A hypothesis, not a description.</p>
+        <p class="ptx">Montado a partir do que os clientes descrevem. <strong>Está certo?</strong></p>
+        <ul class="b">
+          <li class="en"><b>1 · Intake</b> — the client photographs herself and sends it in</li>
+          <li class="ptx"><b>1 · Entrada</b> — a cliente se fotografa e envia</li>
+          <li class="en"><b>2 · Behavioural profile</b> — DISC</li>
+          <li class="ptx"><b>2 · Perfil comportamental</b> — DISC</li>
+          <li class="en"><b>3 · Image analysis</b> — análise da comunicação da imagem, colour and garments</li>
+          <li class="ptx"><b>3 · Análise da comunicação da imagem</b> — cores e peças</li>
+          <li class="en"><b>4 · Wardrobe audit</b> — what stays, what goes</li>
+          <li class="ptx"><b>4 · Guarda-roupa</b> — o que fica, o que sai</li>
+          <li class="en"><b>5 · Montagem de looks</b> — in person, in store</li>
+          <li class="ptx"><b>5 · Montagem de looks</b> — presencial, na loja</li>
+          <li class="en"><b>6 · Teach the framework</b> — so she can decide alone afterwards</li>
+          <li class="ptx"><b>6 · Ensinar o método</b> — para ela decidir sozinha depois</li>
+          <li class="en"><b>7 · Embed a routine</b> — the value outlives the engagement</li>
+          <li class="ptx"><b>7 · Criar uma rotina</b> — o valor continua depois</li>
+        </ul>
+      </div>
+      <div class="notes"><label>Notas</label><textarea data-note="processo" placeholder="Correções ao processo…"></textarea></div>
+    </section>
+
+    <!-- ============ GAP (private) ============ -->
+    <section id="gap" data-sec="gap">
+      <div class="shead">
+        <div class="txt">
+          <p class="eyebrow">Private · not for the screen</p>
+          <h2>The <em>gap</em></h2>
+        </div>
+      </div>
+      <div class="sbody">
+        <p>
+          Everything valuable she produces — the profile, the colour analysis, the assembled looks,
+          the before-and-afters, the written analysis — lives in her camera roll, her laptop files,
+          and a WhatsApp thread. Clients refer back to it <strong>months later, from memory</strong>.
+        </p>
+        <p>
+          Her work is physical and visual. It can't survive as a PDF, and a link isn't something
+          anyone keeps. Two routes, both viable: a Portuguese shell over the GoHighLevel account she
+          already pays for, or something standalone. <strong>Be ready for either. Commit to neither.</strong>
+        </p>
+      </div>
+      <div class="notes"><label>Notas</label><textarea data-note="gap" placeholder="O que ela disse sobre entrega…"></textarea></div>
+    </section>
+
+    <!-- ============ NEVER (private) ============ -->
+    <section id="nunca" data-sec="nunca">
+      <div class="shead">
+        <div class="txt">
+          <p class="eyebrow">Private · standing rules</p>
+          <h2>What <em>not</em> to say</h2>
+        </div>
+      </div>
+      <div class="sbody">
+        <ul class="b">
+          <li><b>Don't pitch, quote, or propose.</b> First conversation is understanding what she needs.</li>
+          <li><b>Never say her website looks templated.</b> True, and the fastest way to lose her.</li>
+          <li><b>Don't tell her she has no system.</b> She's on GoHighLevel.</li>
+          <li><b>Don't offer to build a DISC assessment.</b> Licensed, and it doesn't survive translation. Storing results is fine.</li>
+          <li><b>Don't mention the weekend availability.</b> A client praised it; reading it back as a problem is a diagnosis she didn't ask for.</li>
+          <li><b>Rafa is a bridge, not a channel.</b> No pricing or problems through him unless she asks.</li>
+          <li><b>Her thesis:</b> <span class="pt">"O mercado não está pagando pouco, é o seu posicionamento que não comunica valor."</span> She will hear a soft number as a self-diagnosis.</li>
+        </ul>
+      </div>
+      <div class="notes"><label>Notas</label><textarea data-note="nunca" placeholder=""></textarea></div>
+    </section>
+
+  </main>
+</div>
+
+<script type="module">
+import { api } from './js/api.js';
+import { requireAuth } from './js/auth.js';
+
+const CLIENT_ID = new URLSearchParams(location.search).get('client') || 4;
+const statusEl = document.getElementById('status');
+
+let statusTimer;
+function setStatus(msg, kind) {
+  statusEl.textContent = msg;
+  statusEl.className = 'status' + (kind ? ' ' + kind : '');
+  clearTimeout(statusTimer);
+  if (kind === 'ok') statusTimer = setTimeout(() => { statusEl.textContent = ''; statusEl.className = 'status'; }, 2200);
+}
+
+// ---- presentation mode -------------------------------------------------
+function present(key) {
+  document.querySelectorAll('section').forEach(s => s.classList.toggle('on', s.dataset.sec === key));
+  document.body.classList.add('presenting');
+  const el = document.querySelector(`section[data-sec="${key}"]`);
+  if (el) el.scrollTop = 0;
+}
+function exitPresent() {
+  document.body.classList.remove('presenting');
+  document.querySelectorAll('section.on').forEach(s => s.classList.remove('on'));
+}
+document.querySelectorAll('[data-present]').forEach(b =>
+  b.addEventListener('click', () => present(b.dataset.present)));
+document.getElementById('exit').addEventListener('click', exitPresent);
+document.addEventListener('keydown', e => { if (e.key === 'Escape') exitPresent(); });
+
+// ---- notes: one persisted row per section ------------------------------
+// Each section's notes are stored as their own row in client_private_notes,
+// prefixed with [key] so a reload can put them back in the right box.
+const noteIds = {};
+
+function parseNote(text) {
+  const m = /^\[([a-z]+)\]\s*([\s\S]*)$/.exec(text || '');
+  return m ? { key: m[1], body: m[2] } : null;
+}
+
+async function loadNotes() {
+  try {
+    const rows = await api.notes(CLIENT_ID);
+    (rows || []).forEach(r => {
+      const parsed = parseNote(r.body || r.content || '');
+      if (!parsed) return;
+      const box = document.querySelector(`[data-note="${parsed.key}"]`);
+      if (box && !noteIds[parsed.key]) {
+        box.value = parsed.body;
+        noteIds[parsed.key] = r.id;
+      }
+    });
+    setStatus('Notas carregadas', 'ok');
+  } catch (e) {
+    setStatus('Notas offline', 'err');
+  }
+}
+
+const saveTimers = {};
+async function saveNote(key, value) {
+  const payload = { body: `[${key}] ${value}`, content: `[${key}] ${value}` };
+  try {
+    if (noteIds[key]) {
+      await api.updateNote(CLIENT_ID, noteIds[key], payload);
+    } else {
+      const row = await api.addNote(CLIENT_ID, payload);
+      if (row && row.id) noteIds[key] = row.id;
+    }
+    setStatus('Salvo', 'ok');
+  } catch (e) {
+    setStatus('Erro ao salvar', 'err');
+  }
+}
+
+document.querySelectorAll('[data-note]').forEach(box => {
+  box.addEventListener('input', () => {
+    const key = box.dataset.note;
+    setStatus('…');
+    clearTimeout(saveTimers[key]);
+    saveTimers[key] = setTimeout(() => saveNote(key, box.value), 900);
+  });
+});
+
+// ---- brand colours -----------------------------------------------------
+document.querySelectorAll('.sw input').forEach(inp => {
+  inp.addEventListener('input', () => {
+    const v = inp.value.trim();
+    if (/^#[0-9a-fA-F]{6}$/.test(v)) inp.parentElement.querySelector('i').style.background = v;
+  });
+});
+
+document.getElementById('saveBrand').addEventListener('click', async () => {
+  const primary = document.getElementById('c1').value.trim();
+  const secondary = document.getElementById('c2').value.trim();
+  try {
+    await api.updateClient(CLIENT_ID, {
+      brand_color_primary: primary,
+      brand_color_secondary: secondary,
+    });
+    setStatus('Cores salvas', 'ok');
+  } catch (e) {
+    setStatus('Erro ao salvar cores', 'err');
+  }
+});
+
+// ---- boot --------------------------------------------------------------
+requireAuth('admin').then(async (profile) => {
+  if (!profile) return;
+  try {
+    const c = await api.getClient(CLIENT_ID);
+    if (c) {
+      if (c.brand_color_primary)   { document.getElementById('c1').value = c.brand_color_primary;
+        document.querySelector('#c1').parentElement.querySelector('i').style.background = c.brand_color_primary; }
+      if (c.brand_color_secondary) { document.getElementById('c2').value = c.brand_color_secondary;
+        document.querySelector('#c2').parentElement.querySelector('i').style.background = c.brand_color_secondary; }
+    }
+  } catch (e) { /* client fetch is not critical to the page working */ }
+  await loadNotes();
+});
+</script>
+</body>
+</html>
