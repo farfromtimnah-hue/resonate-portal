@@ -605,7 +605,11 @@
 import { api } from './js/api.js';
 import { requireAuth } from './js/auth.js';
 
-const CLIENT_ID = new URLSearchParams(location.search).get('client') || 4;
+const QS = new URLSearchParams(location.search);
+const CLIENT_ID = QS.get('client') || 4;
+// Which meeting this is. Notes are prefixed with it, so a second meeting with
+// the same client never overwrites the first one's notes.
+const MEETING = QS.get('m') || 'first';
 const statusEl = document.getElementById('status');
 
 let statusTimer;
@@ -638,8 +642,9 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') exitPresent(
 const noteIds = {};
 
 function parseNote(text) {
-  const m = /^\[([a-z]+)\]\s*([\s\S]*)$/.exec(text || '');
-  return m ? { key: m[1], body: m[2] } : null;
+  const m = /^\[([a-z0-9]+):([a-z]+)\]\s*([\s\S]*)$/.exec(text || '');
+  if (!m || m[1] !== MEETING) return null;
+  return { key: m[2], body: m[3] };
 }
 
 async function loadNotes() {
@@ -662,7 +667,8 @@ async function loadNotes() {
 
 const saveTimers = {};
 async function saveNote(key, value) {
-  const payload = { body: `[${key}] ${value}`, content: `[${key}] ${value}` };
+  const tagged = `[${MEETING}:${key}] ${value}`;
+  const payload = { body: tagged, content: tagged };
   try {
     if (noteIds[key]) {
       await api.updateNote(CLIENT_ID, noteIds[key], payload);

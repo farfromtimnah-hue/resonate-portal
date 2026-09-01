@@ -23,6 +23,8 @@ async function init() {
   _clientId = qp('id');
   if (!_clientId) { window.location.href = 'dashboard.html'; return; }
 
+  renderMeetings();
+
   document.getElementById('signout-btn').addEventListener('click', async () => {
     await signOut(); window.location.href = 'index.html';
   });
@@ -1266,3 +1268,46 @@ function renderHistory(history) {
 }
 
 init();
+
+
+// ---------------------------------------------------------------------------
+// Meetings section — prep pages for this client, newest first.
+//
+// Each meeting is its own page and its own set of notes, so a second meeting
+// never overwrites the first. Defined here rather than fetched: meetings are
+// scheduled, few, and known in advance. When there are enough of them to be
+// worth a table, this becomes an API call and nothing else changes.
+// ---------------------------------------------------------------------------
+const MEETINGS = {
+  // Suellen Sartorato — first conversation
+  4: [
+    { key: 'first', date: '2026-09-02', label: 'First meeting', time: '4:15 PM' },
+  ],
+};
+
+function renderMeetings() {
+  const el = document.getElementById('meetings-list');
+  if (!el) return;
+
+  const rows = MEETINGS[Number(_clientId)] || [];
+
+  if (!rows.length) {
+    el.innerHTML = '<div style="font-size:12px; color:var(--text-3);">No meetings prepared.</div>';
+    return;
+  }
+
+  el.innerHTML = rows.map(m => {
+    const d = new Date(m.date + 'T12:00:00');
+    const when = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+    const past = d < new Date(new Date().toDateString());
+    return `
+      <a href="meeting.html?client=${encodeURIComponent(_clientId)}&m=${encodeURIComponent(m.key)}"
+         class="flex items-center gap-2 py-2 text-[13px] transition-colors ${past ? 'text-outline-variant' : 'text-primary-fixed-dim'} hover:text-white">
+        <span class="material-symbols-outlined text-[16px]">co_present</span>
+        <span>
+          ${esc(m.label)}
+          <span style="color:var(--text-3); font-size:12px;"> · ${when}${m.time ? ' · ' + esc(m.time) : ''}</span>
+        </span>
+      </a>`;
+  }).join('');
+}
