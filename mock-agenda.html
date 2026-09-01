@@ -173,6 +173,59 @@
   }
   .langtoggle button.on{background:var(--gold-hi);color:var(--ground)}
   .langtoggle button:not(.on):hover{color:var(--gold-hi)}
+
+  /* ---- meeting prep, opened from the agenda ---- */
+  .prep{
+    position:fixed;inset:0;z-index:380;background:var(--ground);
+    display:none;overflow-y:auto;
+  }
+  .prep.on{display:block}
+  .prepinner{max-width:900px;margin:0 auto;padding:clamp(34px,6vh,70px) clamp(24px,5vw,60px) 80px}
+  .prepx{
+    position:fixed;top:16px;right:20px;z-index:390;
+    background:rgba(10,10,10,.9);border:1px solid var(--gold-line);color:var(--gold-hi);
+    font-family:var(--sans);font-size:.66rem;letter-spacing:.15em;text-transform:uppercase;
+    padding:8px 14px;cursor:pointer;border-radius:2px;
+  }
+  .prepx:hover{background:var(--gold-hi);color:var(--ground)}
+  .pkick{
+    font-size:.64rem;letter-spacing:.22em;text-transform:uppercase;color:var(--gold-hi);
+    margin:0 0 10px;
+  }
+  .ptitle{
+    font-family:var(--serif);font-weight:300;font-size:clamp(2.1rem,4.6vw,3rem);
+    line-height:1.08;margin:0 0 8px;color:#fff;
+  }
+  .ptitle em{font-style:italic;color:var(--gold-hi)}
+  .pmeta{font-size:.9rem;color:var(--dim);margin:0 0 32px}
+  .pgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px}
+  .pcard{
+    border:1px solid var(--hair);background:var(--panel-2);border-radius:2px;padding:20px 22px;
+  }
+  .pcard.wide{grid-column:1 / -1}
+  .pcard h3{
+    font-size:.62rem;letter-spacing:.2em;text-transform:uppercase;color:var(--gold-hi);
+    margin:0 0 12px;font-weight:500;
+  }
+  .pcard ul{margin:0;padding:0;list-style:none}
+  .pcard li{
+    font-size:.9rem;color:var(--dim);padding:5px 0 5px 15px;position:relative;line-height:1.5;
+  }
+  .pcard li::before{
+    content:"";position:absolute;left:0;top:14px;width:6px;height:1px;
+    background:var(--gold-hi);opacity:.6;
+  }
+  .pcard li b{color:var(--ink);font-weight:500}
+  .pnote{
+    margin:0;font-family:var(--serif);font-style:italic;font-size:1.1rem;line-height:1.55;
+    color:var(--cream);
+  }
+  .pacts{display:flex;flex-wrap:wrap;gap:8px;margin-top:26px}
+  .pacts button{
+    background:transparent;border:1px solid var(--gold-line);color:var(--gold-hi);cursor:pointer;
+    font-family:var(--sans);font-size:.74rem;padding:10px 17px;border-radius:2px;
+  }
+  .pacts button:hover{background:var(--gold-hi);color:var(--ground)}
 </style>
 </head>
 <body>
@@ -222,7 +275,7 @@
           <div class="acts">
             <button class="prim" data-t="Abrindo a chamada…">▸ Entrar na chamada</button>
             <button data-t="WhatsApp aberto com o link da chamada">Enviar link</button>
-            <button data-t="Abrindo a preparação da reunião">Preparação</button>
+            <button class="prepbtn">Preparação</button>
           </div>
         </div>
 
@@ -237,7 +290,7 @@
           <div class="acts">
             <button class="prim" data-t="Abrindo o GPS…">▸ Como chegar</button>
             <button data-t="WhatsApp aberto com o endereço">Enviar endereço</button>
-            <button data-t="Abrindo a preparação da reunião">Preparação</button>
+            <button class="prepbtn">Preparação</button>
           </div>
           <p class="travel">
             Sair às <b>13:05</b> · 55 min no trânsito previsto para as 13h de uma quarta
@@ -341,6 +394,68 @@
   </div>
 </div>
 
+
+<div class="prep" id="prep">
+  <button class="prepx" id="prepx">Fechar · Esc</button>
+  <div class="prepinner">
+    <p class="pkick">Preparação da reunião</p>
+    <h2 class="ptitle">Marina <em>Costa</em></h2>
+    <p class="pmeta">Quarta, 2 de setembro · 09:30 · online · 2ª sessão de 4</p>
+
+    <div class="pgrid">
+      <div class="pcard">
+        <h3>Onde paramos</h3>
+        <ul>
+          <li>Fotos recebidas em <b>12 de agosto</b></li>
+          <li>DISC aplicado em <b>14 de agosto</b> — perfil <b>I alto, S médio</b></li>
+          <li>Análise de cores <b>feita</b></li>
+          <li>Montagem de looks <b>ainda não</b></li>
+        </ul>
+      </div>
+
+      <div class="pcard">
+        <h3>Para hoje</h3>
+        <ul>
+          <li>Passar as <b>18 fotos comentadas</b></li>
+          <li>Fechar a <b>cartela de cores</b></li>
+          <li>Marcar a ida ao shopping</li>
+        </ul>
+      </div>
+
+      <div class="pcard wide">
+        <h3>Sua nota da última sessão</h3>
+        <p class="pnote">
+          Perfil I alto com C baixo — vai resistir a regra rígida. Dar princípio, não lista.
+          Mencionou duas vezes que não quer parecer arrogante. Trabalhar isso antes de falar de peça.
+        </p>
+      </div>
+
+      <div class="pcard">
+        <h3>Ela perguntou</h3>
+        <ul>
+          <li>Se podia usar as peças que já tem</li>
+          <li>Quanto tempo leva o processo inteiro</li>
+        </ul>
+      </div>
+
+      <div class="pcard">
+        <h3>Números</h3>
+        <ul>
+          <li>Investimento <b>R$ 4.800</b> · pago</li>
+          <li>Sessão <b>2 de 4</b></li>
+          <li>Próxima em <b>9 de setembro</b></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="pacts">
+      <button data-t="Abrindo a chamada…">▸ Entrar na chamada</button>
+      <button data-t="Abrindo o portal da Marina">Abrir portal da cliente</button>
+      <button data-t="WhatsApp aberto com a Marina">Mandar mensagem</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -354,6 +469,17 @@
     clearTimeout(t);
     t = setTimeout(() => toast.classList.remove('on'), 1900);
   });
+
+  // "Preparação" opens the prep page, exactly as it would in the product
+  const prep = document.getElementById('prep');
+  document.querySelectorAll('.prepbtn').forEach(b =>
+    b.addEventListener('click', () => {
+      prep.classList.add('on');
+      document.body.style.overflow = 'hidden';
+    }));
+  function closePrep(){ prep.classList.remove('on'); document.body.style.overflow=''; }
+  document.getElementById('prepx').addEventListener('click', closePrep);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closePrep(); });
 
   // scope toggle is cosmetic in the mockup
   document.querySelectorAll('.scope').forEach(bar => {

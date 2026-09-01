@@ -99,14 +99,17 @@
     width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;
     font-weight:500;
   }
+  /* Solid fills, not thin borders. At month scale a hairline is invisible —
+     the type of meeting has to read across the whole grid at a glance.
+     Apex proves this out: filled chips, one colour per kind. */
   .day .ev{
-    display:block;font-size:.58rem;line-height:1.3;margin-top:3px;padding:2px 4px;
-    border-left:2px solid var(--gold-hi);background:rgba(162,138,96,.09);
-    color:var(--cream);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-    border-radius:0 2px 2px 0;
+    display:block;font-size:.57rem;line-height:1.3;margin-top:3px;padding:2px 5px;
+    background:var(--gold-hi);color:#12100C;font-weight:500;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-radius:2px;
   }
-  .day .ev.rem{border-left-color:var(--green);background:rgba(63,122,94,.1)}
-  .day .ev.grp{border-left-color:var(--ox-hi);background:rgba(168,57,74,.1)}
+  .day .ev.rem{background:#2A4A3C;color:#D9E5DE;font-weight:400}
+  .day .ev.grp{background:#0A0A0A;color:var(--gold-hi);border:1px solid var(--gold-hi);padding:1px 4px}
+  .day .ev.lead{background:var(--cream);color:#12100C;font-weight:500}
   .day .blocked{
     position:absolute;inset:0;
     background:repeating-linear-gradient(45deg,transparent,transparent 5px,rgba(255,255,255,.025) 5px,rgba(255,255,255,.025) 10px);
@@ -145,12 +148,13 @@
   .wcol.today .wh b{color:var(--gold-hi)}
   .wslot{height:44px;border-bottom:1px solid rgba(255,255,255,.03)}
   .wev{
-    position:absolute;left:2px;right:2px;border-left:2px solid var(--gold-hi);
-    background:rgba(162,138,96,.14);color:var(--cream);border-radius:0 2px 2px 0;
+    position:absolute;left:2px;right:2px;border-radius:2px;
+    background:var(--gold-hi);color:#12100C;font-weight:500;
     font-size:.58rem;padding:3px 5px;overflow:hidden;line-height:1.25;
   }
-  .wev.rem{border-left-color:var(--green);background:rgba(63,122,94,.14)}
-  .wev.grp{border-left-color:var(--ox-hi);background:rgba(168,57,74,.14)}
+  .wev.rem{background:#2A4A3C;color:#D9E5DE;font-weight:400}
+  .wev.grp{background:#0A0A0A;color:var(--gold-hi);border:1px solid var(--gold-hi)}
+  .wev.lead{background:var(--cream);color:#12100C;font-weight:500}
 
   /* add-meeting dialog */
   .dlg{
@@ -251,8 +255,9 @@
     border-left:2px solid var(--gold-hi);border-radius:0 2px 2px 0;
     background:var(--panel-2);margin-bottom:6px;
   }
-  .pev.rem{border-left-color:var(--green)}
-  .pev.grp{border-left-color:var(--ox-hi)}
+  .pev.rem{border-left-color:#3F7A5E}
+  .pev.grp{border-left-color:var(--gold-hi);border-left-style:double;border-left-width:4px}
+  .pev.lead{border-left-color:var(--cream)}
   .pev .t{
     font-family:var(--serif);font-size:.98rem;color:#fff;font-variant-numeric:tabular-nums;
     flex:0 0 auto;
@@ -332,8 +337,9 @@
 
       <div class="legend">
         <span><i style="background:#A28A60"></i>Presencial</span>
-        <span><i style="background:#3F7A5E"></i>Online</span>
-        <span><i style="background:#A8394A"></i>Mentoria / turma</span>
+        <span><i style="background:#2A4A3C"></i>Online</span>
+        <span><i style="background:#0A0A0A;border:1px solid #A28A60"></i>Mentoria / turma</span>
+        <span><i style="background:#D7D7C8"></i>Primeira conversa</span>
         <span><i style="background:rgba(255,255,255,.08)"></i>Indisponível</span>
       </div>
 
@@ -422,7 +428,7 @@
 
             <div class="pday">
               <p class="dh">Sexta, 4 set</p>
-              <div class="pev rem">
+              <div class="pev lead">
                 <span class="t">15:30</span>
                 <span class="d"><b>Beatriz Lima</b><span>Primeira conversa · online</span></span>
               </div>
@@ -482,7 +488,7 @@
 const EVENTS = {
   2:  [['Marina Costa','rem'], ['Renata Alves',''], ['Mentoria CI','grp']],
   3:  [['Camila Duarte','']],
-  4:  [['Beatriz Lima','rem']],
+  4:  [['Beatriz Lima','lead']],
   7:  [['Mentoria CI','grp']],
   9:  [['Helena Prado',''], ['Ana Ribeiro','rem']],
   10: [['Sofia Martins','rem']],
@@ -522,7 +528,7 @@ const WEEK = [
   {d:'Ter', n:1,  evs:[[10,1.5,'Helena Prado','']]},
   {d:'Qua', n:2,  today:true, evs:[[9.5,1,'Marina Costa','rem'],[14,3,'Renata Alves',''],[20,1.5,'Mentoria CI','grp']]},
   {d:'Qui', n:3,  evs:[[10,2,'Camila Duarte','']]},
-  {d:'Sex', n:4,  evs:[[15.5,1,'Beatriz Lima','rem']]},
+  {d:'Sex', n:4,  evs:[[15.5,1,'Beatriz Lima','lead']]},
   {d:'Sáb', n:5,  evs:[]},
 ];
 const wcols = document.getElementById('wcols');
@@ -594,7 +600,7 @@ const DICT = {
 "Sexta, 4 set":"Friday, 4 Sep","Segunda, 7 set":"Monday, 7 Sep",
 "Análise · online":"Analysis · online","Looks · Iguatemi":"Looks · Iguatemi",
 "6 alunas":"6 students","Guarda-roupa · casa":"Wardrobe · at home",
-"Primeira conversa · online":"First conversation · online","encontro 3 de 3":"session 3 of 3",
+"Primeira conversa · online":"First conversation · online","Primeira conversa":"First conversation","encontro 3 de 3":"session 3 of 3",
 };
 
 const PH = [...document.querySelectorAll('[placeholder]')].map(el => [el, el.placeholder]);
