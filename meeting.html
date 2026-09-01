@@ -224,6 +224,44 @@
   body.presenting .exit{display:block}
   .exit:hover{color:var(--gold-hi);border-color:var(--gold-hi)}
 
+  /* ===================== mockup previews ===================== */
+  .mocks{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px;margin-top:18px}
+  .mock{
+    display:flex;flex-direction:column;gap:0;text-align:left;padding:0;cursor:pointer;
+    background:var(--panel-2);border:1px solid var(--hair);border-radius:3px;overflow:hidden;
+    font-family:var(--sans);color:inherit;
+  }
+  .mock:hover{border-color:var(--gold-hi)}
+  .mock:focus-visible{outline:1px solid var(--gold-hi);outline-offset:2px}
+  .mock .thumb{
+    display:block;aspect-ratio:16/10;background:var(--ground);overflow:hidden;position:relative;
+    border-bottom:1px solid var(--hair);
+  }
+  .mock .thumb img{width:100%;height:100%;object-fit:cover;object-position:center 18%;display:block;opacity:.9}
+  .mock .thumb.agenda{display:flex;align-items:center;justify-content:center;gap:14px}
+  .mock .thumb.agenda .t{
+    font-family:var(--serif);font-size:1.5rem;color:var(--gold-hi);opacity:.5;
+    font-variant-numeric:tabular-nums;
+  }
+  .mock .lab{display:block;padding:13px 15px 15px}
+  .mock .lab b{
+    display:block;font-family:var(--serif);font-size:1.16rem;font-weight:400;color:#fff;
+    margin-bottom:3px;
+  }
+  .mock .lab span{font-size:.82rem;color:var(--dim);line-height:1.5}
+
+  /* fullscreen mockup overlay */
+  .mockfs{position:fixed;inset:0;z-index:300;background:var(--ground);display:none}
+  .mockfs.on{display:block}
+  .mockfs iframe{width:100%;height:100%;border:0;display:block}
+  .mockfs .cx{
+    position:absolute;top:16px;right:20px;z-index:310;
+    background:rgba(10,10,10,.9);border:1px solid var(--gold-line);color:var(--gold-hi);
+    font-family:var(--sans);font-size:.66rem;letter-spacing:.15em;text-transform:uppercase;
+    padding:8px 14px;cursor:pointer;border-radius:2px;
+  }
+  .mockfs .cx:hover{background:var(--gold-hi);color:var(--ground)}
+
   /* language: English by default, Portuguese only when presenting */
   .ptx{display:none}
 
@@ -245,6 +283,11 @@
 
 <button class="exit" id="exit">Fechar · Esc</button>
 
+<div class="mockfs" id="mockfs">
+  <button class="cx" id="mockx">Fechar · Esc</button>
+  <iframe id="mockframe" title="Exemplo" src="about:blank"></iframe>
+</div>
+
 <div class="shell">
   <nav>
     <p class="grp">Confirmar</p>
@@ -258,6 +301,9 @@
     <a href="#eventos">Eventos</a>
     <p class="grp">Processo</p>
     <a href="#processo">Como funciona</a>
+    <p class="grp">Mostrar</p>
+    <a href="#mockups">Telas</a>
+
     <p class="grp">Privado</p>
     <a href="#gap">A lacuna</a>
     <a href="#brasil">Psicologia BR</a>
@@ -678,6 +724,48 @@
       <div class="notes"><label>Notas</label><textarea data-note="gap" placeholder="O que ela disse sobre entrega…"></textarea></div>
     </section>
 
+    <!-- ============ MOCKUPS ============ -->
+    <section id="mockups" data-sec="mockups">
+      <div class="shead">
+        <div class="txt">
+          <p class="eyebrow"><span class="en">Show these</span><span class="ptx">Para mostrar</span></p>
+          <h2><span class="en">What it could <em>look like</em></span><span class="ptx">Como <em>poderia ser</em></span></h2>
+        </div>
+      </div>
+      <div class="sbody">
+        <p class="en">
+          Three mockups, in her brand, with invented client data. Click a preview to open it full
+          screen. Escape closes.
+        </p>
+        <p class="ptx">
+          Três exemplos, com a sua marca e dados fictícios. Toque para abrir em tela cheia.
+        </p>
+
+        <div class="mocks">
+          <button class="mock" data-mock="mock-portal.html">
+            <span class="thumb"><img src="assets/mock/after.jpg" alt=""></span>
+            <span class="lab">
+              <b><span class="en">Client portal</span><span class="ptx">Portal da cliente</span></b>
+              <span class="en">The whole journey — photos, profile, looks, before and after</span>
+              <span class="ptx">A jornada completa — fotos, perfil, looks, antes e depois</span>
+            </span>
+          </button>
+
+          <button class="mock" data-mock="mock-agenda.html">
+            <span class="thumb agenda">
+              <span class="t">09:30</span><span class="t">14:00</span><span class="t">20:00</span>
+            </span>
+            <span class="lab">
+              <b><span class="en">Today's agenda</span><span class="ptx">Agenda do dia</span></b>
+              <span class="en">One tap to join, navigate, or send the address</span>
+              <span class="ptx">Um toque para entrar, navegar ou enviar o endereço</span>
+            </span>
+          </button>
+        </div>
+      </div>
+      <div class="notes"><label>Notas</label><textarea data-note="mockups" placeholder="Reação a cada tela…"></textarea></div>
+    </section>
+
     <!-- ============ BRAZILIAN SALES PSYCHOLOGY (private) ============ -->
     <section id="brasil" data-sec="brasil">
       <div class="shead">
@@ -876,7 +964,34 @@ function exitPresent() {
 document.querySelectorAll('[data-present]').forEach(b =>
   b.addEventListener('click', () => present(b.dataset.present)));
 document.getElementById('exit').addEventListener('click', exitPresent);
-document.addEventListener('keydown', e => { if (e.key === 'Escape') exitPresent(); });
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  // A mockup sits above everything: close that first and stop, so one press
+  // does not also drop out of presentation mode behind it.
+  if (document.getElementById('mockfs').classList.contains('on')) return;
+  exitPresent();
+});
+
+// ---- mockups: preview in place, full screen on click ----------------------
+const mockfs = document.getElementById('mockfs');
+const mockframe = document.getElementById('mockframe');
+
+function openMock(src) {
+  mockframe.src = src;
+  mockfs.classList.add('on');
+  document.body.style.overflow = 'hidden';
+}
+function closeMock() {
+  mockfs.classList.remove('on');
+  mockframe.src = 'about:blank';   // stop it running behind the page
+  document.body.style.overflow = '';
+}
+document.querySelectorAll('[data-mock]').forEach(b =>
+  b.addEventListener('click', () => openMock(b.dataset.mock)));
+document.getElementById('mockx').addEventListener('click', closeMock);
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && mockfs.classList.contains('on')) closeMock();
+});
 
 // ---- notes: one persisted row per section ------------------------------
 // Each section's notes are stored as their own row in client_private_notes,
