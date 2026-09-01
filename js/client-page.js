@@ -10,6 +10,14 @@ import { esc, nl2br, formatDate, formatDateTime, formatDateFull,
          statusClass, invoiceStatusClass } from './utils.js?v=2';
 
 let _clientId = null;
+
+const MEETINGS = {
+  // Suellen Sartorato — first conversation
+  4: [
+    { key: 'first', date: '2026-09-02', label: 'First meeting', time: '4:15 PM' },
+  ],
+};
+
 let _data     = null;          // { client, projects, comments, notes, links, people, intake_session_count, history }
 let _adminFeedback = {};       // keyed by `${projectId}_${comment_type}` → row
 let _editingProjectId = null;
@@ -1278,12 +1286,6 @@ init();
 // scheduled, few, and known in advance. When there are enough of them to be
 // worth a table, this becomes an API call and nothing else changes.
 // ---------------------------------------------------------------------------
-const MEETINGS = {
-  // Suellen Sartorato — first conversation
-  4: [
-    { key: 'first', date: '2026-09-02', label: 'First meeting', time: '4:15 PM' },
-  ],
-};
 
 function renderMeetings() {
   const el = document.getElementById('meetings-list');
