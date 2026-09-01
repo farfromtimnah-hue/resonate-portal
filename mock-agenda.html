@@ -48,7 +48,14 @@
   .chrome .url{flex:1;text-align:center;font-size:.68rem;color:var(--dimmer)}
 
   .phone{border:1px solid var(--hair);border-radius:26px;overflow:hidden;background:var(--panel);padding:9px}
-  .phone .screen{border-radius:19px;overflow:hidden;background:var(--ground)}
+  .phone .screen{
+    border-radius:19px;overflow:hidden;background:var(--ground);
+    aspect-ratio:9/19.5;display:flex;flex-direction:column;
+  }
+  .phone .screen > .pane,
+  .phone .screen .body{overflow-y:auto;flex:1;min-height:0}
+  .phone .screen::-webkit-scrollbar,
+  .phone .screen *::-webkit-scrollbar{width:0;height:0}
   .phone .notch{height:22px;display:flex;align-items:center;justify-content:center}
   .phone .notch i{width:52px;height:4px;border-radius:3px;background:#242424;display:block}
 

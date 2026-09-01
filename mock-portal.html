@@ -67,7 +67,15 @@
     border:1px solid var(--hair);border-radius:26px;overflow:hidden;background:var(--panel);
     padding:9px;
   }
-  .phone .screen{border-radius:19px;overflow:hidden;background:var(--ground);position:relative}
+  .phone .screen{
+    border-radius:19px;overflow:hidden;background:var(--ground);position:relative;
+    /* A phone is a fixed shape. Pin the aspect ratio and scroll the content
+       inside it, rather than letting the frame grow with whatever is in it. */
+    aspect-ratio:9/19.5;display:flex;flex-direction:column;
+  }
+  .phone .screen .pane.on{overflow-y:auto;flex:1;min-height:0}
+  .phone .screen::-webkit-scrollbar,
+  .phone .screen *::-webkit-scrollbar{width:0;height:0}
   .phone .notch{
     height:22px;display:flex;align-items:center;justify-content:center;
   }
