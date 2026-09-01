@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Indicação — exemplo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ground:#0A0A0A; --panel:#131313; --panel-2:#1A1A19;
+    --gold:#8A7048; --gold-hi:#A28A60; --gold-line:rgba(162,138,96,.22);
+    --cream:#D7D7C8; --ink:#E8E5DE; --dim:#8E8880; --dimmer:#65605A;
+    --ox:#7B2230; --ox-hi:#A8394A; --green:#3F7A5E;
+    --hair:rgba(255,255,255,.07);
+    --serif:"Cormorant Garamond",Georgia,serif;
+    --sans:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  }
+  *{box-sizing:border-box}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+  body{
+    margin:0;background:var(--ground);color:var(--ink);
+    font-family:var(--sans);font-weight:300;line-height:1.6;font-size:15px;
+    -webkit-font-smoothing:antialiased;
+  }
+  .stage{max-width:1180px;margin:0 auto;padding:26px 22px 90px}
+  .stagehead{
+    display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+    border-bottom:1px solid var(--hair);padding-bottom:14px;margin-bottom:26px;
+  }
+  .stagehead h1{font-family:var(--serif);font-weight:300;font-size:1.5rem;margin:0;color:#fff}
+  .stagehead h1 em{font-style:italic;color:var(--gold-hi)}
+  .stagehead .tag{
+    font-size:.62rem;letter-spacing:.2em;text-transform:uppercase;color:var(--dimmer);
+    border:1px solid var(--hair);padding:3px 9px;border-radius:2px;
+  }
+  .langtoggle{
+    display:inline-flex;margin-left:auto;
+    border:1px solid var(--gold-line);border-radius:2px;overflow:hidden;
+  }
+  .langtoggle button{
+    background:none;border:none;cursor:pointer;color:var(--dimmer);
+    font-family:var(--sans);font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;
+    padding:7px 12px;
+  }
+  .langtoggle button.on{background:var(--gold-hi);color:var(--ground)}
+
+  .devices{display:grid;grid-template-columns:minmax(0,1fr) 310px;gap:30px;align-items:start}
+  @media (max-width:960px){.devices{grid-template-columns:1fr}}
+
+  .laptop{border:1px solid var(--hair);border-radius:6px;overflow:hidden;background:var(--panel)}
+  .chrome{
+    display:flex;align-items:center;gap:7px;padding:9px 13px;background:#0E0E0E;
+    border-bottom:1px solid var(--hair);
+  }
+  .chrome i{width:9px;height:9px;border-radius:50%;background:#2C2C2C;display:block}
+  .chrome .url{flex:1;text-align:center;font-size:.68rem;color:var(--dimmer)}
+
+  .phone{border:1px solid var(--hair);border-radius:26px;overflow:hidden;background:var(--panel);padding:9px}
+  .phone .screen{
+    border-radius:19px;overflow:hidden;background:var(--ground);
+    aspect-ratio:9/19.5;display:flex;flex-direction:column;
+  }
+  .phone .screen .rbody{overflow-y:auto;flex:1;min-height:0}
+  .phone .screen *::-webkit-scrollbar{width:0;height:0}
+  .phone .notch{height:22px;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+  .phone .notch i{width:52px;height:4px;border-radius:3px;background:#242424;display:block}
+
+  .pbar{display:flex;align-items:center;gap:12px;padding:13px 18px;border-bottom:1px solid var(--gold-line)}
+  .pbar .sig{height:19px;opacity:.92}
+  .pbar .spacer{flex:1}
+
+  /* ---------- admin: her side ---------- */
+  .admin{padding:22px 24px 26px}
+  .admin h2{font-family:var(--serif);font-weight:300;font-size:1.5rem;color:#fff;margin:0 0 4px}
+  .admin h2 em{font-style:italic;color:var(--gold-hi)}
+  .admin .sub{font-size:.8rem;color:var(--dimmer);margin:0 0 20px}
+
+  .linkbox{
+    display:flex;gap:8px;align-items:center;margin-bottom:22px;
+  }
+  .linkbox .u{
+    flex:1;font-size:.8rem;color:var(--cream);font-family:var(--sans);
+    border:1px solid var(--gold-line);border-radius:2px;padding:10px 12px;
+    background:rgba(162,138,96,.05);
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .linkbox button{
+    background:transparent;border:1px solid var(--gold-hi);color:var(--gold-hi);cursor:pointer;
+    font-family:var(--sans);font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;
+    padding:10px 15px;border-radius:2px;white-space:nowrap;
+  }
+  .linkbox button:hover{background:var(--gold-hi);color:var(--ground)}
+
+  h3{
+    font-size:.62rem;letter-spacing:.2em;text-transform:uppercase;color:var(--gold-hi);
+    margin:0 0 12px;font-weight:500;
+  }
+  .rtable{width:100%;border-collapse:collapse}
+  .rtable th{
+    text-align:left;font-size:.58rem;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--dimmer);font-weight:500;padding:0 10px 8px 0;border-bottom:1px solid var(--hair);
+  }
+  .rtable td{
+    padding:11px 10px 11px 0;border-bottom:1px solid var(--hair);font-size:.86rem;color:var(--dim);
+    vertical-align:top;
+  }
+  .rtable td b{color:var(--ink);font-weight:500;display:block}
+  .rtable .by{color:var(--gold-hi);font-size:.8rem}
+  .st{
+    font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;padding:3px 8px;
+    border-radius:2px;white-space:nowrap;
+  }
+  .st.novo{background:var(--gold-hi);color:#12100C;font-weight:500}
+  .st.falado{background:rgba(63,122,94,.18);color:#7FB89C;border:1px solid rgba(63,122,94,.4)}
+  .st.cliente{background:#0A0A0A;color:var(--gold-hi);border:1px solid var(--gold-hi)}
+
+  .synced{
+    display:flex;align-items:center;gap:8px;margin-top:18px;padding:11px 14px;
+    border:1px solid var(--hair);border-radius:2px;background:var(--panel-2);
+    font-size:.78rem;color:var(--dim);
+  }
+  .synced .dot{width:7px;height:7px;border-radius:50%;background:var(--green);flex:0 0 auto}
+  .synced b{color:var(--ink);font-weight:500}
+
+  /* ---------- public: the referral form ---------- */
+  .rbody{padding:0}
+  .hero{padding:28px 22px 22px;text-align:center;border-bottom:1px solid var(--gold-line)}
+  .hero .sig{height:17px;opacity:.9;margin-bottom:18px}
+  .hero .eyebrow{
+    font-size:.58rem;letter-spacing:.2em;text-transform:uppercase;color:var(--gold-hi);margin:0 0 8px;
+  }
+  .hero h1{
+    font-family:var(--serif);font-weight:300;font-size:1.5rem;line-height:1.15;
+    color:#fff;margin:0 0 8px;
+  }
+  .hero h1 em{font-style:italic;color:var(--gold-hi)}
+  .hero p{font-size:.82rem;color:var(--cream);margin:0}
+  .hero p b{color:var(--gold-hi);font-weight:400}
+
+  form{padding:20px 22px 26px}
+  form label{
+    display:block;font-size:.6rem;letter-spacing:.17em;text-transform:uppercase;
+    color:var(--dimmer);margin:0 0 6px;
+  }
+  form input[type=text],form input[type=tel]{
+    width:100%;background:var(--panel-2);border:1px solid var(--hair);border-radius:3px;
+    color:var(--ink);font-family:var(--sans);font-size:1rem;font-weight:300;
+    padding:13px;margin-bottom:15px;
+  }
+  form input:focus{outline:none;border-color:var(--gold-hi)}
+  form input::placeholder{color:#4A4640}
+
+  .chips{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:18px}
+  .chip{
+    border:1px solid var(--hair);background:var(--panel-2);color:var(--dim);cursor:pointer;
+    font-family:var(--sans);font-size:.78rem;padding:8px 13px;border-radius:16px;
+  }
+  .chip.on{background:var(--gold-hi);border-color:var(--gold-hi);color:#12100C;font-weight:500}
+
+  /* honeypot — humans never see it */
+  .hp{position:absolute;left:-9999px;opacity:0;height:0;overflow:hidden}
+
+  .cta{
+    width:100%;background:var(--gold-hi);border:none;color:#12100C;cursor:pointer;
+    font-family:var(--sans);font-size:.94rem;font-weight:500;letter-spacing:.04em;
+    padding:15px;border-radius:3px;
+  }
+  .cta:hover{background:var(--cream)}
+
+  .done{padding:48px 26px;text-align:center;display:none}
+  .done.on{display:block}
+  .done .ck{
+    width:48px;height:48px;border-radius:50%;border:1px solid var(--gold-hi);
+    color:var(--gold-hi);display:flex;align-items:center;justify-content:center;
+    margin:0 auto 18px;font-size:1.4rem;
+  }
+  .done h2{font-family:var(--serif);font-weight:300;font-size:1.6rem;color:#fff;margin:0 0 8px}
+  .done p{font-size:.86rem;color:var(--dim);margin:0}
+
+  .note{
+    border-left:2px solid var(--gold-hi);background:rgba(162,138,96,.06);
+    padding:12px 16px;margin:20px 24px 24px;border-radius:0 2px 2px 0;
+  }
+  .note p{margin:0;font-size:.8rem;color:var(--dim)}
+  .note b{color:var(--ink);font-weight:500}
+</style>
+</head>
+<body>
+
+<div class="stage">
+  <div class="stagehead">
+    <h1>Indicação de <em>clientes</em></h1>
+    <span class="tag">Exemplo · dados fictícios</span>
+    <div class="langtoggle">
+      <button data-lang="pt" class="on">PT</button>
+      <button data-lang="en">EN</button>
+    </div>
+  </div>
+
+  <div class="devices">
+
+    <!-- ============ ADMIN ============ -->
+    <div class="laptop">
+      <div class="chrome">
+        <i></i><i></i><i></i>
+        <span class="url">portal.suellensartorato.com / indicacoes</span>
+      </div>
+      <div class="pbar">
+        <img class="sig" src="assets/sig-white-tight.png" alt="Suellen Sartorato">
+        <span class="spacer"></span>
+      </div>
+
+      <div class="admin">
+        <h2>Indicações da <em>Marina</em></h2>
+        <p class="sub">Cada cliente tem o seu link. Quem indicou fica registrado.</p>
+
+        <div class="linkbox">
+          <span class="u">suellensartorato.com/indica/marina-costa</span>
+          <button data-t="WhatsApp aberto com o link da Marina">Enviar para ela</button>
+        </div>
+
+        <h3>Quem chegou por indicação</h3>
+        <table class="rtable">
+          <thead>
+            <tr><th>Quem</th><th>Indicada por</th><th>Interesse</th><th>Quando</th><th></th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><b>Dra. Helena Prado</b>(11) 9····-4402</td>
+              <td class="by">Marina Costa</td>
+              <td>Consultoria 1:1</td>
+              <td>ontem</td>
+              <td><span class="st novo">Novo</span></td>
+            </tr>
+            <tr>
+              <td><b>Camila Duarte</b>(11) 9····-7719</td>
+              <td class="by">Marina Costa</td>
+              <td>Consultoria 1:1</td>
+              <td>3 dias</td>
+              <td><span class="st falado">Já falei</span></td>
+            </tr>
+            <tr>
+              <td><b>Renata Alves</b>(11) 9····-2280</td>
+              <td class="by">Dra. Mirelle</td>
+              <td>Imersão Magna</td>
+              <td>1 semana</td>
+              <td><span class="st cliente">Virou cliente</span></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="synced">
+          <span class="dot"></span>
+          <span>Todas foram criadas no seu <b>CRM</b> automaticamente, com a origem da indicação.</span>
+        </div>
+
+        <div class="note">
+          <p>
+            <b>Por que isso importa:</b> hoje uma indicação chega como mensagem no direct e depende
+            de alguém lembrar. Aqui ela chega com nome, telefone, interesse e <b>quem indicou</b> —
+            para você poder agradecer.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ PUBLIC ============ -->
+    <div class="phone">
+      <div class="screen">
+        <div class="notch"><i></i></div>
+        <div class="rbody">
+
+          <div id="screenForm">
+            <div class="hero">
+              <img class="sig" src="assets/sig-white-tight.png" alt="Suellen Sartorato">
+              <p class="eyebrow">Indicação</p>
+              <h1>Que bom que você <em>chegou</em></h1>
+              <p><b>Marina Costa</b> indicou você.</p>
+            </div>
+
+            <form id="refForm" novalidate>
+              <label for="fNome">Seu nome</label>
+              <input type="text" id="fNome" name="nome"
+                     autocomplete="name" autocapitalize="words"
+                     placeholder="Seu nome" required>
+
+              <label for="fTel">WhatsApp</label>
+              <input type="tel" id="fTel" name="tel"
+                     autocomplete="tel" inputmode="tel"
+                     placeholder="(11) 99999-0000" required>
+
+              <label>O que você procura?</label>
+              <div class="chips">
+                <button type="button" class="chip on">Consultoria 1:1</button>
+                <button type="button" class="chip">Imersão Magna</button>
+                <button type="button" class="chip">Curso 21 dias</button>
+                <button type="button" class="chip">Mentoria para consultoras</button>
+              </div>
+
+              <!-- honeypot -->
+              <div class="hp" aria-hidden="true">
+                <label for="website">Website</label>
+                <input type="text" id="website" name="website" tabindex="-1" autocomplete="off">
+              </div>
+
+              <button type="submit" class="cta">Quero falar com a Suellen</button>
+            </form>
+          </div>
+
+          <div class="done" id="screenDone">
+            <div class="ck">✓</div>
+            <h2>Recebido</h2>
+            <p>A Suellen entra em contato pelo WhatsApp.</p>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+document.querySelectorAll('.chip').forEach(c =>
+  c.addEventListener('click', () => c.classList.toggle('on')));
+
+document.getElementById('refForm').addEventListener('submit', e => {
+  e.preventDefault();
+  document.getElementById('screenForm').style.display = 'none';
+  document.getElementById('screenDone').classList.add('on');
+});
+
+const DICT = {
+"Indicação de":"Client","clientes":"referrals",
+"Exemplo · dados fictícios":"Example · fictional data",
+"Indicações da":"Referrals from","Marina":"Marina",
+"Cada cliente tem o seu link. Quem indicou fica registrado.":"Every client gets her own link. The referrer is recorded.",
+"Enviar para ela":"Send it to her",
+"WhatsApp aberto com o link da Marina":"WhatsApp opened with Marina's link",
+"Quem chegou por indicação":"Who came in by referral",
+"Quem":"Who","Indicada por":"Referred by","Interesse":"Interested in","Quando":"When",
+"Consultoria 1:1":"1:1 consulting","Imersão Magna":"Imersão Magna",
+"ontem":"yesterday","3 dias":"3 days","1 semana":"1 week",
+"Novo":"New","Já falei":"Spoke to her","Virou cliente":"Became a client",
+"Todas foram criadas no seu":"All of them were created in your",
+"automaticamente, com a origem da indicação.":"automatically, with the referral source attached.",
+"Por que isso importa:":"Why this matters:",
+"hoje uma indicação chega como mensagem no direct e depende de alguém lembrar. Aqui ela chega com nome, telefone, interesse e":"today a referral arrives as a DM and depends on someone remembering. Here it arrives with a name, a phone number, what they want, and",
+"quem indicou":"who referred them",
+"— para você poder agradecer.":"— so you can thank them.",
+"Indicação":"Referral",
+"Que bom que você":"Glad you","chegou":"found us",
+"indicou você.":"referred you.",
+"Seu nome":"Your name","WhatsApp":"WhatsApp",
+"O que você procura?":"What are you looking for?",
+"Curso 21 dias":"21-day course","Mentoria para consultoras":"Mentorship for consultants",
+"Quero falar com a Suellen":"I'd like to talk to Suellen",
+"Recebido":"Received",
+"A Suellen entra em contato pelo WhatsApp.":"Suellen will get in touch on WhatsApp.",
+};
+
+const PH = [...document.querySelectorAll('[placeholder]')].map(el => [el, el.placeholder]);
+const originals = [];
+function walk(node, fn) {
+  for (const n of node.childNodes) {
+    if (n.nodeType === 3) fn(n);
+    else if (n.nodeType === 1 && !n.closest('.langtoggle')) walk(n, fn);
+  }
+}
+walk(document.body, t => { if (t.nodeValue.trim()) originals.push([t, t.nodeValue]); });
+
+function setLang(lang) {
+  for (const [node, pt] of originals) {
+    if (lang === 'pt') { node.nodeValue = pt; continue; }
+    const key = pt.trim();
+    const hit = DICT[key];
+    node.nodeValue = hit ? pt.replace(key, hit) : pt;
+  }
+  for (const [el, pt] of PH) el.placeholder = (lang === 'en' && DICT[pt]) ? DICT[pt] : pt;
+  document.querySelectorAll('.langtoggle button')
+    .forEach(b => b.classList.toggle('on', b.dataset.lang === lang));
+  document.documentElement.lang = lang === 'pt' ? 'pt-BR' : 'en';
+}
+document.querySelector('.langtoggle').addEventListener('click', e => {
+  const b = e.target.closest('button');
+  if (b) setLang(b.dataset.lang);
+});
+</script>
+</body>
+</html>
