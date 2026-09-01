@@ -26,7 +26,7 @@
   }
   .stage{max-width:1180px;margin:0 auto;padding:26px 22px 90px}
   .stagehead{
-    display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;
+    display:flex;align-items:center;gap:14px;flex-wrap:wrap;
     border-bottom:1px solid var(--hair);padding-bottom:14px;margin-bottom:26px;
   }
   .stagehead h1{font-family:var(--serif);font-weight:300;font-size:1.5rem;margin:0;color:#fff}
@@ -194,9 +194,8 @@
   .note b{color:var(--ink);font-weight:500}
 
   .langtoggle{
-    position:fixed;top:14px;left:16px;z-index:400;display:flex;
+    display:inline-flex;margin-left:auto;
     border:1px solid var(--gold-line);border-radius:2px;overflow:hidden;
-    background:rgba(10,10,10,.9);backdrop-filter:blur(6px);
   }
   .langtoggle button{
     background:none;border:none;cursor:pointer;color:var(--dimmer);
@@ -207,15 +206,11 @@
 </style>
 </head>
 <body>
-<div class="langtoggle">
-  <button data-lang="pt" class="on">PT</button>
-  <button data-lang="en">EN</button>
-</div>
-
 <div class="stage">
   <div class="stagehead">
     <h1>Evento e <em>inscrição</em></h1>
     <span class="tag">Exemplo · dados fictícios</span>
+    <div class="langtoggle"><button data-lang="pt" class="on">PT</button><button data-lang="en">EN</button></div>
   </div>
 
   <div class="devices">
