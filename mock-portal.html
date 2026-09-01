@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Portal da Cliente — exemplo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ground:#0A0A0A;
+    --panel:#131313;
+    --panel-2:#1A1A19;
+    --gold:#8A7048;
+    --gold-hi:#A28A60;
+    --gold-line:rgba(162,138,96,.22);
+    --cream:#D7D7C8;
+    --ink:#E8E5DE;
+    --dim:#8E8880;
+    --dimmer:#65605A;
+    --ox:#7B2230;
+    --hair:rgba(255,255,255,.07);
+    --serif:"Cormorant Garamond",Georgia,serif;
+    --sans:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  }
+  *{box-sizing:border-box}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+  body{
+    margin:0;background:var(--ground);color:var(--ink);
+    font-family:var(--sans);font-weight:300;line-height:1.6;font-size:15px;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  /* --------- device frame --------- */
+  .stage{max-width:1180px;margin:0 auto;padding:26px 22px 90px}
+  .stagehead{
+    display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;
+    border-bottom:1px solid var(--hair);padding-bottom:14px;margin-bottom:26px;
+  }
+  .stagehead h1{
+    font-family:var(--serif);font-weight:300;font-size:1.5rem;margin:0;color:#fff;
+  }
+  .stagehead h1 em{font-style:italic;color:var(--gold-hi)}
+  .stagehead .tag{
+    font-size:.62rem;letter-spacing:.2em;text-transform:uppercase;color:var(--dimmer);
+    border:1px solid var(--hair);padding:3px 9px;border-radius:2px;
+  }
+
+  .devices{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:30px;align-items:start}
+  @media (max-width:960px){.devices{grid-template-columns:1fr}}
+
+  .laptop{
+    border:1px solid var(--hair);border-radius:6px;overflow:hidden;background:var(--panel);
+  }
+  .chrome{
+    display:flex;align-items:center;gap:7px;padding:9px 13px;background:#0E0E0E;
+    border-bottom:1px solid var(--hair);
+  }
+  .chrome i{width:9px;height:9px;border-radius:50%;background:#2C2C2C;display:block}
+  .chrome .url{
+    flex:1;text-align:center;font-size:.68rem;color:var(--dimmer);
+    font-family:var(--sans);letter-spacing:.02em;
+  }
+
+  .phone{
+    border:1px solid var(--hair);border-radius:26px;overflow:hidden;background:var(--panel);
+    padding:9px;
+  }
+  .phone .screen{border-radius:19px;overflow:hidden;background:var(--ground);position:relative}
+  .phone .notch{
+    height:22px;display:flex;align-items:center;justify-content:center;
+  }
+  .phone .notch i{width:52px;height:4px;border-radius:3px;background:#242424;display:block}
+
+  /* --------- portal chrome --------- */
+  .pbar{
+    display:flex;align-items:center;gap:12px;padding:13px 18px;
+    border-bottom:1px solid var(--gold-line);
+  }
+  .pbar .sig{height:19px;opacity:.92}
+  .pbar .spacer{flex:1}
+  .pbar .avatar{
+    width:27px;height:27px;border-radius:50%;background:var(--panel-2);
+    border:1px solid var(--gold-line);display:flex;align-items:center;justify-content:center;
+    font-size:.66rem;color:var(--gold-hi);font-weight:500;
+  }
+
+  /* --------- stage nav --------- */
+  .steps{display:flex;gap:0;overflow-x:auto;border-bottom:1px solid var(--hair);padding:0 18px}
+  .steps button{
+    background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;
+    color:var(--dimmer);font-family:var(--sans);font-size:.73rem;font-weight:400;
+    letter-spacing:.03em;padding:12px 13px;white-space:nowrap;
+  }
+  .steps button:hover{color:var(--dim)}
+  .steps button.on{color:var(--gold-hi);border-bottom-color:var(--gold-hi)}
+  .steps button .n{
+    font-family:var(--serif);font-size:.86rem;margin-right:5px;opacity:.75;
+  }
+
+  .pane{display:none;padding:22px 20px 30px}
+  .pane.on{display:block}
+
+  h2{
+    font-family:var(--serif);font-weight:300;font-size:1.52rem;line-height:1.16;
+    margin:0 0 4px;color:#fff;
+  }
+  h2 em{font-style:italic;color:var(--gold-hi)}
+  .sub{font-size:.78rem;color:var(--dimmer);margin:0 0 20px}
+
+  h3{
+    font-size:.64rem;letter-spacing:.19em;text-transform:uppercase;color:var(--gold-hi);
+    margin:24px 0 10px;font-weight:500;
+  }
+  h3:first-of-type{margin-top:0}
+
+  p{margin:0 0 12px;color:var(--dim);max-width:64ch}
+  p:last-child{margin-bottom:0}
+  strong{color:var(--ink);font-weight:500}
+
+  /* --------- upload --------- */
+  .drop{
+    border:1px dashed var(--gold-line);border-radius:3px;padding:26px 20px;text-align:center;
+    background:rgba(162,138,96,.03);cursor:pointer;
+  }
+  .drop:hover{background:rgba(162,138,96,.06);border-color:var(--gold-hi)}
+  .drop .ic{font-size:1.5rem;color:var(--gold-hi);opacity:.7;line-height:1}
+  .drop b{display:block;color:var(--ink);font-weight:400;font-size:.9rem;margin:9px 0 3px}
+  .drop span{font-size:.75rem;color:var(--dimmer)}
+
+  /* --------- photo grid --------- */
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:7px;margin-top:14px}
+  .ph{
+    aspect-ratio:3/4;background:var(--panel-2);border:1px solid var(--hair);border-radius:2px;
+    position:relative;cursor:pointer;overflow:hidden;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .ph:hover{border-color:var(--gold-line)}
+  .ph .lbl{
+    font-size:.6rem;color:#3A3733;letter-spacing:.1em;text-transform:uppercase;
+  }
+  .ph .cap{
+    position:absolute;left:0;right:0;bottom:0;padding:6px 7px;
+    background:linear-gradient(transparent,rgba(0,0,0,.86));
+    font-size:.64rem;color:var(--cream);line-height:1.35;
+  }
+  .ph .badge{
+    position:absolute;top:5px;right:5px;background:rgba(10,10,10,.8);
+    border:1px solid var(--gold-line);color:var(--gold-hi);
+    font-size:.55rem;padding:2px 5px;border-radius:2px;letter-spacing:.06em;
+  }
+  .ph img{width:100%;height:100%;object-fit:cover;display:block}
+  .ba{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+  .ba figure{margin:0}
+  .ba img{width:100%;aspect-ratio:3/4;object-fit:cover;border:1px solid var(--hair);border-radius:2px;display:block}
+  .ba figcaption{
+    font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;color:var(--gold-hi);
+    text-align:center;margin-top:7px;
+  }
+  .ph.beforeafter{aspect-ratio:3/2}
+  .ph .half{position:absolute;top:0;bottom:0;width:50%;display:flex;align-items:flex-end;justify-content:center;padding-bottom:7px}
+  .ph .half.l{left:0;border-right:1px solid var(--hair)}
+  .ph .half.r{right:0}
+  .ph .half span{font-size:.58rem;letter-spacing:.14em;text-transform:uppercase;color:var(--dimmer)}
+
+  /* --------- DISC --------- */
+  .disc{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--hair);border:1px solid var(--hair)}
+  .disc div{background:var(--panel);padding:15px 10px;text-align:center}
+  .disc b{
+    display:block;font-family:var(--serif);font-size:1.9rem;line-height:1;color:var(--dimmer);
+  }
+  .disc div.hi b{color:var(--gold-hi)}
+  .disc span{display:block;font-size:.58rem;letter-spacing:.11em;text-transform:uppercase;color:var(--dimmer);margin-top:6px}
+  .disc .bar{height:3px;background:var(--panel-2);margin-top:9px;border-radius:2px;overflow:hidden}
+  .disc .bar i{display:block;height:100%;background:var(--gold-hi);opacity:.55}
+
+  /* --------- colours --------- */
+  .cols{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+  .cols div{width:70px;text-align:center}
+  .cols i{display:block;height:52px;border-radius:2px;border:1px solid rgba(255,255,255,.09)}
+  .cols span{display:block;font-size:.6rem;color:var(--dimmer);margin-top:5px}
+
+  /* --------- notes --------- */
+  .note{
+    border-left:2px solid var(--gold-hi);background:rgba(162,138,96,.06);
+    padding:12px 15px;margin:12px 0;border-radius:0 2px 2px 0;
+  }
+  .note .from{
+    font-size:.6rem;letter-spacing:.15em;text-transform:uppercase;color:var(--gold-hi);
+    margin-bottom:5px;display:block;
+  }
+  .note p{color:var(--ink);font-size:.88rem;margin:0}
+  .note.private{border-left-color:var(--ox);background:rgba(123,34,48,.09)}
+  .note.private .from{color:#A8394A}
+
+  /* --------- comments --------- */
+  .cmt{display:flex;gap:9px;padding:9px 0;border-bottom:1px solid var(--hair)}
+  .cmt:last-child{border-bottom:none}
+  .cmt .av{
+    width:24px;height:24px;border-radius:50%;background:var(--panel-2);flex:0 0 auto;
+    border:1px solid var(--hair);display:flex;align-items:center;justify-content:center;
+    font-size:.6rem;color:var(--dim);
+  }
+  .cmt .body{flex:1;min-width:0}
+  .cmt .body b{font-size:.78rem;color:var(--ink);font-weight:500}
+  .cmt .body time{font-size:.66rem;color:var(--dimmer);margin-left:7px}
+  .cmt .body p{font-size:.83rem;margin:2px 0 0;color:var(--dim)}
+
+  .cmtbox{display:flex;gap:8px;margin-top:12px}
+  .cmtbox input{
+    flex:1;background:var(--ground);border:1px solid var(--hair);border-radius:2px;
+    color:var(--ink);font-family:var(--sans);font-size:.84rem;padding:9px 11px;
+  }
+  .cmtbox input:focus{outline:none;border-color:var(--gold-line)}
+  .cmtbox button{
+    background:transparent;border:1px solid var(--gold-hi);color:var(--gold-hi);
+    font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;padding:0 15px;
+    cursor:pointer;border-radius:2px;
+  }
+  .cmtbox button:hover{background:var(--gold-hi);color:var(--ground)}
+
+  /* --------- empty stage --------- */
+  .empty{
+    border:1px dashed var(--hair);border-radius:3px;padding:30px 22px;text-align:center;
+  }
+  .empty b{display:block;color:var(--dim);font-weight:400;font-size:.9rem;margin-bottom:5px}
+  .empty span{font-size:.76rem;color:var(--dimmer)}
+
+  /* --------- lightbox --------- */
+  .lb{
+    position:fixed;inset:0;z-index:200;background:rgba(6,6,6,.96);display:none;
+    align-items:center;justify-content:center;padding:26px;
+  }
+  .lb.on{display:flex}
+  .lb .inner{max-width:520px;width:100%}
+  .lb .big{
+    aspect-ratio:3/4;background:var(--panel-2);border:1px solid var(--hair);border-radius:3px;
+    display:flex;align-items:center;justify-content:center;margin-bottom:14px;
+  }
+  .lb .big span{font-size:.66rem;color:#3A3733;letter-spacing:.12em;text-transform:uppercase}
+  .lb .cx{
+    position:absolute;top:18px;right:22px;background:none;border:1px solid var(--hair);
+    color:var(--dim);font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;
+    padding:7px 13px;cursor:pointer;border-radius:2px;
+  }
+  .lb .cx:hover{color:var(--gold-hi);border-color:var(--gold-hi)}
+  .lb .nav{display:flex;justify-content:space-between;margin-top:12px}
+  .lb .nav button{
+    background:none;border:1px solid var(--hair);color:var(--dim);cursor:pointer;
+    font-size:.68rem;padding:7px 14px;border-radius:2px;
+  }
+  .lb .nav button:hover{color:var(--gold-hi);border-color:var(--gold-hi)}
+
+  /* phone-specific compaction */
+  .phone .pane{padding:15px 13px 22px}
+  .phone h2{font-size:1.22rem}
+  .phone .steps{padding:0 10px}
+  .phone .steps button{font-size:.66rem;padding:10px 8px}
+  .phone .grid{grid-template-columns:repeat(2,1fr)}
+  .phone .disc{grid-template-columns:repeat(4,1fr)}
+  .phone .disc b{font-size:1.4rem}
+  .phone p{font-size:.85rem}
+</style>
+</head>
+<body>
+
+<div class="stage">
+  <div class="stagehead">
+    <h1>Portal da <em>cliente</em></h1>
+    <span class="tag">Exemplo · dados fictícios</span>
+  </div>
+
+  <div class="devices">
+
+    <!-- ================= DESKTOP ================= -->
+    <div class="laptop">
+      <div class="chrome">
+        <i></i><i></i><i></i>
+        <span class="url">portal.suellensartorato.com / marina-costa</span>
+      </div>
+
+      <div class="pbar">
+        <img class="sig" src="assets/sig-white-tight.png" alt="Suellen Sartorato">
+        <span class="spacer"></span>
+        <span class="avatar">MC</span>
+      </div>
+
+      <div class="steps" id="steps-d">
+        <button class="on" data-p="d1"><span class="n">1</span>Fotos</button>
+        <button data-p="d2"><span class="n">2</span>Perfil</button>
+        <button data-p="d3"><span class="n">3</span>Análise</button>
+        <button data-p="d4"><span class="n">4</span>Guarda-roupa</button>
+        <button data-p="d5"><span class="n">5</span>Looks</button>
+        <button data-p="d6"><span class="n">6</span>Método</button>
+        <button data-p="d7"><span class="n">7</span>Rotina</button>
+      </div>
+
+      <!-- 1 · intake -->
+      <div class="pane on" id="d1">
+        <h2>Suas <em>fotos</em></h2>
+        <p class="sub">Marina Costa · início em 12 de agosto</p>
+        <div class="drop">
+          <div class="ic">＋</div>
+          <b>Enviar suas fotos</b>
+          <span>De frente, de lado e de costas, em roupa justa e sem sapatos</span>
+        </div>
+        <div class="grid">
+          <div class="ph"><img src="assets/mock/intake.jpg" alt=""><span class="badge">12 ago</span></div>
+        </div>
+        <div class="note">
+          <span class="from">Suellen</span>
+          <p>Recebi tudo, Marina. Já começamos a análise — falamos na terça.</p>
+        </div>
+      </div>
+
+      <!-- 2 · DISC -->
+      <div class="pane" id="d2">
+        <h2>Seu perfil <em>comportamental</em></h2>
+        <p class="sub">DISC · aplicado em 14 de agosto</p>
+        <div class="disc">
+          <div><b>D</b><div class="bar"><i style="width:22%"></i></div><span>Dominância</span></div>
+          <div class="hi"><b>I</b><div class="bar"><i style="width:78%"></i></div><span>Influência</span></div>
+          <div class="hi"><b>S</b><div class="bar"><i style="width:64%"></i></div><span>Estabilidade</span></div>
+          <div><b>C</b><div class="bar"><i style="width:31%"></i></div><span>Conformidade</span></div>
+        </div>
+        <div class="note">
+          <span class="from">Nota da Suellen para você</span>
+          <p>
+            Seu perfil é de conexão. Você comunica calor antes de comunicar autoridade — e isso é
+            uma força. O trabalho aqui não é te deixar mais dura, é fazer a autoridade aparecer
+            sem apagar o que já funciona.
+          </p>
+        </div>
+        <div class="note private">
+          <span class="from">Privado · só a Suellen vê</span>
+          <p>
+            I alto + C baixo — vai resistir a regra rígida. Dar princípio, não lista.
+            Mencionou duas vezes que "não quer parecer arrogante". Trabalhar isso antes de peça.
+          </p>
+        </div>
+      </div>
+
+      <!-- 3 · analysis -->
+      <div class="pane" id="d3">
+        <h2>Análise da comunicação da <em>imagem</em></h2>
+        <p class="sub">18 fotos · toque para ampliar</p>
+        <h3>Cores que valorizam você</h3>
+        <div class="cols">
+          <div><i style="background:#0A0A0A"></i><span>Preto</span></div>
+          <div><i style="background:#7B2230"></i><span>Vinho</span></div>
+          <div><i style="background:#1E3A34"></i><span>Verde profundo</span></div>
+          <div><i style="background:#D7D7C8"></i><span>Cru</span></div>
+          <div><i style="background:#8A7048"></i><span>Dourado</span></div>
+        </div>
+        <h3>Fotos comentadas</h3>
+        <div class="empty">
+          <b>Cada foto com o seu comentário ao lado</b>
+          <span>Você envia as fotos em lote e escreve uma a uma. A cliente vê como um álbum.</span>
+        </div>
+      </div>
+
+      <!-- 4 · wardrobe -->
+      <div class="pane" id="d4">
+        <h2>Guarda-<em>roupa</em></h2>
+        <p class="sub">A definir</p>
+        <div class="empty">
+          <b>Ainda não sabemos como você faz esta etapa</b>
+          <span>O espaço está aqui. O conteúdo é você quem define.</span>
+        </div>
+      </div>
+
+      <!-- 5 · looks -->
+      <div class="pane" id="d5">
+        <h2>Montagem de <em>looks</em></h2>
+        <p class="sub">Shopping Iguatemi · 26 de agosto</p>
+        <div class="grid">
+          <div class="ph" data-cap="Look 1 — reunião."><img src="assets/mock/look-1.jpg" alt=""><span class="cap">Reunião</span></div>
+          <div class="ph" data-cap="Look 2 — evento."><img src="assets/mock/look-2.jpg" alt=""><span class="cap">Evento</span></div>
+        </div>
+        <h3>Antes e hoje</h3>
+        <div class="ba">
+          <figure><img src="assets/mock/before.jpg" alt=""><figcaption>Antes</figcaption></figure>
+          <figure><img src="assets/mock/after.jpg" alt=""><figcaption>Hoje</figcaption></figure>
+        </div>
+
+        <h3>Comentários</h3>
+        <div class="cmt">
+          <div class="av">MC</div>
+          <div class="body">
+            <b>Marina</b><time>ontem</time>
+            <p>O look 2 eu usei na segunda e três pessoas comentaram. Funcionou mesmo.</p>
+          </div>
+        </div>
+        <div class="cmt">
+          <div class="av">S</div>
+          <div class="body">
+            <b>Suellen</b><time>ontem</time>
+            <p>É exatamente esse o efeito. Guarda essa combinação.</p>
+          </div>
+        </div>
+        <div class="cmtbox">
+          <input placeholder="Escrever um comentário…">
+          <button>Enviar</button>
+        </div>
+      </div>
+
+      <!-- 6 · framework -->
+      <div class="pane" id="d6">
+        <h2>O <em>método</em></h2>
+        <p class="sub">A definir</p>
+        <div class="empty">
+          <b>Como você ensina o método para a cliente levar sozinha</b>
+          <span>Precisamos entender melhor esta etapa antes de desenhar.</span>
+        </div>
+      </div>
+
+      <!-- 7 · routine -->
+      <div class="pane" id="d7">
+        <h2><em>Rotina</em></h2>
+        <p class="sub">A definir</p>
+        <div class="empty">
+          <b>A rotina que fica depois</b>
+          <span>Sabemos que existe. Não sabemos ainda como funciona.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= PHONE ================= -->
+    <div class="phone">
+      <div class="screen">
+        <div class="notch"><i></i></div>
+        <div class="pbar">
+          <img class="sig" src="assets/sig-white-tight.png" alt="Suellen Sartorato" style="height:15px">
+          <span class="spacer"></span>
+          <span class="avatar" style="width:23px;height:23px;font-size:.58rem">MC</span>
+        </div>
+        <div class="steps" id="steps-p">
+          <button class="on" data-p="p1">Fotos</button>
+          <button data-p="p2">Perfil</button>
+          <button data-p="p3">Análise</button>
+          <button data-p="p5">Looks</button>
+        </div>
+
+        <div class="pane on" id="p1">
+          <h2>Suas <em>fotos</em></h2>
+          <p class="sub">Marina Costa</p>
+          <div class="drop">
+            <div class="ic">＋</div>
+            <b>Enviar fotos</b>
+            <span>Frente, lado e costas</span>
+          </div>
+          <div class="grid">
+            <div class="ph"><img src="assets/mock/intake.jpg" alt=""></div>
+          </div>
+        </div>
+
+        <div class="pane" id="p2">
+          <h2>Seu <em>perfil</em></h2>
+          <p class="sub">DISC · 14 ago</p>
+          <div class="disc">
+            <div><b>D</b><div class="bar"><i style="width:22%"></i></div><span>D</span></div>
+            <div class="hi"><b>I</b><div class="bar"><i style="width:78%"></i></div><span>I</span></div>
+            <div class="hi"><b>S</b><div class="bar"><i style="width:64%"></i></div><span>S</span></div>
+            <div><b>C</b><div class="bar"><i style="width:31%"></i></div><span>C</span></div>
+          </div>
+          <div class="note">
+            <span class="from">Nota da Suellen</span>
+            <p>Seu perfil é de conexão. Você comunica calor antes de autoridade — e isso é força.</p>
+          </div>
+        </div>
+
+        <div class="pane" id="p3">
+          <h2><em>Análise</em></h2>
+          <p class="sub">18 fotos</p>
+          <div class="cols">
+            <div style="width:52px"><i style="background:#0A0A0A;height:40px"></i><span>Preto</span></div>
+            <div style="width:52px"><i style="background:#7B2230;height:40px"></i><span>Vinho</span></div>
+            <div style="width:52px"><i style="background:#1E3A34;height:40px"></i><span>Verde</span></div>
+          </div>
+          <div class="empty" style="padding:18px 14px">
+            <b style="font-size:.84rem">Cada foto com o seu comentário</b>
+            <span style="font-size:.72rem">A cliente vê como um álbum.</span>
+          </div>
+        </div>
+
+        <div class="pane" id="p5">
+          <h2><em>Looks</em></h2>
+          <p class="sub">Iguatemi · 26 ago</p>
+          <div class="grid">
+            <div class="ph" data-cap="Look 1 — reunião."><img src="assets/mock/look-1.jpg" alt=""><span class="cap">Reunião</span></div>
+            <div class="ph" data-cap="Look 2 — evento."><img src="assets/mock/look-2.jpg" alt=""><span class="cap">Evento</span></div>
+          </div>
+          <div class="cmt">
+            <div class="av">MC</div>
+            <div class="body"><b>Marina</b><time>ontem</time><p>O look 2 funcionou mesmo.</p></div>
+          </div>
+          <div class="cmtbox">
+            <input placeholder="Comentar…">
+            <button>Enviar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- lightbox -->
+<div class="lb" id="lb">
+  <button class="cx" id="lbx">Fechar</button>
+  <div class="inner">
+    <div class="big"><img id="lbimg" alt="" style="width:100%;height:100%;object-fit:contain"></div>
+    <p id="lbcap" style="color:var(--cream);font-size:.95rem"></p>
+    <div class="nav">
+      <button id="lbprev">← anterior</button>
+      <button id="lbnext">próxima →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // tab switching, both devices
+  document.querySelectorAll('.steps').forEach(bar => {
+    bar.addEventListener('click', e => {
+      const btn = e.target.closest('button');
+      if (!btn) return;
+      const root = bar.closest('.laptop, .phone');
+      bar.querySelectorAll('button').forEach(b => b.classList.toggle('on', b === btn));
+      root.querySelectorAll('.pane').forEach(p => p.classList.toggle('on', p.id === btn.dataset.p));
+    });
+  });
+
+  // lightbox with prev/next across the photos in the same grid
+  const lb = document.getElementById('lb');
+  const lbCap = document.getElementById('lbcap');
+    let group = [], idx = 0;
+
+  function show(i) {
+    idx = (i + group.length) % group.length;
+    const el = group[idx];
+    lbCap.textContent = el.dataset.cap || '';
+    const img = el.querySelector('img');
+    const lbImg = document.getElementById('lbimg');
+    if (img) { lbImg.src = img.src; lbImg.style.display = 'block'; }
+    else { lbImg.style.display = 'none'; }
+  }
+
+  document.addEventListener('click', e => {
+    const ph = e.target.closest('.ph[data-cap]');
+    if (!ph) return;
+    group = [...ph.parentElement.querySelectorAll('.ph[data-cap]')];
+    show(group.indexOf(ph));
+    lb.classList.add('on');
+  });
+
+  document.getElementById('lbx').onclick = () => lb.classList.remove('on');
+  document.getElementById('lbprev').onclick = () => show(idx - 1);
+  document.getElementById('lbnext').onclick = () => show(idx + 1);
+  lb.addEventListener('click', e => { if (e.target === lb) lb.classList.remove('on'); });
+  document.addEventListener('keydown', e => {
+    if (!lb.classList.contains('on')) return;
+    if (e.key === 'Escape') lb.classList.remove('on');
+    if (e.key === 'ArrowLeft') show(idx - 1);
+    if (e.key === 'ArrowRight') show(idx + 1);
+  });
+</script>
+</body>
+</html>

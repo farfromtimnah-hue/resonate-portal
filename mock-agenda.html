@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Agenda — exemplo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ground:#0A0A0A; --panel:#131313; --panel-2:#1A1A19;
+    --gold:#8A7048; --gold-hi:#A28A60; --gold-line:rgba(162,138,96,.22);
+    --cream:#D7D7C8; --ink:#E8E5DE; --dim:#8E8880; --dimmer:#65605A;
+    --ox:#7B2230; --ox-hi:#A8394A; --green:#3F7A5E;
+    --hair:rgba(255,255,255,.07);
+    --serif:"Cormorant Garamond",Georgia,serif;
+    --sans:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  }
+  *{box-sizing:border-box}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+  body{
+    margin:0;background:var(--ground);color:var(--ink);
+    font-family:var(--sans);font-weight:300;line-height:1.6;font-size:15px;
+    -webkit-font-smoothing:antialiased;
+  }
+  .stage{max-width:1180px;margin:0 auto;padding:26px 22px 90px}
+  .stagehead{
+    display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;
+    border-bottom:1px solid var(--hair);padding-bottom:14px;margin-bottom:26px;
+  }
+  .stagehead h1{font-family:var(--serif);font-weight:300;font-size:1.5rem;margin:0;color:#fff}
+  .stagehead h1 em{font-style:italic;color:var(--gold-hi)}
+  .stagehead .tag{
+    font-size:.62rem;letter-spacing:.2em;text-transform:uppercase;color:var(--dimmer);
+    border:1px solid var(--hair);padding:3px 9px;border-radius:2px;
+  }
+
+  .devices{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:30px;align-items:start}
+  @media (max-width:960px){.devices{grid-template-columns:1fr}}
+
+  .laptop{border:1px solid var(--hair);border-radius:6px;overflow:hidden;background:var(--panel)}
+  .chrome{
+    display:flex;align-items:center;gap:7px;padding:9px 13px;background:#0E0E0E;
+    border-bottom:1px solid var(--hair);
+  }
+  .chrome i{width:9px;height:9px;border-radius:50%;background:#2C2C2C;display:block}
+  .chrome .url{flex:1;text-align:center;font-size:.68rem;color:var(--dimmer)}
+
+  .phone{border:1px solid var(--hair);border-radius:26px;overflow:hidden;background:var(--panel);padding:9px}
+  .phone .screen{border-radius:19px;overflow:hidden;background:var(--ground)}
+  .phone .notch{height:22px;display:flex;align-items:center;justify-content:center}
+  .phone .notch i{width:52px;height:4px;border-radius:3px;background:#242424;display:block}
+
+  .pbar{display:flex;align-items:center;gap:12px;padding:13px 18px;border-bottom:1px solid var(--gold-line)}
+  .pbar .sig{height:19px;opacity:.92}
+  .pbar .spacer{flex:1}
+
+  /* scope toggle */
+  .scope{display:flex;gap:0;border-bottom:1px solid var(--hair);padding:0 18px}
+  .scope button{
+    background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;
+    color:var(--dimmer);font-family:var(--sans);font-size:.74rem;padding:11px 14px;
+  }
+  .scope button.on{color:var(--gold-hi);border-bottom-color:var(--gold-hi)}
+  .scope .spacer{flex:1}
+  .scope .date{
+    font-size:.7rem;color:var(--dimmer);align-self:center;letter-spacing:.05em;
+  }
+
+  .body{padding:20px}
+  .phone .body{padding:14px 12px}
+
+  .dayhead{
+    font-size:.62rem;letter-spacing:.2em;text-transform:uppercase;color:var(--gold-hi);
+    margin:0 0 12px;
+  }
+
+  /* meeting card */
+  .mt{
+    border:1px solid var(--hair);border-left:2px solid var(--gold-hi);border-radius:2px;
+    background:var(--panel-2);padding:14px 16px;margin-bottom:10px;
+  }
+  .mt.remote{border-left-color:var(--green)}
+  .mt .top{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:3px}
+  .mt .time{
+    font-family:var(--serif);font-size:1.32rem;color:#fff;line-height:1;
+    font-variant-numeric:tabular-nums;
+  }
+  .mt .who{
+    font-size:.95rem;color:var(--gold-hi);text-decoration:none;border-bottom:1px solid transparent;
+  }
+  .mt .who:hover{border-bottom-color:var(--gold-hi)}
+  .mt .kind{
+    font-size:.58rem;letter-spacing:.14em;text-transform:uppercase;
+    border:1px solid var(--hair);color:var(--dimmer);padding:2px 7px;border-radius:2px;
+  }
+  .mt .kind.pres{border-color:var(--gold-line);color:var(--gold-hi)}
+  .mt .kind.rem{border-color:rgba(63,122,94,.4);color:var(--green)}
+  .mt .meta{font-size:.8rem;color:var(--dim);margin:2px 0 0}
+  .mt .meta b{color:var(--ink);font-weight:400}
+
+  .acts{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+  .acts button{
+    background:transparent;border:1px solid var(--hair);color:var(--dim);cursor:pointer;
+    font-family:var(--sans);font-size:.7rem;padding:6px 11px;border-radius:2px;
+    display:inline-flex;align-items:center;gap:5px;
+  }
+  .acts button:hover{border-color:var(--gold-hi);color:var(--gold-hi)}
+  .acts button.prim{border-color:var(--gold-hi);color:var(--gold-hi)}
+  .acts button.prim:hover{background:var(--gold-hi);color:var(--ground)}
+
+  .travel{
+    font-size:.72rem;color:var(--dimmer);margin-top:9px;padding-top:9px;
+    border-top:1px solid var(--hair);
+  }
+  .travel b{color:var(--gold-hi);font-weight:400}
+
+  /* booking link panel */
+  .book{
+    border:1px solid var(--gold-line);border-radius:2px;padding:18px 20px;margin-top:22px;
+    background:rgba(162,138,96,.04);
+  }
+  .book h3{
+    font-size:.62rem;letter-spacing:.2em;text-transform:uppercase;color:var(--gold-hi);
+    margin:0 0 10px;font-weight:500;
+  }
+  .book p{margin:0 0 12px;color:var(--dim);font-size:.85rem;max-width:56ch}
+  .slots{display:flex;gap:8px;flex-wrap:wrap}
+  .slot{
+    border:1px solid var(--hair);border-radius:2px;padding:10px 14px;background:var(--panel);
+    cursor:pointer;
+  }
+  .slot:hover{border-color:var(--gold-hi)}
+  .slot b{display:block;font-size:.84rem;color:var(--ink);font-weight:400}
+  .slot span{display:block;font-size:.7rem;color:var(--dimmer);margin-top:2px}
+
+  .toast{
+    position:fixed;left:50%;bottom:30px;transform:translateX(-50%);
+    background:var(--panel-2);border:1px solid var(--gold-line);color:var(--cream);
+    padding:11px 18px;border-radius:3px;font-size:.84rem;opacity:0;pointer-events:none;
+    transition:opacity .2s;z-index:200;
+  }
+  .toast.on{opacity:1}
+
+  .note{
+    border-left:2px solid var(--ox-hi);background:rgba(123,34,48,.09);
+    padding:11px 15px;margin-top:18px;border-radius:0 2px 2px 0;
+  }
+  .note p{margin:0;font-size:.8rem;color:var(--dim)}
+  .note b{color:var(--ink);font-weight:500}
+
+  .phone .mt .time{font-size:1.1rem}
+  .phone .acts button{font-size:.66rem;padding:5px 9px}
+</style>
+</head>
+<body>
+
+<div class="stage">
+  <div class="stagehead">
+    <h1>Agenda do <em>dia</em></h1>
+    <span class="tag">Exemplo · dados fictícios</span>
+  </div>
+
+  <div class="devices">
+
+    <!-- ============ DESKTOP ============ -->
+    <div class="laptop">
+      <div class="chrome">
+        <i></i><i></i><i></i>
+        <span class="url">portal.suellensartorato.com / agenda</span>
+      </div>
+      <div class="pbar">
+        <img class="sig" src="assets/sig-white-tight.png" alt="Suellen Sartorato">
+        <span class="spacer"></span>
+      </div>
+
+      <div class="scope">
+        <button class="on">Hoje</button>
+        <button>Esta semana</button>
+        <span class="spacer"></span>
+        <span class="date">Quarta, 2 de setembro</span>
+      </div>
+
+      <div class="body">
+        <p class="dayhead">3 compromissos</p>
+
+        <!-- remote -->
+        <div class="mt remote">
+          <div class="top">
+            <span class="time">09:30</span>
+            <a class="who" href="#">Marina Costa</a>
+            <span class="kind rem">Online</span>
+          </div>
+          <p class="meta">Análise da comunicação da imagem · <b>2ª sessão</b></p>
+          <div class="acts">
+            <button class="prim" data-t="Abrindo a chamada…">▸ Entrar na chamada</button>
+            <button data-t="WhatsApp aberto com o link da chamada">Enviar link</button>
+            <button data-t="Abrindo a preparação da reunião">Preparação</button>
+          </div>
+        </div>
+
+        <!-- in person -->
+        <div class="mt">
+          <div class="top">
+            <span class="time">14:00</span>
+            <a class="who" href="#">Renata Alves</a>
+            <span class="kind pres">Presencial</span>
+          </div>
+          <p class="meta">Montagem de looks · <b>Shopping Iguatemi</b>, Faria Lima 2232</p>
+          <div class="acts">
+            <button class="prim" data-t="Abrindo o GPS…">▸ Como chegar</button>
+            <button data-t="WhatsApp aberto com o endereço">Enviar endereço</button>
+            <button data-t="Abrindo a preparação da reunião">Preparação</button>
+          </div>
+          <p class="travel">
+            Sair às <b>13:05</b> · 55 min no trânsito previsto para as 13h de uma quarta
+            <span style="color:var(--dimmer)">(não os 35 min sem trânsito)</span>
+          </p>
+        </div>
+
+        <!-- mentoria -->
+        <div class="mt remote">
+          <div class="top">
+            <span class="time">20:00</span>
+            <a class="who" href="#">Turma Mentoria CI</a>
+            <span class="kind rem">Online</span>
+          </div>
+          <p class="meta">6 alunas · <b>encontro 2 de 3</b></p>
+          <div class="acts">
+            <button class="prim" data-t="Abrindo a chamada…">▸ Entrar na chamada</button>
+            <button data-t="WhatsApp aberto com o link para o grupo">Enviar link ao grupo</button>
+          </div>
+        </div>
+
+        <!-- booking -->
+        <div class="book">
+          <h3>Link de agendamento</h3>
+          <p>
+            A cliente recebe duas opções e escolhe. O tempo de deslocamento entra sozinho,
+            calculado para o horário real da consulta.
+          </p>
+          <div class="slots">
+            <div class="slot"><b>Quinta, 4 set</b><span>10:00 · presencial</span></div>
+            <div class="slot"><b>Sexta, 5 set</b><span>15:30 · online</span></div>
+          </div>
+          <div class="acts" style="margin-top:14px">
+            <button class="prim" data-t="WhatsApp aberto com as duas opções">Enviar por WhatsApp</button>
+          </div>
+        </div>
+
+        <div class="note">
+          <p>
+            <b>Nota para a reunião:</b> o buffer de trânsito usa o horário da consulta, não o
+            horário em que a agenda foi aberta. 35 min num domingo não é 55 min numa quarta às 13h.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ PHONE ============ -->
+    <div class="phone">
+      <div class="screen">
+        <div class="notch"><i></i></div>
+        <div class="pbar">
+          <img class="sig" src="assets/sig-white-tight.png" alt="Suellen Sartorato" style="height:15px">
+          <span class="spacer"></span>
+        </div>
+        <div class="scope">
+          <button class="on" style="font-size:.68rem;padding:9px 11px">Hoje</button>
+          <button style="font-size:.68rem;padding:9px 11px">Semana</button>
+        </div>
+        <div class="body">
+          <p class="dayhead">Qua, 2 set</p>
+
+          <div class="mt remote">
+            <div class="top">
+              <span class="time">09:30</span>
+              <a class="who" href="#" style="font-size:.86rem">Marina Costa</a>
+            </div>
+            <p class="meta" style="font-size:.75rem">Análise · 2ª sessão</p>
+            <div class="acts">
+              <button class="prim" data-t="Abrindo a chamada…">▸ Entrar</button>
+              <button data-t="WhatsApp aberto">Link</button>
+            </div>
+          </div>
+
+          <div class="mt">
+            <div class="top">
+              <span class="time">14:00</span>
+              <a class="who" href="#" style="font-size:.86rem">Renata Alves</a>
+            </div>
+            <p class="meta" style="font-size:.75rem">Looks · Iguatemi</p>
+            <div class="acts">
+              <button class="prim" data-t="Abrindo o GPS…">▸ Como chegar</button>
+              <button data-t="WhatsApp aberto com o endereço">Endereço</button>
+            </div>
+            <p class="travel" style="font-size:.68rem">Sair às <b>13:05</b> · 55 min</p>
+          </div>
+
+          <div class="mt remote">
+            <div class="top">
+              <span class="time">20:00</span>
+              <a class="who" href="#" style="font-size:.86rem">Mentoria CI</a>
+            </div>
+            <p class="meta" style="font-size:.75rem">6 alunas · 2 de 3</p>
+            <div class="acts">
+              <button class="prim" data-t="Abrindo a chamada…">▸ Entrar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const toast = document.getElementById('toast');
+  let t;
+  document.addEventListener('click', e => {
+    const b = e.target.closest('button[data-t]');
+    if (!b) return;
+    toast.textContent = b.dataset.t;
+    toast.classList.add('on');
+    clearTimeout(t);
+    t = setTimeout(() => toast.classList.remove('on'), 1900);
+  });
+
+  // scope toggle is cosmetic in the mockup
+  document.querySelectorAll('.scope').forEach(bar => {
+    bar.addEventListener('click', e => {
+      const b = e.target.closest('button');
+      if (!b) return;
+      bar.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+    });
+  });
+</script>
+</body>
+</html>
