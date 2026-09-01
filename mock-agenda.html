@@ -225,6 +225,37 @@
     font-family:var(--sans);font-size:.74rem;padding:10px 17px;border-radius:2px;
   }
   .pacts button:hover{background:var(--gold-hi);color:var(--ground)}
+  .pacts{margin:0 0 22px}
+  .pcard{margin-bottom:14px}
+  .pcard .lk{
+    color:var(--gold-hi);text-decoration:none;border-bottom:1px solid rgba(162,138,96,.3);
+    font-size:.84rem;
+  }
+  .pcard .lk:hover{border-bottom-color:var(--gold-hi)}
+  .ask{
+    font-family:var(--serif);font-style:italic;font-size:1.14rem;line-height:1.45;
+    color:var(--cream);margin:18px 0 8px;
+  }
+  .ask:first-of-type{margin-top:0}
+  .cap{
+    width:100%;min-height:56px;resize:vertical;background:var(--ground);
+    border:1px solid var(--hair);border-radius:2px;color:var(--ink);
+    font-family:var(--sans);font-size:.88rem;font-weight:300;line-height:1.55;
+    padding:10px 12px;margin-bottom:4px;
+  }
+  .cap:focus{outline:none;border-color:var(--gold-line)}
+  .cap::placeholder{color:#4A4640}
+  .cap.tall{min-height:110px}
+  .savestate{
+    font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;color:var(--dimmer);
+    margin:6px 0 0;opacity:0;transition:opacity .2s;
+  }
+  .savestate.on{opacity:1;color:var(--gold-hi)}
+  .agree{display:grid;gap:9px}
+  .agree label{
+    display:flex;align-items:center;gap:10px;font-size:.9rem;color:var(--dim);cursor:pointer;
+  }
+  .agree input{accent-color:var(--gold-hi);width:15px;height:15px}
 </style>
 </head>
 <body>
@@ -397,56 +428,70 @@
     <h2 class="ptitle">Marina <em>Costa</em></h2>
     <p class="pmeta">Quarta, 2 de setembro · 09:30 · online · 2ª sessão de 4</p>
 
-    <div class="pgrid">
-      <div class="pcard">
-        <h3>Onde paramos</h3>
-        <ul>
-          <li>Fotos recebidas em <b>12 de agosto</b></li>
-          <li>DISC aplicado em <b>14 de agosto</b> — perfil <b>I alto, S médio</b></li>
-          <li>Análise de cores <b>feita</b></li>
-          <li>Montagem de looks <b>ainda não</b></li>
-        </ul>
-      </div>
-
-      <div class="pcard">
-        <h3>Para hoje</h3>
-        <ul>
-          <li>Passar as <b>18 fotos comentadas</b></li>
-          <li>Fechar a <b>cartela de cores</b></li>
-          <li>Marcar a ida ao shopping</li>
-        </ul>
-      </div>
-
-      <div class="pcard wide">
-        <h3>Sua nota da última sessão</h3>
-        <p class="pnote">
-          Perfil I alto com C baixo — vai resistir a regra rígida. Dar princípio, não lista.
-          Mencionou duas vezes que não quer parecer arrogante. Trabalhar isso antes de falar de peça.
-        </p>
-      </div>
-
-      <div class="pcard">
-        <h3>Ela perguntou</h3>
-        <ul>
-          <li>Se podia usar as peças que já tem</li>
-          <li>Quanto tempo leva o processo inteiro</li>
-        </ul>
-      </div>
-
-      <div class="pcard">
-        <h3>Números</h3>
-        <ul>
-          <li>Investimento <b>R$ 4.800</b> · pago</li>
-          <li>Sessão <b>2 de 4</b></li>
-          <li>Próxima em <b>9 de setembro</b></li>
-        </ul>
-      </div>
-    </div>
-
     <div class="pacts">
       <button data-t="Abrindo a chamada…">▸ Entrar na chamada</button>
-      <button data-t="Abrindo o portal da Marina">Abrir portal da cliente</button>
-      <button data-t="WhatsApp aberto com a Marina">Mandar mensagem</button>
+      <button data-t="Abrindo o portal da Marina">Portal da cliente</button>
+      <button data-t="Abrindo as 18 fotos">Fotos e análise</button>
+      <button data-t="Abrindo o perfil DISC">Perfil DISC</button>
+      <button data-t="WhatsApp aberto com a Marina">WhatsApp</button>
+    </div>
+
+    <div class="pcard">
+      <h3>Onde paramos</h3>
+      <ul>
+        <li>Fotos recebidas em <b>12 de agosto</b> · <a href="#" class="lk">ver as 3</a></li>
+        <li>DISC aplicado em <b>14 de agosto</b> — <b>I alto, S médio</b> · <a href="#" class="lk">abrir perfil</a></li>
+        <li>Cartela de cores <b>montada</b> · <a href="#" class="lk">ver cores</a></li>
+        <li>Montagem de looks <b>ainda não marcada</b></li>
+      </ul>
+    </div>
+
+    <div class="pcard">
+      <h3>Sua nota da sessão anterior</h3>
+      <p class="pnote">
+        Perfil I alto com C baixo — vai resistir a regra rígida. Dar princípio, não lista.
+        Mencionou duas vezes que não quer parecer arrogante. Trabalhar isso antes de falar de peça.
+      </p>
+    </div>
+
+    <div class="pcard">
+      <h3>Perguntar hoje</h3>
+
+      <p class="ask">Como você se sentiu usando as peças que a gente separou?</p>
+      <textarea class="cap" placeholder="Anotar a resposta…"></textarea>
+
+      <p class="ask">Teve alguma situação essa semana em que a roupa atrapalhou?</p>
+      <textarea class="cap" placeholder="Anotar a resposta…"></textarea>
+
+      <p class="ask">Que dia funciona para a gente ir ao shopping?</p>
+      <textarea class="cap" placeholder="Anotar a resposta…"></textarea>
+
+      <p class="savestate" id="ss">salvo</p>
+    </div>
+
+    <div class="pcard">
+      <h3>Ficou pendente da última vez</h3>
+      <ul>
+        <li>Ela perguntou se pode usar as peças que já tem — <b>responder hoje</b></li>
+        <li>Ela perguntou quanto tempo leva o processo inteiro — <b>responder hoje</b></li>
+      </ul>
+    </div>
+
+    <div class="pcard">
+      <h3>Anotações livres</h3>
+      <textarea class="cap tall" placeholder="Qualquer coisa que aparecer…"></textarea>
+    </div>
+
+    <div class="pcard">
+      <h3>Combinado ao final</h3>
+      <div class="agree">
+        <label><input type="checkbox"> Data do shopping marcada</label>
+        <label><input type="checkbox"> Cartela de cores enviada</label>
+        <label><input type="checkbox"> Próxima sessão agendada</label>
+      </div>
+      <div class="pacts" style="margin-top:14px">
+        <button data-t="WhatsApp aberto com o resumo da sessão">Enviar resumo no WhatsApp</button>
+      </div>
     </div>
   </div>
 </div>
@@ -475,6 +520,17 @@
   function closePrep(){ prep.classList.remove('on'); document.body.style.overflow=''; }
   document.getElementById('prepx').addEventListener('click', closePrep);
   document.addEventListener('keydown', e => { if (e.key === 'Escape') closePrep(); });
+
+  // capture boxes show a save state, as the real one would
+  const ss = document.getElementById('ss');
+  let sst;
+  document.querySelectorAll('.cap').forEach(box =>
+    box.addEventListener('input', () => {
+      if (!ss) return;
+      ss.textContent = 'salvando…'; ss.classList.add('on');
+      clearTimeout(sst);
+      sst = setTimeout(() => { ss.textContent = 'salvo'; }, 700);
+    }));
 
   // scope toggle is cosmetic in the mockup
   document.querySelectorAll('.scope').forEach(bar => {
