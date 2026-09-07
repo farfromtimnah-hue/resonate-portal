@@ -815,6 +815,20 @@ html.dark .banner--info    { background: rgba(0,91,150,0.12); color: #9ccaff; bo
   display: block;
   flex-shrink: 0;
 }
+/* A logo drawn in WHITE (a signature or seal made for a dark brand) is
+   invisible on this light page. When the client's own primary colour is dark,
+   the mark sits on a plate of it — their colour, doing the work, rather than a
+   grey box. Set by portal.js, which knows the palette. */
+.portal-logo-plate {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 20px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+.portal-logo-plate .portal-logo-img { max-height: 40px; }
+
 .portal-wordmark {
   font-family: 'Newsreader', serif;
   font-size: 28px;

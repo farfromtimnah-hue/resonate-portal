@@ -244,10 +244,17 @@ function render() {
 
 function renderIdentity(client) {
   const logoArea = document.getElementById('portal-logo-area');
+  const name = esc(client.business_name || client.name);
   if (client.logo_url) {
-    logoArea.innerHTML = `<img src="${esc(client.logo_url)}" class="portal-logo-img" alt="${esc(client.business_name || client.name)}">`;
+    // A mark made for a dark brand needs a dark ground to be seen at all. Use
+    // the client's own primary colour for it when they have a dark one.
+    const primary = normaliseHex(client.brand_color_primary);
+    const img = `<img src="${esc(client.logo_url)}" class="portal-logo-img" alt="${name}">`;
+    logoArea.innerHTML = (primary && isVeryDark(primary))
+      ? `<div class="portal-logo-plate" style="background:${primary};">${img}</div>`
+      : img;
   } else {
-    logoArea.innerHTML = `<div class="portal-wordmark">${esc(client.business_name || client.name)}</div>`;
+    logoArea.innerHTML = `<div class="portal-wordmark">${name}</div>`;
   }
 }
 
@@ -283,6 +290,13 @@ function renderContent() {
 
   // Contact actions
   renderContact(client);
+
+  // ---- Client branding ----
+  // Their colours were captured in the meeting page and stored on the client
+  // row. Applying them here is what makes the portal feel like THEIR home
+  // rather than a vendor's. Falls back to the Resonate blue when a client has
+  // no colours recorded, which is every client until one is set.
+  applyClientBrand(client);
 
   // AI intake interview card — only for clients with intake explicitly enabled
   const intakeCard = document.getElementById('portal-intake-card');
@@ -836,3 +850,37 @@ function hideShareMenu() {
 }
 
 init();
+
+// Paint the page in the client's own colours.
+//
+// Only --brand is overridden: it already carries 22 usages across app.css, so
+// one variable reaches links, focus rings, buttons and accents at once. The
+// page ground stays light — a client's dark palette belongs on THEIR marketing
+// surfaces, and inverting a working portal to it would be a redesign, not a
+// theme.
+//
+// A near-black primary (Suellen's #0A0A0A) would make links unreadable as an
+// accent, so a very dark primary defers to the secondary when one exists.
+function applyClientBrand(client) {
+  if (!client) return;
+  const primary   = normaliseHex(client.brand_color_primary);
+  const secondary = normaliseHex(client.brand_color_secondary);
+  if (!primary && !secondary) return;
+
+  const accent = (primary && !isVeryDark(primary)) ? primary : (secondary || primary);
+  if (accent) document.documentElement.style.setProperty('--brand', accent);
+}
+
+function normaliseHex(v) {
+  const s = (v || '').trim();
+  return /^#[0-9a-fA-F]{6}$/.test(s) ? s : null;
+}
+
+// Relative luminance, rounded: below this an accent stops reading as a colour
+// and starts reading as body text.
+function isVeryDark(hex) {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return (0.2126 * r + 0.7152 * g + 0.0722 * b) < 40;
+}

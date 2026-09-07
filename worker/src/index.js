@@ -695,6 +695,10 @@ async function buildClientPortalResponse(client, env, viewer) {
     email: client.email,
     website: client.website,
     logo_url: client.logo_url ?? null,
+    // Their own colours, captured in the meeting page. The portal paints
+    // itself with these so it reads as the client's home, not a vendor's.
+    brand_color_primary: client.brand_color_primary ?? null,
+    brand_color_secondary: client.brand_color_secondary ?? null,
     // Both grains must be on for this person to be offered the interview.
     intake_enabled: !!client.intake_enabled && personIntakeEnabled,
     // The business-level switch on its own, so the portal can tell
