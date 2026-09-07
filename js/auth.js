@@ -89,6 +89,13 @@ export async function setInitialPassword(newPassword) {
 }
 
 export async function getToken() {
+  // A client-portal session (username/password) carries an opaque token in
+  // localStorage and has no Firebase user. The Worker's authenticate() accepts
+  // either, so returning it here makes every existing page work for both kinds
+  // of session without changes.
+  const clientToken = localStorage.getItem('rcpt_token');
+  if (clientToken) return clientToken;
+
   if (!_fbUser) {
     await waitForAuth();
     if (!_fbUser) return null;
@@ -100,6 +107,19 @@ export async function getToken() {
 // Redirects to index.html if not logged in.
 // Returns the user profile.
 export async function requireAuth(expectedRole = null) {
+  // Client-portal sessions sign in at entrar.html, not index.html, and their
+  // profile comes from /api/me with the opaque token.
+  const clientToken = localStorage.getItem('rcpt_token');
+  if (clientToken) {
+    const profile = await fetchClientProfile(clientToken);
+    if (!profile) {
+      localStorage.removeItem('rcpt_token');
+      window.location.href = 'entrar.html';
+      return null;
+    }
+    return profile;
+  }
+
   const profile = await getProfile();
   if (!profile) {
     window.location.href = 'index.html';
@@ -121,6 +141,19 @@ export async function requireAuth(expectedRole = null) {
 }
 
 // ---- Internal ----
+
+// The same /api/me the Firebase path uses; only the credential differs.
+async function fetchClientProfile(token) {
+  try {
+    const res = await fetch(`${API_BASE}/api/me`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
 
 async function fetchProfile(fbUser) {
   const token = await getIdToken(fbUser);

@@ -39,6 +39,11 @@
     display:flex;align-items:center;justify-content:space-between;gap:16px;
     padding:22px 0 0;
   }
+  .back{
+    color:var(--dimmer);text-decoration:none;font-size:.66rem;
+    letter-spacing:.18em;text-transform:uppercase;transition:color .2s;
+  }
+  .back:hover{color:var(--cream)}
   .langtoggle{display:flex;border:1px solid var(--hair);border-radius:2px;overflow:hidden}
   .langtoggle button{
     background:none;border:0;color:var(--dimmer);font-family:var(--sans);
@@ -198,7 +203,7 @@
 <div class="wrap">
 
   <div class="head">
-    <span></span>
+    <a class="back" href="inicio.html">&larr; Portal</a>
     <div class="langtoggle">
       <button data-lang="pt" class="on">PT</button>
       <button data-lang="en">EN</button>
@@ -514,6 +519,7 @@ const DICT = {
 "Cole o link ou escreva o nome":"Paste the link or type the name",
 
 "Qualquer dúvida, é só responder no WhatsApp.":"Any questions, just reply on WhatsApp.",
+"← Portal":"← Portal",
 
 "A enviar…":"Uploading…",
 "Recebido":"Received",

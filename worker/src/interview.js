@@ -399,6 +399,17 @@ function effectiveUserId(user, request) {
   return asUser ? parseInt(asUser) : null;
 }
 
+// Every interview-taker has a users row, including client-portal logins, which
+// carry a `clientlogin:<username>` sentinel uid instead of a real Firebase one.
+// That keeps intake_sessions.user_id's foreign key intact and means the results
+// page renders both kinds of person identically.
+async function resolveIntakePerson(env, userId) {
+  if (userId == null) return null;
+  return await env.DB.prepare(
+    'SELECT id, email, first_name, last_name, interview_role FROM users WHERE id = ?'
+  ).bind(userId).first();
+}
+
 // Resolve the in-progress session for one person at one client.
 //
 // Keyed on (client_id, user_id) together. The client_id term is not
@@ -1147,12 +1158,7 @@ async function handleTranslatedSession(sessionId, request, env, user) {
   var future = await env.DB.prepare('SELECT * FROM intake_future_vision WHERE session_id = ?').bind(sessionId).first();
   var messagesRes = await env.DB.prepare('SELECT * FROM intake_messages WHERE session_id = ? ORDER BY id ASC').bind(sessionId).all();
 
-  var person = null;
-  if (session.user_id != null) {
-    person = await env.DB.prepare(
-      'SELECT id, email, first_name, last_name, interview_role FROM users WHERE id = ?'
-    ).bind(session.user_id).first();
-  }
+  var person = await resolveIntakePerson(env, session.user_id);
 
   var bundle = {
     session: session,
@@ -1220,12 +1226,7 @@ async function handleExport(clientId, env, user) {
     // Whose answers these are and what their vantage point was. A session
     // predating the user_id column has no person; that reads as unattributed
     // rather than being quietly assigned to somebody.
-    var person = null;
-    if (s.user_id != null) {
-      person = await env.DB.prepare(
-        'SELECT id, email, first_name, last_name, interview_role FROM users WHERE id = ?'
-      ).bind(s.user_id).first();
-    }
+    var person = await resolveIntakePerson(env, s.user_id);
 
     // The stored translation, if one has been generated. Null means the
     // results page has not translated this session yet.

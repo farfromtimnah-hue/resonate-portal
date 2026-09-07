@@ -340,8 +340,12 @@ async function handleGetMe(env, user, request) {
   // preview identity is applied here once rather than at each portal call site.
   // effectiveClientId returns the caller's own client_id unless an ADMIN is
   // previewing, so a client session is never redirected by a query parameter.
+  // token_hash is the stored form of the session credential and is internal to
+  // the Worker. It must never be handed back to a browser.
+  const { token_hash, ...safeUser } = user;
+
   const previewing = previewClientId(user, request);
-  if (previewing === null) return jsonResponse(user, 200, env);
+  if (previewing === null) return jsonResponse(safeUser, 200, env);
 
   const clientId = effectiveClientId(user, request);
   // Tell the banner whether writing is even possible for this client. The
@@ -352,7 +356,7 @@ async function handleGetMe(env, user, request) {
   ).bind(clientId).first();
 
   return jsonResponse({
-    ...user,
+    ...safeUser,
     client_id: clientId,
     preview: {
       active:         true,
@@ -1400,6 +1404,19 @@ async function authenticate(request, env) {
   if (!authHeader?.startsWith('Bearer ')) throw new ApiError('Missing or invalid Authorization header', 401);
 
   const token = authHeader.slice(7);
+
+  // 🔑 THE APEX PATTERN. An opaque client-portal token (username/password
+  // login) resolves to the SAME user shape a Firebase session produces, so
+  // every downstream route — intake included — works unchanged and sees a
+  // normal client. Firebase JWTs never start with this prefix, so the
+  // existing admin flow is untouched.
+  //
+  // Building a separate parallel path instead of this is what made client
+  // features look like they needed rewriting. They do not.
+  if (token.startsWith('rcpt_')) {
+    return authenticateClientToken(token, env);
+  }
+
   const payload = await verifyFirebaseToken(token, env.FIREBASE_PROJECT_ID);
 
   // Look up this user in D1
@@ -1419,6 +1436,51 @@ async function authenticate(request, env) {
     db_id:                dbUser.id,
     first_name:           dbUser.first_name  ?? null,
     last_name:            dbUser.last_name   ?? null,
+  };
+}
+
+// Resolve an opaque client token to the standard user shape.
+//
+// The join is on USERNAME, not client_id: client_logins.client_id is NOT
+// unique (Suellen and Anderson share client 4), so a client_id join would fan
+// out to every login at the business and pick an arbitrary one — Anderson's
+// token could resolve to Suellen's row and inherit her intake session.
+// username is the PRIMARY KEY and is what the token was minted against.
+//
+// db_id comes from intake_user_id, which points at a real users row carrying a
+// `clientlogin:<username>` sentinel firebase_uid. Every existing query and the
+// intake_sessions foreign key therefore work unchanged, and each person's
+// intake session stays separate: intake_sessions is keyed on (client_id, user_id).
+async function authenticateClientToken(token, env) {
+  const tokenHash = await sha256Hex(token);
+  const row = await env.DB.prepare(
+    'SELECT t.client_id, t.username, t.expires_at, ' +
+    'l.must_change_password, l.person_name, l.intake_user_id, l.intake_enabled, ' +
+    'c.language_preference ' +
+    'FROM client_auth_tokens t ' +
+    'JOIN client_logins l ON l.username = t.username ' +
+    'LEFT JOIN clients c ON c.id = t.client_id ' +
+    'WHERE t.token_hash = ?'
+  ).bind(tokenHash).first();
+
+  if (!row) throw new ApiError('Session expired or invalid. Please sign in again.', 401);
+  if (!row.expires_at || row.expires_at <= new Date().toISOString()) {
+    throw new ApiError('Session expired or invalid. Please sign in again.', 401);
+  }
+
+  return {
+    uid:                  null,
+    email:                null,
+    role:                 'client',
+    client_id:            row.client_id,
+    language_preference:  row.language_preference || 'pt',
+    must_change_password: row.must_change_password === 1,
+    db_id:                row.intake_user_id,
+    first_name:           row.person_name ?? null,
+    last_name:            null,
+    username:             row.username,
+    auth_method:          'password',
+    token_hash:           tokenHash,
   };
 }
 
