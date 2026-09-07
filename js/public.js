@@ -5,7 +5,7 @@
 // ============================================================
 
 import { API_BASE }                   from './config.js';
-import { t, setLang, statusLabel }    from './t.js';
+import { t, setLang, statusLabel }    from './t.js?v=20260907b';
 import { esc, nl2br, formatDate, statusClass } from './utils.js?v=2';
 
 let _lang = 'en';

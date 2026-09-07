@@ -9,8 +9,8 @@
 // person's account is read on its own, and Nicole moves between them.
 // ============================================================
 
-import { requireAuth } from './auth.js';
-import { api }         from './api.js';
+import { requireAuth } from './auth.js?v=20260907b';
+import { api }         from './api.js?v=20260907b';
 import { esc, nl2br, formatDate, formatDateTime, toast, qp } from './utils.js?v=2';
 
 var _clientId = null;

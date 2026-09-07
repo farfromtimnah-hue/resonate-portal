@@ -2,11 +2,11 @@
 // Admin dashboard — client card grid with search/filter
 // ============================================================
 
-import { requireAuth, signOut } from './auth.js';
-import { api }                   from './api.js';
-import { t }                     from './t.js';
+import { requireAuth, signOut } from './auth.js?v=20260907b';
+import { api }                   from './api.js?v=20260907b';
+import { t }                     from './t.js?v=20260907b';
 import { esc, formatDate, statusClass, toast,
-         openModal, closeModal, debounce, projectCounts } from './utils.js';
+         openModal, closeModal, debounce, projectCounts } from './utils.js?v=20260907b';
 
 let _clients = [];
 

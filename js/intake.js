@@ -5,10 +5,10 @@
 // Section 4: future/vision behind a click-to-skip gate
 // ============================================================
 
-import { requireAuth, getToken } from './auth.js';
-import { api } from './api.js';
+import { requireAuth, getToken } from './auth.js?v=20260907b';
+import { api } from './api.js?v=20260907b';
 import { API_BASE } from './config.js';
-import { createVoiceRecorder } from './voice.js';
+import { createVoiceRecorder } from './voice.js?v=20260907b';
 
 // ---- state ----
 var _session   = null;

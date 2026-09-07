@@ -2,9 +2,9 @@
 // Admin client detail page — full view with all edit controls
 // ============================================================
 
-import { requireAuth, signOut } from './auth.js';
-import { api }                   from './api.js';
-import { statusLabel, invoiceStatusLabel, STATUS_OPTIONS } from './t.js';
+import { requireAuth, signOut } from './auth.js?v=20260907b';
+import { api }                   from './api.js?v=20260907b';
+import { statusLabel, invoiceStatusLabel, STATUS_OPTIONS } from './t.js?v=20260907b';
 import { esc, nl2br, formatDate, formatDateTime, formatDateFull,
          toast, openModal, closeModal, qp, telLink, waLink, projectCounts,
          statusClass, invoiceStatusClass } from './utils.js?v=2';

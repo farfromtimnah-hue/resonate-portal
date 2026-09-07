@@ -1,6 +1,6 @@
 // ============================================================
 // Translation system
-// Usage:  import { t, setLang, getLang } from './t.js';
+// Usage:  import { t, setLang, getLang } from './t.js?v=20260907b';
 //         t('login_title')  →  returns string for current lang
 //         setLang('pt')     →  switches language and re-renders [data-i18n] elements
 // ============================================================

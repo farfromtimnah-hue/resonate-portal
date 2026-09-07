@@ -2,9 +2,9 @@
 // Client portal page — simplified, bilingual, read + comment only
 // ============================================================
 
-import { requireAuth, signOut, changePassword, setInitialPassword } from './auth.js';
-import { api }                   from './api.js';
-import { t, setLang, getLang, statusLabel, invoiceStatusLabel, setGender } from './t.js';
+import { requireAuth, signOut, changePassword, setInitialPassword } from './auth.js?v=20260907b';
+import { api }                   from './api.js?v=20260907b';
+import { t, setLang, getLang, statusLabel, invoiceStatusLabel, setGender } from './t.js?v=20260907b';
 import { esc, nl2br, formatDate, formatDateTime, toast, telLink, waLink, projectCounts,
          statusClass, invoiceStatusClass, openModal, closeModal } from './utils.js?v=2';
 

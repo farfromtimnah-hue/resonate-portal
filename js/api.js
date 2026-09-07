@@ -2,7 +2,7 @@
 // API client — wraps all Worker calls with auth headers
 // ============================================================
 
-import { getToken }  from './auth.js';
+import { getToken }  from './auth.js?v=20260907b';
 import { API_BASE }  from './config.js';
 
 // Admin preview-as: carry the current page's preview context onto every

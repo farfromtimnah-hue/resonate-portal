@@ -2,9 +2,9 @@
 // Admin archive page
 // ============================================================
 
-import { requireAuth, signOut } from './auth.js';
-import { api }                   from './api.js';
-import { esc, formatDate, formatDateFull, toast, debounce, projectCounts } from './utils.js';
+import { requireAuth, signOut } from './auth.js?v=20260907b';
+import { api }                   from './api.js?v=20260907b';
+import { esc, formatDate, formatDateFull, toast, debounce, projectCounts } from './utils.js?v=20260907b';
 
 let _all = [];
 

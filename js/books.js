@@ -7,10 +7,10 @@
 // each panel's data loads once, on first activation.
 // ============================================================
 
-import { requireAuth, signOut } from './auth.js';
-import { api }                   from './api.js';
-import { t, invoiceStatusLabel } from './t.js';
-import { esc, toast, invoiceStatusClass, openModal, closeModal } from './utils.js';
+import { requireAuth, signOut } from './auth.js?v=20260907b';
+import { api }                   from './api.js?v=20260907b';
+import { t, invoiceStatusLabel } from './t.js?v=20260907b';
+import { esc, toast, invoiceStatusClass, openModal, closeModal } from './utils.js?v=20260907b';
 
 async function init() {
   const profile = await requireAuth('admin');
