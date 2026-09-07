@@ -670,9 +670,12 @@ function renderContact(client) {
   //
   // Hard-coded rather than read from a row because there is exactly one
   // Resonate, and a wrong value here reaches every client at once.
+  // WhatsApp FIRST. It is how they already talk to her, it survives a language
+  // gap because it is written, and it is the one Nicole actually watches. Call
+  // is second and styled quiet: possible, not preferable.
   el.innerHTML =
-    `<a href="${telLink(RESONATE_PHONE)}" class="btn btn-call">${t('portal_call')}</a>` +
-    `<a href="${waLink(RESONATE_PHONE)}" class="btn btn-wa" target="_blank" rel="noopener">${t('portal_whatsapp')}</a>`;
+    `<a href="${waLink(RESONATE_PHONE)}" class="btn btn-wa" target="_blank" rel="noopener">${t('portal_whatsapp')}</a>` +
+    `<a href="${telLink(RESONATE_PHONE)}" class="btn btn-call">${t('portal_call')}</a>`;
 }
 
 // Nicole's number, the one the vault records for client technical contact.
