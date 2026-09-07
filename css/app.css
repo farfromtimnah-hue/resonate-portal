@@ -1414,6 +1414,22 @@ html.portal-dark body {
   color: #E8E5DE !important;
 }
 
+/* The TOKENS, not just the utilities. Overriding bg-white and text-[#001d35]
+   alone missed every rule that uses var(--text-2) — .vision-copy among them,
+   which measured 1.98:1 on a dark card. Anything reading a token now gets a
+   dark-appropriate value, so a class added later is covered without anyone
+   remembering to add it here. */
+html.portal-dark {
+  --bg:            var(--portal-dark-bg, #0A0A0A);
+  --surface:       var(--portal-dark-surface, #131313);
+  --surface-2:     #1A1A19;
+  --border:        rgba(255,255,255,0.07);
+  --border-strong: rgba(255,255,255,0.14);
+  --text-1:        #E8E5DE;
+  --text-2:        #C9C4BC;
+  --text-3:        #8E8880;
+}
+
 /* Cards and panels */
 html.portal-dark .bg-white {
   background: var(--portal-dark-surface, #131313) !important;
@@ -1448,6 +1464,28 @@ html.portal-dark .portal-logo-plate {
 html.portal-dark a:not(.card):not([class*="btn"]),
 html.portal-dark .resource-link__url,
 html.portal-dark .text-\[13px\] { color: #C2A876 !important; }
+
+/* A secondary button is white by default: on a dark page it reads as the
+   loudest thing on screen. It is also the QUIETER of the two actions here —
+   Call should never outrank WhatsApp when client and consultant do not share
+   a language. Outline only. */
+html.portal-dark .btn--secondary {
+  background: transparent !important;
+  color: #C9C4BC !important;
+  border: 1px solid rgba(255,255,255,0.16) !important;
+}
+html.portal-dark .btn--secondary:hover {
+  background: rgba(255,255,255,0.05) !important;
+  color: #E8E5DE !important;
+}
+
+/* Same reasoning for the call button: present, not prominent. */
+html.portal-dark .btn-call {
+  background: transparent !important;
+  color: #C9C4BC !important;
+  border: 1px solid rgba(255,255,255,0.16) !important;
+}
+html.portal-dark .btn-call:hover { background: rgba(255,255,255,0.05) !important; }
 
 /* Header, tabs, inputs and shadows all assume a light ground */
 html.portal-dark header,

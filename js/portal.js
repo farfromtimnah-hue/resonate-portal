@@ -660,11 +660,23 @@ function renderContact(client) {
   const el = document.getElementById('portal-contact-actions');
   el.innerHTML = '';
 
-  if (client.phone)    el.innerHTML += `<a href="${telLink(client.phone)}"    class="btn btn-call">${t('portal_call')}</a>`;
-  if (client.whatsapp) el.innerHTML += `<a href="${waLink(client.whatsapp)}"  class="btn btn-wa" target="_blank">${t('portal_whatsapp')}</a>`;
-  if (client.email)    el.innerHTML += `<a href="mailto:${esc(client.email)}" class="btn btn-email">${t('portal_email')}</a>`;
-  if (client.website)  el.innerHTML += `<a href="${esc(client.website)}"      class="btn btn--secondary" target="_blank">${t('portal_website')}</a>`;
+  // 🔑 These are NICOLE's contact details, not the client's.
+  //
+  // The heading is "My door is always open" — first person, hers. This block
+  // previously rendered client.phone / client.whatsapp / client.website, so a
+  // client opened their own portal and was offered their OWN WhatsApp number
+  // and a button to their OWN website. Suellen would have clicked "Site" and
+  // landed on suellensartorato.com.
+  //
+  // Hard-coded rather than read from a row because there is exactly one
+  // Resonate, and a wrong value here reaches every client at once.
+  el.innerHTML =
+    `<a href="${telLink(RESONATE_PHONE)}" class="btn btn-call">${t('portal_call')}</a>` +
+    `<a href="${waLink(RESONATE_PHONE)}" class="btn btn-wa" target="_blank" rel="noopener">${t('portal_whatsapp')}</a>`;
 }
+
+// Nicole's number, the one the vault records for client technical contact.
+const RESONATE_PHONE = '+14016514117';
 
 // ---- Password change (Feature 1 — general) ----
 
