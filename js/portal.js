@@ -4,7 +4,7 @@
 
 import { requireAuth, signOut, changePassword, setInitialPassword } from './auth.js';
 import { api }                   from './api.js';
-import { t, setLang, getLang, statusLabel, invoiceStatusLabel } from './t.js';
+import { t, setLang, getLang, statusLabel, invoiceStatusLabel, setGender } from './t.js';
 import { esc, nl2br, formatDate, formatDateTime, toast, telLink, waLink, projectCounts,
          statusClass, invoiceStatusClass, openModal, closeModal } from './utils.js?v=2';
 
@@ -24,6 +24,9 @@ async function init() {
   if (!_profile) return;
 
   renderPreviewBanner();
+
+  // Before any copy renders: Portuguese adjectives agree with the reader.
+  setGender(_profile.gender);
 
   // Set language from user preference
   _lang = _profile.language_preference || 'en';
@@ -393,13 +396,7 @@ function renderGreeting(client) {
   // Prefer first_name from portal profile (users table), fall back to client contact name
   const rawName   = _profile?.first_name || (client.name || '');
   const firstName = rawName.trim().split(/\s+/)[0] || '';
-  // Portuguese greetings agree with the person being greeted. The gender is
-  // set by Nicole on the client's record, never asked of them. With none
-  // recorded it falls back to the feminine form, which is the wording Nicole
-  // wrote and the right default for this practice.
-  const prefix    = (_profile?.gender === 'm')
-    ? t('portal_greeting_m')
-    : t('portal_greeting');
+  const prefix    = t('portal_greeting');
   document.getElementById('portal-greeting').textContent =
     firstName ? `${prefix}, ${firstName}` : prefix;
 }

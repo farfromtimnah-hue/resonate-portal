@@ -157,7 +157,6 @@ const STRINGS = {
     portal_no_projects:       'Your first project will appear here once we get started — you\'re in good hands.',
     portal_no_comments:       'No messages yet — feel free to reach out any time.',
     portal_greeting:          'Welcome back',
-    portal_greeting_m:        'Welcome back',
     portal_tab_projects:      'Projects',
     portal_tab_vision:        'Vision',
     portal_contact_heading:   'My door is always open',
@@ -471,8 +470,7 @@ const STRINGS = {
     portal_message_us:        'Enviar Mensagem',
     portal_no_projects:       'Seu primeiro projeto aparecerá aqui assim que começarmos — você está em boas mãos.',
     portal_no_comments:       'Nenhuma mensagem ainda — entre em contato a qualquer momento.',
-    portal_greeting:          'Bem-vinda',
-    portal_greeting_m:        'Bem-vindo',
+    portal_greeting:          'Bem-vind{o|a}',
     portal_tab_projects:      'Projetos',
     portal_tab_vision:        'Visão',
     portal_contact_heading:   'Minha porta está sempre aberta',
@@ -487,7 +485,7 @@ const STRINGS = {
     feedback_edited_pill:         'Editado',
     feedback_saving:              'Salvando…',
     feedback_saved:               'Salvo',
-    vision_copy:              'Todo fundador começa usando todos os chapéus. É assim que precisa ser. Mas em algum momento, os chapéus começam a usar você. Você ainda tem a visão. Você ainda tem o impulso que deu início a tudo isso. Mas você não consegue alcançá-la, porque está enterrado sob tudo o mais. A Resonate constrói os sistemas que carregam os chapéus que você já superou. Não para descartá-los. Para pendurá-los, para que você possa sair pela porta sem peso e finalmente perseguir o futuro pelo qual construiu tudo isso. Liberdade para o futuro. Menos chapéus. Mais visão.',
+    vision_copy:              'Todo fundador começa usando todos os chapéus. É assim que precisa ser. Mas em algum momento, os chapéus começam a usar você. Você ainda tem a visão. Você ainda tem o impulso que deu início a tudo isso. Mas você não consegue alcançá-la, porque está enterrad{o|a} sob tudo o mais. A Resonate constrói os sistemas que carregam os chapéus que você já superou. Não para descartá-los. Para pendurá-los, para que você possa sair pela porta sem peso e finalmente perseguir o futuro pelo qual construiu tudo isso. Liberdade para o futuro. Menos chapéus. Mais visão.',
 
     archive_title:            'Arquivo',
     archive_empty:            'Nenhum cliente arquivado.',
@@ -502,7 +500,7 @@ const STRINGS = {
     firebase_uid:             'UID do Firebase',
     remove_access:            'Remover Acesso',
 
-    all_complete_notice:      'Todos os projetos estão concluídos. Pronto para arquivar?',
+    all_complete_notice:      'Todos os projetos estão concluídos. Arquivar?',
     loading:                  'Carregando…',
     error_generic:            'Algo deu errado. Tente novamente.',
 
@@ -669,8 +667,26 @@ export function setLang(lang) {
   });
 }
 
+// The reader's gender, set by Nicole on their record and never asked of them.
+// Portuguese adjectives agree with the person being addressed, so a single
+// stored letter decides whether the copy reads as written for them or at them.
+let _gender = 'f';   // Nicole's copy is written in the feminine; that is the default.
+
+export function setGender(g) {
+  _gender = (g === 'm') ? 'm' : 'f';
+}
+
+// Copy marks agreement inline as {o|a} — masculine form, then feminine.
+// Doing it in t() means EVERY string is covered, including ones written later,
+// rather than each gendered phrase needing its own parallel key that somebody
+// has to remember to add.
+function agree(str) {
+  if (typeof str !== 'string' || str.indexOf('{') === -1) return str;
+  return str.replace(/\{([^{}|]*)\|([^{}|]*)\}/g, (_, m, f) => (_gender === 'm' ? m : f));
+}
+
 export function t(key) {
-  return STRINGS[_lang]?.[key] ?? STRINGS.en[key] ?? key;
+  return agree(STRINGS[_lang]?.[key] ?? STRINGS.en[key] ?? key);
 }
 
 export function statusLabel(status) {

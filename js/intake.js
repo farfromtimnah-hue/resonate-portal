@@ -149,9 +149,19 @@ var I18N = {
   }
 };
 
+// Same {o|a} agreement marker as t.js: the reader's gender is set by Nicole
+// and every string passes through here, so copy added later is covered.
+var _gender = 'f';
+function agree(str) {
+  if (typeof str !== 'string' || str.indexOf('{') === -1) return str;
+  return str.replace(/\{([^{}|]*)\|([^{}|]*)\}/g, function (_, m, f) {
+    return _gender === 'm' ? m : f;
+  });
+}
+
 function t(key) {
   var dict = I18N[_lang] || I18N.en;
-  return dict[key] || key;
+  return agree(dict[key] || key);
 }
 
 // An interview is almost entirely writes, so an admin previewing without
@@ -307,11 +317,9 @@ async function init() {
   var profile = await requireAuth('client');
   if (!profile) return;
 
-  // The welcome heading agrees with the reader. Gender is set by Nicole on the
-  // client record, never asked here. Feminine is the fallback: it is the
-  // wording Nicole wrote.
+  _gender = (profile.gender === 'm') ? 'm' : 'f';
   var welcomeEl = document.getElementById('intake-welcome');
-  if (welcomeEl && profile.gender === 'm') welcomeEl.textContent = 'Bem-vindo';
+  if (welcomeEl) welcomeEl.textContent = agree('Bem-vind{o|a}');
 
   wireStaticButtons();
   carryPreviewOnPortalLinks();
