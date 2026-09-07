@@ -876,7 +876,14 @@ function applyClientBrand(client) {
   if (!primary && !secondary) return;
 
   const accent = (primary && !isVeryDark(primary)) ? primary : (secondary || primary);
-  if (accent) document.documentElement.style.setProperty('--brand', accent);
+  if (accent) {
+    const root = document.documentElement;
+    // All three move together. Setting --brand alone leaves a gold button
+    // turning blue on hover, because --brand-hover still holds the default.
+    root.style.setProperty('--brand', accent);
+    root.style.setProperty('--brand-hover', shade(accent, -22));
+    root.style.setProperty('--brand-light', hexToRgba(accent, 0.12));
+  }
 
   // A client whose own primary colour is dark gets a dark portal. Suellen's
   // whole brand is near-black and gold; a light page with her logo on it reads
@@ -909,4 +916,18 @@ function isVeryDark(hex) {
   const g = parseInt(hex.slice(3, 5), 16);
   const b = parseInt(hex.slice(5, 7), 16);
   return (0.2126 * r + 0.7152 * g + 0.0722 * b) < 40;
+}
+
+// Darken (or lighten, with a positive amount) a hex colour for hover states.
+function shade(hex, amount) {
+  const n = [1, 3, 5].map(i => {
+    const v = parseInt(hex.slice(i, i + 2), 16) + amount;
+    return Math.max(0, Math.min(255, v));
+  });
+  return '#' + n.map(v => v.toString(16).padStart(2, '0')).join('');
+}
+
+function hexToRgba(hex, alpha) {
+  const [r, g, b] = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16));
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }

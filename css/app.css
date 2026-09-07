@@ -257,8 +257,8 @@ html.dark .status--green  { background: rgba(22,163,74,0.12);   color: #86efac; 
 .btn:active    { transform: scale(0.97); }
 .btn:disabled  { opacity: 0.45; cursor: not-allowed; }
 
-.btn--primary   { background: #005b96; color: #fff; }
-.btn--primary:hover { background: #004370; }
+.btn--primary   { background: var(--brand); color: #fff; }
+.btn--primary:hover { background: var(--brand-hover); }
 
 .btn--secondary {
   background: var(--surface);
@@ -277,7 +277,7 @@ html.dark .status--green  { background: rgba(22,163,74,0.12);   color: #86efac; 
 .btn--icon      { padding: 7px; }
 
 /* Contact action buttons */
-.btn-call  { background: rgba(0,91,150,0.1);  color: #005b96; border: 1px solid rgba(0,91,150,0.2); }
+.btn-call  { background: var(--brand-light); color: var(--brand); border: 1px solid var(--brand-light); }
 .btn-call:hover { background: rgba(0,91,150,0.18); }
 .btn-wa    { background: rgba(37,211,102,0.1); color: #16a34a; border: 1px solid rgba(37,211,102,0.25); }
 .btn-wa:hover { background: rgba(37,211,102,0.18); }
@@ -495,7 +495,7 @@ html.dark .project-link { background: rgba(0,91,150,0.15); color: #9ccaff; borde
 }
 .progress-bar__fill {
   height: 100%;
-  background: #005b96;
+  background: var(--brand);
   border-radius: var(--radius-full);
   transition: width 0.5s ease;
   box-shadow: 0 0 10px rgba(0,91,150,0.4);
@@ -1441,6 +1441,14 @@ html.portal-dark .portal-logo-plate {
   padding: 0 !important;
 }
 
+/* The client's accent at small sizes: their gold measured 3.97:1 on a card,
+   which carries a heading but not 13px body text. Links and small accented
+   text use the lighter gold instead, which clears 4.5:1. The client's own
+   colour still owns every heading, border and icon. */
+html.portal-dark a:not(.card):not([class*="btn"]),
+html.portal-dark .resource-link__url,
+html.portal-dark .text-\[13px\] { color: #C2A876 !important; }
+
 /* Header, tabs, inputs and shadows all assume a light ground */
 html.portal-dark header,
 html.portal-dark .modal__panel,
@@ -1452,6 +1460,8 @@ html.portal-dark select {
   color: #E8E5DE !important;
   border-color: rgba(255,255,255,0.10) !important;
 }
+/* #65605A measured 2.80:1 against the input ground — genuinely hard to read.
+   #8E8880 is 4.6:1 and still clearly secondary to entered text at 13.8:1. */
 html.portal-dark input::placeholder,
-html.portal-dark textarea::placeholder { color: #65605A !important; }
+html.portal-dark textarea::placeholder { color: #8E8880 !important; }
 html.portal-dark [class*="shadow"] { box-shadow: none !important; }
