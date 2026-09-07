@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Materiais — Suellen Sartorato</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ground:#0A0A0A;
+    --panel:#131313;
+    --panel-2:#1A1A19;
+    --gold:#8A7048;
+    --gold-hi:#A28A60;
+    --gold-line:rgba(162,138,96,.22);
+    --cream:#D7D7C8;
+    --ink:#E8E5DE;
+    --dim:#8E8880;
+    --dimmer:#65605A;
+    --ox:#7B2230;
+    --hair:rgba(255,255,255,.07);
+    --serif:"Cormorant Garamond",Georgia,serif;
+    --sans:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  }
+  *{box-sizing:border-box}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+  body{
+    margin:0;background:var(--ground);color:var(--ink);
+    font-family:var(--sans);font-weight:300;line-height:1.6;font-size:15px;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  .wrap{max-width:840px;margin:0 auto;padding:0 22px 120px}
+
+  /* ---------- header ---------- */
+  .head{
+    display:flex;align-items:center;justify-content:space-between;gap:16px;
+    padding:22px 0 0;
+  }
+  .langtoggle{display:flex;border:1px solid var(--hair);border-radius:2px;overflow:hidden}
+  .langtoggle button{
+    background:none;border:0;color:var(--dimmer);font-family:var(--sans);
+    font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;
+    padding:6px 11px;cursor:pointer;transition:color .2s,background .2s;
+  }
+  .langtoggle button.on{color:var(--cream);background:rgba(255,255,255,.04)}
+
+  /* ---------- the mark ---------- */
+  /* Her handwritten signature — one of her two distinct brand marks, and the
+     one we already hold. It sits here permanently. The seal is the OTHER mark;
+     it belongs on the client profile, not here. */
+  .markwrap{display:flex;justify-content:center;padding:52px 0 0}
+  .mark{
+    min-width:104px;height:104px;border-radius:3px;
+    display:flex;align-items:center;justify-content:center;
+    overflow:hidden;padding:0 18px;
+  }
+  /* The same asset used across every mockup she saw in the meeting. Never an
+     invented mark, and never a typographic stand-in when the real one exists. */
+  .mark .sig{height:46px;width:auto;opacity:.92;display:block}
+  .mark.empty{border:0;background:transparent}
+
+  .title{text-align:center;padding:26px 0 0}
+  .title h1{
+    font-family:var(--serif);font-weight:300;font-size:2.35rem;line-height:1.2;
+    margin:0 0 14px;color:#fff;letter-spacing:.01em;
+  }
+  .title h1 em{font-style:italic;color:var(--gold-hi)}
+  .title p{
+    max-width:520px;margin:0 auto;color:var(--dim);font-size:.95rem;line-height:1.75;
+  }
+  .rule{
+    width:34px;height:1px;background:var(--gold);opacity:.5;
+    margin:34px auto 0;
+  }
+
+  /* ---------- tier ---------- */
+  .tier{margin-top:64px}
+  .tierhead{
+    display:flex;align-items:baseline;gap:14px;
+    padding-bottom:13px;border-bottom:1px solid var(--hair);margin-bottom:6px;
+  }
+  .tiernum{
+    font-family:var(--serif);font-size:1.05rem;font-style:italic;color:var(--gold-hi);
+    min-width:18px;
+  }
+  .tierhead h2{
+    font-family:var(--serif);font-weight:400;font-size:1.32rem;margin:0;color:var(--cream);
+    letter-spacing:.01em;flex:1;
+  }
+  .tiernote{
+    font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;color:var(--dimmer);
+  }
+  .tierlede{color:var(--dim);font-size:.87rem;margin:14px 0 4px;max-width:600px}
+
+  /* ---------- slot ---------- */
+  .slot{
+    display:flex;align-items:flex-start;gap:18px;
+    padding:22px 0;border-bottom:1px solid var(--hair);
+  }
+  .slot:last-child{border-bottom:0}
+
+  .drop{
+    flex:0 0 92px;height:92px;border-radius:3px;
+    border:1px dashed var(--gold-line);background:var(--panel);
+    display:flex;align-items:center;justify-content:center;
+    cursor:pointer;overflow:hidden;position:relative;
+    transition:border-color .22s,background .22s;
+  }
+  .drop:hover,.drop.over{border-color:var(--gold-hi);background:var(--panel-2)}
+  .drop:focus-visible{outline:1px solid var(--gold-hi);outline-offset:2px}
+  .drop .plus{font-family:var(--serif);font-size:1.5rem;color:var(--dimmer);line-height:1}
+  /* contain, never cover: a brand mark must be shown WHOLE. cover crops to
+     fill the square and slices the edges off a logo. */
+  .drop img{
+    max-width:100%;max-height:100%;width:auto;height:auto;
+    object-fit:contain;display:block;padding:8px;
+  }
+  .drop .filemark{
+    font-family:var(--sans);font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--gold-hi);text-align:center;padding:0 8px;
+  }
+  .drop.done{border-style:solid;border-color:var(--gold-line)}
+  .drop.busy{opacity:.5}
+
+  /* A settled item occupies the same 92px column as a drop zone so the
+     left edge stays true, but reads as a record rather than an invitation. */
+  .chips{
+    flex:0 0 92px;height:92px;display:flex;
+    align-items:center;justify-content:center;gap:6px;
+  }
+  .chip{
+    width:17px;height:17px;border-radius:2px;
+    /* The near-black chip would otherwise vanish into the ground, so every
+       chip carries a hairline and reads as a deliberate row of four. */
+    border:1px solid rgba(255,255,255,.16);display:block;flex:0 0 auto;
+  }
+  .slot.settled .slotbody h3{color:var(--cream)}
+
+  /* A typed answer occupies the same left column as a drop zone so the page
+     keeps one edge, but it is plainly not an upload. */
+  .typebox{
+    flex:0 0 92px;height:92px;display:flex;align-items:center;justify-content:center;
+  }
+  .typebox .plus{font-family:var(--serif);font-size:1.5rem;color:var(--dimmer);line-height:1}
+  .textin{
+    margin-top:11px;width:100%;max-width:380px;background:var(--panel);
+    border:1px solid var(--hair);border-radius:3px;color:var(--ink);
+    font-family:var(--sans);font-weight:300;font-size:.88rem;padding:9px 12px;
+    transition:border-color .2s;
+  }
+  .textin::placeholder{color:var(--dimmer)}
+  .textin:focus{outline:none;border-color:var(--gold-hi)}
+
+  .slotbody{flex:1;min-width:0;padding-top:2px}
+  .slotbody h3{
+    font-family:var(--serif);font-weight:400;font-size:1.1rem;margin:0 0 5px;
+    color:var(--ink);letter-spacing:.01em;
+  }
+  .slotbody p{margin:0;color:var(--dim);font-size:.85rem;line-height:1.65}
+  .slotstate{
+    margin-top:9px;font-size:.7rem;letter-spacing:.13em;text-transform:uppercase;
+    color:var(--dimmer);min-height:1em;
+  }
+  .slotstate.ok{color:var(--gold-hi)}
+  .slotstate.err{color:var(--ox)}
+
+  /* ---------- later tier ---------- */
+  .tier.later .tierhead h2,
+  .tier.later .tiernum{color:var(--dimmer)}
+  .tier.later .slot{opacity:.42}
+  .tier.later .drop{
+    cursor:default;border-style:solid;border-color:var(--hair);background:transparent;
+  }
+  .tier.later .drop:hover{border-color:var(--hair);background:transparent}
+  .tier.later .drop .plus{color:#2E2C2A}
+
+  .closing{
+    margin-top:76px;padding-top:30px;border-top:1px solid var(--hair);
+    text-align:center;color:var(--dimmer);font-size:.82rem;line-height:1.8;
+  }
+  .closing .sig{
+    font-family:var(--serif);font-style:italic;font-size:1.02rem;color:var(--dim);
+    display:block;margin-top:8px;
+  }
+
+  @media (max-width:560px){
+    .title h1{font-size:1.85rem}
+    .slot{gap:14px}
+    .drop{flex-basis:72px;height:72px}
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <div class="head">
+    <span></span>
+    <div class="langtoggle">
+      <button data-lang="pt" class="on">PT</button>
+      <button data-lang="en">EN</button>
+    </div>
+  </div>
+
+  <div class="markwrap">
+    <div class="mark empty" id="mark">
+      <img class="sig" src="assets/sig-white-tight.png" alt="Suellen Sartorato">
+    </div>
+  </div>
+
+  <div class="title">
+    <h1>Os seus <em>materiais</em></h1>
+    <p>Este é o espaço para nos enviar o que já existe da sua marca e do seu método. Envie no seu tempo, um item de cada vez. Nada aqui tem pressa, e nada se perde.</p>
+    <div class="rule"></div>
+  </div>
+
+  <!-- ============ TIER 1 ============ -->
+  <section class="tier">
+    <div class="tierhead">
+      <span class="tiernum">I</span>
+      <h2>O essencial</h2>
+      <span class="tiernote">Para desenhar as telas</span>
+    </div>
+    <p class="tierlede">Cada item aqui é algo que você já tem. Nada precisa ser criado.</p>
+
+    <div class="slot" data-slot="seal">
+      <div class="drop" tabindex="0" role="button" aria-label="Enviar o selo">
+        <span class="plus">+</span>
+      </div>
+      <div class="slotbody">
+        <h3>O selo</h3>
+        <p>O logotipo circular, de preferência em PNG com fundo transparente. É a única marca sua que ainda não temos.</p>
+        <div class="slotstate"></div>
+      </div>
+    </div>
+
+    <!-- Confirmed in the meeting, so it is shown as settled rather than asked
+         for. Small chips, one quiet row: her own grammar is one accent per
+         layout, and a full colour strip here would be louder than anything
+         she puts out herself. -->
+    <div class="slot settled" data-slot="palette-confirmed">
+      <div class="chips" aria-hidden="true">
+        <span class="chip" style="background:#0A0A0A"></span>
+        <span class="chip" style="background:#C9A227"></span>
+        <span class="chip" style="background:#F5F2ED"></span>
+        <span class="chip" style="background:#7B2230"></span>
+      </div>
+      <div class="slotbody">
+        <h3>As suas cores</h3>
+        <p>Já definidas a partir da sua marca, e confirmadas por si. Não é preciso enviar nada.</p>
+        <div class="slotstate ok">Confirmado</div>
+      </div>
+    </div>
+
+    <div class="slot" data-slot="wheel">
+      <div class="drop" tabindex="0" role="button" aria-label="Enviar a roda">
+        <span class="plus">+</span>
+      </div>
+      <div class="slotbody">
+        <h3>A roda de avaliação</h3>
+        <p>O círculo de dez partes que hoje é preenchido à mão. Uma foto do papel já serve — precisamos ver as divisões e o que está escrito em cada uma.</p>
+        <div class="slotstate"></div>
+      </div>
+    </div>
+
+    <!-- The outfit exchanges are the SPEC for a screen we have never seen. Not
+         training data: we need to know how long her replies run, whether she
+         leads with the verdict or the reasoning, whether she names garments.
+         A handful is enough. Framed as craft, never as homework. -->
+    <div class="slot" data-slot="outfits">
+      <div class="drop" tabindex="0" role="button" aria-label="Enviar exemplos de looks">
+        <span class="plus">+</span>
+      </div>
+      <div class="slotbody">
+        <h3>Alguns exemplos de resposta</h3>
+        <p>Cinco ou dez capturas de tela de uma cliente enviando um look e a sua resposta. É a partir delas que desenhamos essa tela do jeito que você já trabalha.</p>
+        <div class="slotstate"></div>
+      </div>
+    </div>
+
+    <div class="slot" data-slot="assessment">
+      <div class="drop" tabindex="0" role="button" aria-label="Enviar um resultado de avaliação">
+        <span class="plus">+</span>
+      </div>
+      <div class="slotbody">
+        <h3>A avaliação que você usa hoje</h3>
+        <p>O nome de quem a fornece, e uma página de resultado — pode ser de uma cliente, com os dados dela apagados. É o que mostra o que você espera ver.</p>
+        <div class="slotstate"></div>
+      </div>
+    </div>
+
+    <div class="slot" data-slot="form">
+      <div class="drop" tabindex="0" role="button" aria-label="Enviar o formulário">
+        <span class="plus">+</span>
+      </div>
+      <div class="slotbody">
+        <h3>O formulário de avaliação</h3>
+        <p>O formulário que hoje recebe quem se candidata. Uma captura de tela ou o link, como for mais fácil.</p>
+        <div class="slotstate"></div>
+      </div>
+    </div>
+
+    <!-- A link or a name, not a file. Typing it is lower friction than making
+         her find and export something. -->
+    <div class="slot" data-slot="app">
+      <div class="typebox">
+        <span class="plus">↳</span>
+      </div>
+      <div class="slotbody">
+        <h3>O aplicativo que você me mostrou</h3>
+        <p>Aquele que separa a peça de roupa da foto. O link, ou só o nome — o que for mais rápido.</p>
+        <input class="textin" type="text" id="app-name" autocomplete="off"
+               placeholder="Cole o link ou escreva o nome">
+        <div class="slotstate"></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="closing">
+    Qualquer dúvida, é só responder no WhatsApp.
+    <span class="sig">Resonate</span>
+  </div>
+
+</div>
+
+<script>
+// ---------------------------------------------------------------------------
+// Upload wiring.
+//
+// The seal slot is marked data-primary: when it lands, it appears at the top
+// of the page beside her signature. Deliberately with no animation and no toast —
+// the page simply carries her mark from then on. Restraint reads as premium;
+// a celebration reads as a template.
+//
+// API_BASE / CLIENT_ID are filled in at deploy. Until an upload endpoint that
+// accepts a client-scoped token exists, uploads are held locally and previewed
+// so the page can be reviewed end to end.
+// ---------------------------------------------------------------------------
+const API_BASE = '';           // e.g. https://resonate-portal-api.farfromtimnah.workers.dev
+const CLIENT_ID = 4;
+
+const MAX_BYTES = 15 * 1024 * 1024;
+const OK_TYPES = /^(image\/|application\/pdf)/;
+
+function stateEl(slot){ return slot.querySelector('.slotstate'); }
+
+function setState(slot, text, kind){
+  const el = stateEl(slot);
+  if (!el) return;
+  el.textContent = text || '';
+  el.classList.remove('ok','err');
+  if (kind) el.classList.add(kind);
+  // Keep the EN dictionary honest for text written in by script.
+  if (LANG === 'en' && text && DICT[text]) el.textContent = DICT[text];
+}
+
+function showThumb(drop, file){
+  if (file.type.startsWith('image/')) {
+    const url = URL.createObjectURL(file);
+    drop.innerHTML = '';
+    const img = new Image();
+    img.onload = () => URL.revokeObjectURL(url);
+    img.src = url;
+    drop.appendChild(img);
+  } else {
+    drop.innerHTML = '<span class="filemark">PDF</span>';
+  }
+  drop.classList.add('done');
+}
+
+async function upload(slot, file){
+  const drop = slot.querySelector('.drop');
+  const name = slot.dataset.slot;
+
+  if (!OK_TYPES.test(file.type)) {
+    setState(slot, 'Formato não aceite', 'err'); return;
+  }
+  if (file.size > MAX_BYTES) {
+    setState(slot, 'Ficheiro grande demais', 'err'); return;
+  }
+
+  showThumb(drop, file);
+
+  if (!API_BASE) { setState(slot, 'Recebido', 'ok'); return; }
+
+  drop.classList.add('busy');
+  setState(slot, 'A enviar…');
+  try {
+    const fd = new FormData();
+    fd.append('file', file);
+    fd.append('client_id', CLIENT_ID);
+    fd.append('slot', name);
+    const res = await fetch(API_BASE + '/api/materials', { method:'POST', body:fd, credentials:'include' });
+    if (!res.ok) throw new Error(String(res.status));
+    setState(slot, 'Recebido', 'ok');
+  } catch {
+    // The file is on screen but not stored. Say so rather than let a thumbnail
+    // imply it arrived.
+    setState(slot, 'Não foi enviado — tente de novo', 'err');
+    drop.classList.remove('done');
+  } finally {
+    drop.classList.remove('busy');
+  }
+}
+
+// Settled rows (the palette) carry no drop zone, so they are skipped rather
+// than wired up.
+document.querySelectorAll('.tier:not(.later) .slot:not(.settled)').forEach(slot => {
+  const drop = slot.querySelector('.drop');
+  if (!drop) return;
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'image/*,application/pdf';
+  input.style.display = 'none';
+  slot.appendChild(input);
+
+  drop.addEventListener('click', () => input.click());
+  drop.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); input.click(); }
+  });
+  input.addEventListener('change', () => {
+    if (input.files && input.files[0]) upload(slot, input.files[0]);
+  });
+
+  ['dragenter','dragover'].forEach(ev =>
+    drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('over'); }));
+  ['dragleave','drop'].forEach(ev =>
+    drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('over'); }));
+  drop.addEventListener('drop', e => {
+    const f = e.dataTransfer?.files?.[0];
+    if (f) upload(slot, f);
+  });
+});
+
+// The app name is a typed answer, not a file. Saved on blur so there is no
+// button to press and nothing to submit.
+const appIn = document.getElementById('app-name');
+if (appIn) {
+  const appSlot = appIn.closest('.slot');
+  let lastSaved = '';
+  appIn.addEventListener('blur', async () => {
+    const v = appIn.value.trim();
+    if (!v || v === lastSaved) return;
+    lastSaved = v;
+    if (!API_BASE) { setState(appSlot, 'Guardado', 'ok'); return; }
+    setState(appSlot, 'A enviar…');
+    try {
+      const res = await fetch(API_BASE + '/api/materials/note', {
+        method:'POST', credentials:'include',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ client_id: CLIENT_ID, slot:'app', value: v })
+      });
+      if (!res.ok) throw new Error(String(res.status));
+      setState(appSlot, 'Guardado', 'ok');
+    } catch {
+      setState(appSlot, 'Não foi enviado — tente de novo', 'err');
+      lastSaved = '';
+    }
+  });
+}
+
+// ---------------------------------------------------------------------------
+// PT is authored in the markup; EN comes from this dictionary. Same pattern as
+// the mockups, so the two behave identically.
+// ---------------------------------------------------------------------------
+const DICT = {
+"Materiais — Suellen Sartorato":"Materials — Suellen Sartorato",
+"Os seus":"Your",
+"materiais":"materials",
+"Este é o espaço para nos enviar o que já existe da sua marca e do seu método. Envie no seu tempo, um item de cada vez. Nada aqui tem pressa, e nada se perde.":"This is where you send us what already exists of your brand and your method. Send it in your own time, one item at a time. Nothing here is urgent, and nothing gets lost.",
+
+"O essencial":"The essentials",
+"Para desenhar as telas":"To design the screens",
+"Cada item aqui é algo que você já tem. Nada precisa ser criado.":"Every item here is something you already have. Nothing needs to be created.",
+
+"O selo":"The seal",
+"O logotipo circular, de preferência em PNG com fundo transparente. É a única marca sua que ainda não temos.":"The circular logo, ideally a PNG with a transparent background. It is the only mark of yours we do not have.",
+
+"As suas cores":"Your colours",
+"Já definidas a partir da sua marca, e confirmadas por si. Não é preciso enviar nada.":"Already drawn from your brand, and confirmed by you. Nothing to send.",
+"Confirmado":"Confirmed",
+
+"A roda de avaliação":"The assessment wheel",
+"O círculo de dez partes que hoje é preenchido à mão. Uma foto do papel já serve — precisamos ver as divisões e o que está escrito em cada uma.":"The ten-part circle that is filled in by hand today. A photo of the paper is enough — we need to see the divisions and what is written in each one.",
+
+"Alguns exemplos de resposta":"A few example replies",
+"Cinco ou dez capturas de tela de uma cliente enviando um look e a sua resposta. É a partir delas que desenhamos essa tela do jeito que você já trabalha.":"Five or ten screenshots of a client sending a look and your reply. They are what lets us design that screen around the way you already work.",
+
+"A avaliação que você usa hoje":"The assessment you use today",
+"O nome de quem a fornece, e uma página de resultado — pode ser de uma cliente, com os dados dela apagados. É o que mostra o que você espera ver.":"Who provides it, and one result page — a client's is fine, with her details removed. It shows what you expect to see.",
+
+"O formulário de avaliação":"The application form",
+"O formulário que hoje recebe quem se candidata. Uma captura de tela ou o link, como for mais fácil.":"The form that receives applicants today. A screenshot or the link, whichever is easier.",
+
+"O aplicativo que você me mostrou":"The app you showed me",
+"Aquele que separa a peça de roupa da foto. O link, ou só o nome — o que for mais rápido.":"The one that separates the garment from the photo. The link, or just the name — whichever is quicker.",
+"Cole o link ou escreva o nome":"Paste the link or type the name",
+
+"Qualquer dúvida, é só responder no WhatsApp.":"Any questions, just reply on WhatsApp.",
+
+"A enviar…":"Uploading…",
+"Recebido":"Received",
+"Guardado":"Saved",
+"Formato não aceite":"File type not accepted",
+"Ficheiro grande demais":"File too large",
+"Não foi enviado — tente de novo":"Not uploaded — please try again"
+};
+
+let LANG = 'pt';
+
+function walk(node, fn) {
+  for (const n of node.childNodes) {
+    if (n.nodeType === 3) fn(n);
+    else if (n.nodeType === 1 && !n.closest('.langtoggle')) walk(n, fn);
+  }
+}
+
+// Snapshot the original Portuguese once so switching back is lossless.
+// Placeholders are attributes, not text nodes, so they need their own pass.
+const PH = [...document.querySelectorAll('[placeholder]')].map(el => [el, el.placeholder]);
+const originals = [];
+walk(document.body, t => {
+  if (t.nodeValue.trim()) originals.push([t, t.nodeValue]);
+});
+
+function setLang(lang) {
+  LANG = lang;
+  for (const [node, pt] of originals) {
+    if (lang === 'pt') { node.nodeValue = pt; continue; }
+    const key = pt.trim();
+    const hit = DICT[key];
+    node.nodeValue = hit ? pt.replace(key, hit) : pt;
+  }
+  for (const [el, pt] of PH) {
+    el.placeholder = (lang === 'en' && DICT[pt]) ? DICT[pt] : pt;
+  }
+  document.querySelectorAll('.langtoggle button')
+    .forEach(b => b.classList.toggle('on', b.dataset.lang === lang));
+  document.documentElement.lang = lang === 'pt' ? 'pt-BR' : 'en';
+}
+
+document.querySelector('.langtoggle').addEventListener('click', e => {
+  const b = e.target.closest('button');
+  if (b) setLang(b.dataset.lang);
+});
+</script>
+
+</body>
+</html>
