@@ -84,19 +84,8 @@ async function init() {
 
   // Open this client's portal as they see it. Preview is read-only unless the
   // client is flagged as a test client AND writing is switched on in the banner.
-  // Preview the page this client ACTUALLY lands on, not a second page that can
-  // drift from it. A client who signs in with a username lands on inicio.html;
-  // a Firebase client (Alice) still lands on portal.html. Previewing the wrong
-  // one is how the materials card went missing from a preview while being
-  // present for the client.
-  document.getElementById('preview-portal-btn').addEventListener('click', async () => {
-    const q = `?previewAs=${encodeURIComponent(_clientId)}`;
-    let page = 'portal.html';
-    try {
-      const logins = await api.clientLogins(_clientId);
-      if (Array.isArray(logins) && logins.length > 0) page = 'inicio.html';
-    } catch { /* fall back to portal.html */ }
-    window.location.href = page + q;
+  document.getElementById('preview-portal-btn').addEventListener('click', () => {
+    window.location.href = `portal.html?previewAs=${encodeURIComponent(_clientId)}`;
   });
   document.getElementById('archive-now-btn')?.addEventListener('click', archiveClient);
   document.getElementById('add-project-btn').addEventListener('click', openAddProject);

@@ -185,7 +185,7 @@ $('login-form').addEventListener('submit', async e => {
       $('new-password').focus();
       return;
     }
-    window.location.href = 'inicio.html';
+    window.location.href = 'portal.html';
   } catch {
     say(msg, 'Sem conexão. Tente novamente.');
     btn.disabled = false;
@@ -222,7 +222,7 @@ $('change-form').addEventListener('submit', async e => {
       btn.disabled = false;
       return;
     }
-    window.location.href = 'inicio.html';
+    window.location.href = 'portal.html';
   } catch {
     say(msg, 'Sem conexão. Tente novamente.');
     btn.disabled = false;
