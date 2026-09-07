@@ -101,7 +101,7 @@
 
   <div class="greet">
     <h1>Olá, <em><span id="who">bem-vinda</span></em></h1>
-    <p>Há duas coisas aqui para si. Pode fazer nas duas ordens, e não precisa terminar tudo de uma vez.</p>
+    <p>Tem duas coisas aqui para você. Pode fazer na ordem que preferir, e não precisa terminar tudo de uma vez.</p>
     <div class="rule"></div>
   </div>
 
@@ -109,7 +109,7 @@
     <a class="card" href="intake.html" id="card-intake">
       <span class="num">I</span>
       <h2>As perguntas</h2>
-      <p>Uma conversa curta sobre como o seu negócio funciona hoje. Escreve ou fala, como preferir, e pode parar e voltar quando quiser.</p>
+      <p>Uma conversa sobre como o seu negócio funciona hoje. Você pode escrever ou falar, como preferir, e pode parar e voltar quando quiser.</p>
       <div class="go">Começar &rarr;</div>
       <div class="state" id="intake-state"></div>
     </a>
@@ -159,7 +159,7 @@ if (person) document.getElementById('who').textContent = person;
       el.classList.add('done');
       document.querySelector('#card-intake .go').textContent = 'Rever →';
     } else if (d && d.status === 'in_progress') {
-      el.textContent = 'Em curso';
+      el.textContent = 'Em andamento';
       document.querySelector('#card-intake .go').textContent = 'Continuar →';
     }
     if (LANG === 'en') setLang('en');
@@ -170,9 +170,9 @@ const DICT = {
 "Portal — Suellen Sartorato":"Portal — Suellen Sartorato",
 "Olá,":"Hello,",
 "bem-vinda":"welcome",
-"Há duas coisas aqui para si. Pode fazer nas duas ordens, e não precisa terminar tudo de uma vez.":"There are two things here for you. Either order is fine, and you do not need to finish it all at once.",
+"Tem duas coisas aqui para você. Pode fazer na ordem que preferir, e não precisa terminar tudo de uma vez.":"There are two things here for you. Either order is fine, and you do not need to finish it all at once.",
 "As perguntas":"The questions",
-"Uma conversa curta sobre como o seu negócio funciona hoje. Escreve ou fala, como preferir, e pode parar e voltar quando quiser.":"A short conversation about how your business works today. Type or speak, whichever you prefer, and you can stop and come back whenever you like.",
+"Uma conversa sobre como o seu negócio funciona hoje. Você pode escrever ou falar, como preferir, e pode parar e voltar quando quiser.":"A short conversation about how your business works today. Type or speak, whichever you prefer, and you can stop and come back whenever you like.",
 "Começar →":"Start →",
 "Continuar →":"Continue →",
 "Rever →":"Review →",
@@ -180,7 +180,7 @@ const DICT = {
 "O espaço para enviar o que já existe da sua marca e do seu método. Um item de cada vez, no seu tempo.":"The place to send what already exists of your brand and your method. One item at a time, in your own time.",
 "Abrir →":"Open →",
 "Concluído":"Completed",
-"Em curso":"In progress",
+"Em andamento":"In progress",
 "Sair":"Sign out",
 "Qualquer dúvida, é só responder no WhatsApp.":"Any questions, just reply on WhatsApp."
 };

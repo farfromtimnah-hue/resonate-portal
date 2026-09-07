@@ -94,10 +94,10 @@
   <!-- Sign in -->
   <div id="screen-login">
     <h1>Entrar</h1>
-    <p class="lede">Use os dados que a Nicole lhe enviou.</p>
+    <p class="lede">Use os dados que a Nicole te enviou.</p>
 
     <form id="login-form" autocomplete="on">
-      <label for="username">Utilizador</label>
+      <label for="username">Usuário</label>
       <input id="username" name="username" type="text" autocomplete="username"
              autocapitalize="none" autocorrect="off" spellcheck="false" required>
 
@@ -113,7 +113,7 @@
   <!-- First sign-in: the temporary password must be replaced. -->
   <div id="screen-change" class="hidden">
     <h1>Criar a sua senha</h1>
-    <p class="lede">A senha que recebeu é temporária. Escolha uma sua para continuar.</p>
+    <p class="lede">A senha que você recebeu é temporária. Escolha uma sua para continuar.</p>
 
     <form id="change-form" autocomplete="on">
       <label for="new-password">Nova senha</label>
@@ -124,7 +124,7 @@
       <input id="confirm-password" name="confirm-password" type="password"
              autocomplete="new-password" required minlength="8">
 
-      <button type="submit" id="change-btn">Guardar</button>
+      <button type="submit" id="change-btn">Salvar</button>
     </form>
     <div class="msg" id="change-msg"></div>
   </div>
@@ -154,7 +154,7 @@ $('login-form').addEventListener('submit', async e => {
   if (!username || !password) return;
 
   btn.disabled = true;
-  say(msg, 'A entrar…');
+  say(msg, 'Entrando…');
 
   try {
     const res = await fetch(API_BASE + '/api/auth/client-login', {
@@ -187,7 +187,7 @@ $('login-form').addEventListener('submit', async e => {
     }
     window.location.href = 'inicio.html';
   } catch {
-    say(msg, 'Sem ligação. Tente novamente.');
+    say(msg, 'Sem conexão. Tente novamente.');
     btn.disabled = false;
   }
 });
@@ -200,11 +200,11 @@ $('change-form').addEventListener('submit', async e => {
   const a = $('new-password').value;
   const b = $('confirm-password').value;
 
-  if (a.length < 8) { say(msg, 'A senha precisa de pelo menos 8 caracteres.'); return; }
+  if (a.length < 8) { say(msg, 'A senha precisa ter pelo menos 8 caracteres.'); return; }
   if (a !== b)      { say(msg, 'As duas senhas não são iguais.'); return; }
 
   btn.disabled = true;
-  say(msg, 'A guardar…');
+  say(msg, 'Salvando…');
 
   try {
     const res = await fetch(API_BASE + '/api/auth/client-password', {
@@ -217,14 +217,14 @@ $('change-form').addEventListener('submit', async e => {
     });
     if (!res.ok) {
       const d = await res.json().catch(() => ({}));
-      const raw = d.error || 'Não foi possível guardar.';
+      const raw = d.error || 'Não foi possível salvar.';
       say(msg, raw.split(' / ')[LANG === 'en' ? 1 : 0] || raw);
       btn.disabled = false;
       return;
     }
     window.location.href = 'inicio.html';
   } catch {
-    say(msg, 'Sem ligação. Tente novamente.');
+    say(msg, 'Sem conexão. Tente novamente.');
     btn.disabled = false;
   }
 });
@@ -232,22 +232,22 @@ $('change-form').addEventListener('submit', async e => {
 // ---- Language ----
 const DICT = {
 "Entrar":"Sign in",
-"Use os dados que a Nicole lhe enviou.":"Use the details Nicole sent you.",
-"Utilizador":"Username",
+"Use os dados que a Nicole te enviou.":"Use the details Nicole sent you.",
+"Usuário":"Username",
 "Senha":"Password",
 "Criar a sua senha":"Create your password",
-"A senha que recebeu é temporária. Escolha uma sua para continuar.":"The password you received is temporary. Choose your own to continue.",
+"A senha que você recebeu é temporária. Escolha uma sua para continuar.":"The password you received is temporary. Choose your own to continue.",
 "Nova senha":"New password",
 "Repita a nova senha":"Repeat the new password",
-"Guardar":"Save",
+"Salvar":"Save",
 "Qualquer dificuldade, é só responder no WhatsApp.":"Any trouble, just reply on WhatsApp.",
-"A entrar…":"Signing in…",
-"A guardar…":"Saving…",
-"Sem ligação. Tente novamente.":"No connection. Please try again.",
-"A senha precisa de pelo menos 8 caracteres.":"The password needs at least 8 characters.",
+"Entrando…":"Signing in…",
+"Salvando…":"Saving…",
+"Sem conexão. Tente novamente.":"No connection. Please try again.",
+"A senha precisa ter pelo menos 8 caracteres.":"The password needs at least 8 characters.",
 "As duas senhas não são iguais.":"The two passwords do not match.",
 "Não foi possível entrar.":"Could not sign in.",
-"Não foi possível guardar.":"Could not save."
+"Não foi possível salvar.":"Could not save."
 };
 
 let LANG = 'pt';

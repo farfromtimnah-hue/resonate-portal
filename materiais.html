@@ -218,7 +218,7 @@
 
   <div class="title">
     <h1>Os seus <em>materiais</em></h1>
-    <p>Este é o espaço para nos enviar o que já existe da sua marca e do seu método. Envie no seu tempo, um item de cada vez. Nada aqui tem pressa, e nada se perde.</p>
+    <p>Este é o espaço para você enviar o que já existe da sua marca e do seu método. Envie no seu tempo, um item de cada vez. Nada aqui tem pressa, e nada se perde.</p>
     <div class="rule"></div>
   </div>
 
@@ -255,7 +255,7 @@
       </div>
       <div class="slotbody">
         <h3>As suas cores</h3>
-        <p>Já definidas a partir da sua marca, e confirmadas por si. Não é preciso enviar nada.</p>
+        <p>Já definidas a partir da sua marca, e confirmadas por você. Não precisa enviar nada.</p>
         <div class="slotstate ok">Confirmado</div>
       </div>
     </div>
@@ -281,7 +281,7 @@
       </div>
       <div class="slotbody">
         <h3>Alguns exemplos de resposta</h3>
-        <p>Cinco ou dez capturas de tela de uma cliente enviando um look e a sua resposta. É a partir delas que desenhamos essa tela do jeito que você já trabalha.</p>
+        <p>Cinco ou dez capturas de tela do check-in diário: a cliente manda a foto do look do dia e você responde. É a partir delas que desenhamos essa tela do jeito que você já trabalha.</p>
         <div class="slotstate"></div>
       </div>
     </div>
@@ -392,7 +392,7 @@ async function upload(slot, file){
     setState(slot, 'Formato não aceite', 'err'); return;
   }
   if (file.size > MAX_BYTES) {
-    setState(slot, 'Ficheiro grande demais', 'err'); return;
+    setState(slot, 'Arquivo muito grande', 'err'); return;
   }
 
   showThumb(drop, file);
@@ -489,7 +489,7 @@ const DICT = {
 "Materiais — Suellen Sartorato":"Materials — Suellen Sartorato",
 "Os seus":"Your",
 "materiais":"materials",
-"Este é o espaço para nos enviar o que já existe da sua marca e do seu método. Envie no seu tempo, um item de cada vez. Nada aqui tem pressa, e nada se perde.":"This is where you send us what already exists of your brand and your method. Send it in your own time, one item at a time. Nothing here is urgent, and nothing gets lost.",
+"Este é o espaço para você enviar o que já existe da sua marca e do seu método. Envie no seu tempo, um item de cada vez. Nada aqui tem pressa, e nada se perde.":"This is where you send us what already exists of your brand and your method. Send it in your own time, one item at a time. Nothing here is urgent, and nothing gets lost.",
 
 "O essencial":"The essentials",
 "Para desenhar as telas":"To design the screens",
@@ -499,14 +499,14 @@ const DICT = {
 "O logotipo circular, de preferência em PNG com fundo transparente. É a única marca sua que ainda não temos.":"The circular logo, ideally a PNG with a transparent background. It is the only mark of yours we do not have.",
 
 "As suas cores":"Your colours",
-"Já definidas a partir da sua marca, e confirmadas por si. Não é preciso enviar nada.":"Already drawn from your brand, and confirmed by you. Nothing to send.",
+"Já definidas a partir da sua marca, e confirmadas por você. Não precisa enviar nada.":"Already drawn from your brand, and confirmed by you. Nothing to send.",
 "Confirmado":"Confirmed",
 
 "A roda de avaliação":"The assessment wheel",
 "O círculo de dez partes que hoje é preenchido à mão. Uma foto do papel já serve — precisamos ver as divisões e o que está escrito em cada uma.":"The ten-part circle that is filled in by hand today. A photo of the paper is enough — we need to see the divisions and what is written in each one.",
 
 "Alguns exemplos de resposta":"A few example replies",
-"Cinco ou dez capturas de tela de uma cliente enviando um look e a sua resposta. É a partir delas que desenhamos essa tela do jeito que você já trabalha.":"Five or ten screenshots of a client sending a look and your reply. They are what lets us design that screen around the way you already work.",
+"Cinco ou dez capturas de tela do check-in diário: a cliente manda a foto do look do dia e você responde. É a partir delas que desenhamos essa tela do jeito que você já trabalha.":"Five or ten screenshots of a client sending a look and your reply. They are what lets us design that screen around the way you already work.",
 
 "A avaliação que você usa hoje":"The assessment you use today",
 "O nome de quem a fornece, e uma página de resultado — pode ser de uma cliente, com os dados dela apagados. É o que mostra o que você espera ver.":"Who provides it, and one result page — a client's is fine, with her details removed. It shows what you expect to see.",
@@ -525,7 +525,7 @@ const DICT = {
 "Recebido":"Received",
 "Guardado":"Saved",
 "Formato não aceite":"File type not accepted",
-"Ficheiro grande demais":"File too large",
+"Arquivo muito grande":"File too large",
 "Não foi enviado — tente de novo":"Not uploaded — please try again",
 "Sessão expirada":"Session expired"
 };
