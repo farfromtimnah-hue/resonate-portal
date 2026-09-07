@@ -349,7 +349,14 @@ const API_BASE = 'https://resonate-portal-api.farfromtimnah.workers.dev';
 
 // No session, no page. Without this the materials page renders for anyone and
 // every upload fails at the API with a message they cannot act on.
-if (!localStorage.getItem('rcpt_token')) {
+//
+// An ADMIN arrives here from portal.html?previewAs=<id> on a Firebase session
+// and has no rcpt_ token. Bouncing them to the client sign-in would make the
+// client experience impossible to preview, which is the whole point of the
+// preview. Uploads still refuse for them — the API requires a client session —
+// and that matches the read-only banner they are already looking at.
+const IS_PREVIEW = new URLSearchParams(location.search).has('previewAs');
+if (!localStorage.getItem('rcpt_token') && !IS_PREVIEW) {
   window.location.replace('entrar.html');
 }
 // No CLIENT_ID here on purpose: the server reads it from the session token,
@@ -400,7 +407,10 @@ async function upload(slot, file){
   if (!API_BASE) { setState(slot, 'Recebido', 'ok'); return; }
 
   const token = localStorage.getItem('rcpt_token');
-  if (!token) { setState(slot, 'Sessão expirada', 'err'); return; }
+  if (!token) {
+    setState(slot, IS_PREVIEW ? 'Pré-visualização — somente leitura' : 'Sessão expirada', 'err');
+    return;
+  }
 
   drop.classList.add('busy');
   setState(slot, 'A enviar…');
@@ -464,7 +474,10 @@ if (appIn) {
     lastSaved = v;
     if (!API_BASE) { setState(appSlot, 'Guardado', 'ok'); return; }
     const tk = localStorage.getItem('rcpt_token');
-    if (!tk) { setState(appSlot, 'Sessão expirada', 'err'); return; }
+    if (!tk) {
+      setState(appSlot, IS_PREVIEW ? 'Pré-visualização — somente leitura' : 'Sessão expirada', 'err');
+      return;
+    }
     setState(appSlot, 'A enviar…');
     try {
       const res = await fetch(API_BASE + '/api/materials/note', {
@@ -527,7 +540,8 @@ const DICT = {
 "Formato não aceite":"File type not accepted",
 "Arquivo muito grande":"File too large",
 "Não foi enviado — tente de novo":"Not uploaded — please try again",
-"Sessão expirada":"Session expired"
+"Sessão expirada":"Session expired",
+"Pré-visualização — somente leitura":"Preview — read only"
 };
 
 let LANG = 'pt';

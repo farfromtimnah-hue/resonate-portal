@@ -70,6 +70,7 @@ export const api = {
   updateClient: (id, data)       => req('PUT',    `/api/clients/${id}`, data),
   // People on a client (admin) — a business can have more than one
   // person whose work is worth interviewing
+  clientLogins: (clientId)          => req('GET',  `/api/clients/${clientId}/logins`),
   addPerson:    (clientId, d)       => req('POST', `/api/clients/${clientId}/people`, d),
   updatePerson: (clientId, pid, d)  => req('PUT',  `/api/clients/${clientId}/people/${pid}`, d),
 

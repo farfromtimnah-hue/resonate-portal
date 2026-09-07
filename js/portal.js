@@ -291,12 +291,17 @@ function renderContent() {
   // Carry preview context across the navigation to intake.html. A plain href
   // would drop it, and intake would then run against the admin's own session
   // instead of the client being previewed.
-  if (intakeCard && _profile?.preview?.active) {
+  // The materials page is offered to every client: unlike the interview it has
+  // no per-person gate, and both people at a business share one page.
+  const materialsCard = document.getElementById('portal-materials-card');
+
+  if (_profile?.preview?.active) {
     const page = new URLSearchParams(window.location.search);
     const carry = new URLSearchParams();
     carry.set('previewAs', page.get('previewAs'));
     if (page.get('previewWrite')) carry.set('previewWrite', page.get('previewWrite'));
-    intakeCard.setAttribute('href', `intake.html?${carry.toString()}`);
+    intakeCard?.setAttribute('href', `intake.html?${carry.toString()}`);
+    materialsCard?.setAttribute('href', `materiais.html?${carry.toString()}`);
   }
 }
 

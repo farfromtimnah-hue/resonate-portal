@@ -44,6 +44,8 @@ const STRINGS = {
     // AI intake interview (portal card)
     intake_card_title:       'Tell us about your business',
     intake_card_copy:        'A guided interview about your day-to-day work. Start, pause, and continue any time.',
+    materials_card_title:    'Your materials',
+    materials_card_copy:     'Send us what already exists of your brand and your method. One item at a time.',
 
     // Client detail — sections
     section_contact:         'Contact',
@@ -366,6 +368,8 @@ const STRINGS = {
     // AI intake interview (portal card)
     intake_card_title:       'Conte-nos sobre o seu negócio',
     intake_card_copy:        'Uma entrevista guiada sobre o seu dia a dia. Comece, pause e continue quando quiser.',
+    materials_card_title:    'Os seus materiais',
+    materials_card_copy:     'Envie o que já existe da sua marca e do seu método. Um item de cada vez.',
 
     section_contact:         'Contato',
     section_progress:        'Visão Geral do Progresso',

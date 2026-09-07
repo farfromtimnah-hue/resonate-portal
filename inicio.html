@@ -128,7 +128,11 @@
 <script>
 const API_BASE = 'https://resonate-portal-api.farfromtimnah.workers.dev';
 
-if (!localStorage.getItem('rcpt_token')) {
+// An admin arrives from the client page with ?previewAs=<id> on a Firebase
+// session and no rcpt_ token. They must be able to see this page — it is the
+// page the client actually lands on.
+const IS_PREVIEW = new URLSearchParams(location.search).has('previewAs');
+if (!localStorage.getItem('rcpt_token') && !IS_PREVIEW) {
   window.location.replace('entrar.html');
 }
 
@@ -144,9 +148,20 @@ document.getElementById('signout').addEventListener('click', () => {
 const person = localStorage.getItem('rcpt_person');
 if (person) document.getElementById('who').textContent = person;
 
+// A plain href would drop ?previewAs and bounce the admin to the client
+// sign-in on the very next click.
+if (IS_PREVIEW) {
+  const q = location.search;
+  document.querySelectorAll('.card').forEach(a => {
+    a.setAttribute('href', a.getAttribute('href') + q);
+  });
+  document.getElementById('signout').textContent = 'Sair da pré-visualização';
+}
+
 // Whether this person has already finished their interview. Their own only —
 // the API answers for the session behind the token.
 (async () => {
+  if (IS_PREVIEW) return;
   try {
     const res = await fetch(API_BASE + '/api/interview/session', {
       headers: { 'Authorization': 'Bearer ' + localStorage.getItem('rcpt_token') }
