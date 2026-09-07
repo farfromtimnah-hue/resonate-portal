@@ -376,9 +376,17 @@ function renderInvoices(invoices) {
   }).join('');
 }
 
+// The welcome banner explains how PROJECTS work — that every project has room
+// for what they liked and where it could go further. Before a project exists
+// it describes something the reader cannot see, so it is held back until there
+// is one. Same reasoning that already hides the progress bar and the projects
+// tab for a client with no projects.
 function renderWelcomeMessage() {
   const el = document.getElementById('portal-welcome-msg');
-  if (el) el.textContent = t('portal_welcome_message');
+  if (!el) return;
+  const hasProjects = (_data?.projects?.length || 0) > 0;
+  el.textContent = hasProjects ? t('portal_welcome_message') : '';
+  el.classList.toggle('hidden', !hasProjects);
 }
 
 function renderGreeting(client) {
