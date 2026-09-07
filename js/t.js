@@ -470,7 +470,7 @@ const STRINGS = {
     portal_message_us:        'Enviar Mensagem',
     portal_no_projects:       'Seu primeiro projeto aparecerá aqui assim que começarmos — você está em boas mãos.',
     portal_no_comments:       'Nenhuma mensagem ainda — entre em contato a qualquer momento.',
-    portal_greeting:          'Bem-vinda',
+    portal_greeting:          'Olá',
     portal_tab_projects:      'Projetos',
     portal_tab_vision:        'Visão',
     portal_contact_heading:   'Minha porta está sempre aberta',
