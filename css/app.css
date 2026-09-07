@@ -1465,6 +1465,21 @@ html.portal-dark a:not(.card):not([class*="btn"]),
 html.portal-dark .resource-link__url,
 html.portal-dark .text-\[13px\] { color: #C2A876 !important; }
 
+/* The Vision sign-off is #001d35 — 1.09:1 on a dark card, effectively
+   invisible. It hardcodes the colour rather than reading a token, which is why
+   redefining the token layer did not reach it. Given her palette, the sign-off
+   is the one line that should carry her gold. */
+html.portal-dark .vision-copy-signature { color: var(--brand) !important; }
+
+/* Anything else still pinned to the light ink. Cheap insurance: these are
+   admin-page classes today, but a client page borrowing one later should not
+   render invisible text. */
+html.portal-dark .status--gray,
+html.portal-dark .status--blue,
+html.portal-dark .status--green,
+html.portal-dark .btn-email,
+html.portal-dark .resource-link__badge { color: #C9C4BC !important; }
+
 /* A secondary button is white by default: on a dark page it reads as the
    loudest thing on screen. It is also the QUIETER of the two actions here —
    Call should never outrank WhatsApp when client and consultant do not share
