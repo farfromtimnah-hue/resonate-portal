@@ -355,12 +355,36 @@ async function handleGetMe(env, user, request) {
     'SELECT business_display_name, business_name, name FROM clients WHERE id = ?'
   ).bind(clientId).first();
 
+  // ?previewPerson=<username> renders the portal as THAT person sees it, not
+  // just as that client. Without it the preview keeps the admin's own name and
+  // gender, so "Bem-vinda, Nicole" appears where the client would read their
+  // own name — and Anderson's masculine copy could never be checked at all.
+  //
+  // Gated behind previewClientId having already established the caller is an
+  // admin, and the login must belong to the client being previewed.
+  const personParam = new URL(request.url).searchParams.get('previewPerson');
+  let personOverride = {};
+  if (personParam) {
+    const row = await env.DB.prepare(
+      'SELECT username, person_name, gender FROM client_logins WHERE username = ? AND client_id = ?'
+    ).bind(personParam.trim().toLowerCase(), clientId).first();
+    if (row) {
+      personOverride = {
+        first_name: row.person_name ?? null,
+        gender:     row.gender ?? null,
+        username:   row.username,
+      };
+    }
+  }
+
   return jsonResponse({
     ...safeUser,
+    ...personOverride,
     client_id: clientId,
     preview: {
       active:         true,
       client_id:      clientId,
+      person:         personOverride.first_name ?? null,
       client_name:    client
         ? (client.business_display_name || client.business_name || client.name || `Client ${clientId}`)
         : `Client ${clientId}`,

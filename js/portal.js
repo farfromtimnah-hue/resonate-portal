@@ -181,8 +181,9 @@ function renderPreviewBanner() {
           Admin preview
         </div>
         <div class="mt-0.5">
-          Previewing <strong>${esc(preview.client_name)}</strong>
-          &middot; <strong>${mode}</strong>
+          Previewing <strong>${esc(preview.client_name)}</strong>${
+            preview.person ? ` as <strong>${esc(preview.person)}</strong>` : ''
+          } &middot; <strong>${mode}</strong>
         </div>
       </div>
       <div class="flex items-center gap-2">
@@ -316,7 +317,8 @@ function renderContent() {
     const page = new URLSearchParams(window.location.search);
     const carry = new URLSearchParams();
     carry.set('previewAs', page.get('previewAs'));
-    if (page.get('previewWrite')) carry.set('previewWrite', page.get('previewWrite'));
+    if (page.get('previewWrite'))  carry.set('previewWrite',  page.get('previewWrite'));
+    if (page.get('previewPerson')) carry.set('previewPerson', page.get('previewPerson'));
     intakeCard?.setAttribute('href', `intake.html?${carry.toString()}`);
     materialsCard?.setAttribute('href', `materiais.html?${carry.toString()}`);
   }

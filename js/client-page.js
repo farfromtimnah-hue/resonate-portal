@@ -84,8 +84,25 @@ async function init() {
 
   // Open this client's portal as they see it. Preview is read-only unless the
   // client is flagged as a test client AND writing is switched on in the banner.
-  document.getElementById('preview-portal-btn').addEventListener('click', () => {
-    window.location.href = `portal.html?previewAs=${encodeURIComponent(_clientId)}`;
+  // Preview as a SPECIFIC PERSON when the client has more than one login.
+  // The portal's Portuguese agrees with the reader's gender, so previewing
+  // "the client" is not enough: Suellen reads "Bem-vinda … enterrada" and
+  // Anderson "Bem-vindo … enterrado", and only a per-person preview shows it.
+  document.getElementById('preview-portal-btn').addEventListener('click', async () => {
+    let url = `portal.html?previewAs=${encodeURIComponent(_clientId)}`;
+    try {
+      const logins = await api.clientLogins(_clientId);
+      if (Array.isArray(logins) && logins.length > 1) {
+        const names = logins.map((l, i) => `${i + 1}. ${l.person_name || l.username}`).join('\n');
+        const pick = prompt(`Preview the portal as which person?\n\n${names}\n\nEnter a number:`, '1');
+        if (pick === null) return;                       // cancelled
+        const chosen = logins[parseInt(pick, 10) - 1];
+        if (chosen) url += `&previewPerson=${encodeURIComponent(chosen.username)}`;
+      } else if (logins?.length === 1) {
+        url += `&previewPerson=${encodeURIComponent(logins[0].username)}`;
+      }
+    } catch { /* no logins, or the call failed: preview the client as before */ }
+    window.location.href = url;
   });
   document.getElementById('archive-now-btn')?.addEventListener('click', archiveClient);
   document.getElementById('add-project-btn').addEventListener('click', openAddProject);
