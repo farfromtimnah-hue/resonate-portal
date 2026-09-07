@@ -73,6 +73,14 @@ export default {
       // CLIENT, who has a `rcpt_` token and no Firebase identity. The client_id
       // is taken from the token row inside requireClientSession — never from
       // the request — so one client cannot write into another's materials.
+      // POST /api/auth/client-password — the client sets their own password,
+      // replacing the temporary one. Same early-route rules as materials.
+      if (method === 'POST' && path === '/api/auth/client-password') {
+        const cs = await requireClientSession(request, env);
+        if (cs.response) return cs.response;
+        return handleClientSetPassword(request, env, cs.session);
+      }
+
       if (method === 'POST' && path === '/api/materials') {
         const cs = await requireClientSession(request, env);
         if (cs.response) return cs.response;
@@ -1886,6 +1894,38 @@ async function handleClientMaterialNote(request, env, session) {
   ).bind(session.client_id, slot, value, session.username).run();
 
   return jsonResponse({ ok: true, slot }, 200, env);
+}
+
+// POST /api/auth/client-password  (CLIENT) — { new_password }
+//
+// Clears must_change_password and revokes every OTHER session for this login,
+// keeping the current one: a password change should not sign you out of the
+// browser you just changed it in.
+async function handleClientSetPassword(request, env, session) {
+  let body;
+  try { body = await request.json(); } catch { body = {}; }
+  const pw = String(body.new_password || '');
+
+  if (pw.length < 8) {
+    return jsonResponse({ error: 'A senha precisa de pelo menos 8 caracteres. / Password needs at least 8 characters.' }, 400, env);
+  }
+  if (pw.length > 200) {
+    return jsonResponse({ error: 'Senha demasiado longa. / Password too long.' }, 400, env);
+  }
+
+  const hash = await hashPassword(pw);
+  await env.DB.prepare(
+    "UPDATE client_logins SET password_hash = ?, must_change_password = 0, " +
+    "password_changed_at = datetime('now') WHERE username = ?"
+  ).bind(hash, session.username).run();
+
+  const authHeader = request.headers.get('Authorization') || '';
+  const currentHash = await sha256Hex(authHeader.slice(7).trim());
+  await env.DB.prepare(
+    'DELETE FROM client_auth_tokens WHERE username = ? AND token_hash != ?'
+  ).bind(session.username, currentHash).run();
+
+  return jsonResponse({ ok: true }, 200, env);
 }
 
 // GET /api/clients/:id/materials  (ADMIN) — everything a client has sent.

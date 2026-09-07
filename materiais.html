@@ -341,6 +341,12 @@
 // the row landed on the session's own client.
 // ---------------------------------------------------------------------------
 const API_BASE = 'https://resonate-portal-api.farfromtimnah.workers.dev';
+
+// No session, no page. Without this the materials page renders for anyone and
+// every upload fails at the API with a message they cannot act on.
+if (!localStorage.getItem('rcpt_token')) {
+  window.location.replace('entrar.html');
+}
 // No CLIENT_ID here on purpose: the server reads it from the session token,
 // so the page cannot address another client's records even if edited.
 

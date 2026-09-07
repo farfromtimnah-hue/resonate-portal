@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Entrar — Suellen Sartorato</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ground:#0A0A0A; --panel:#131313; --panel-2:#1A1A19;
+    --gold:#8A7048; --gold-hi:#A28A60; --gold-line:rgba(162,138,96,.22);
+    --cream:#D7D7C8; --ink:#E8E5DE; --dim:#8E8880; --dimmer:#65605A;
+    --ox:#7B2230; --hair:rgba(255,255,255,.07);
+    --serif:"Cormorant Garamond",Georgia,serif;
+    --sans:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  }
+  *{box-sizing:border-box}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+  body{
+    margin:0;background:var(--ground);color:var(--ink);
+    font-family:var(--sans);font-weight:300;line-height:1.6;font-size:15px;
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;display:flex;align-items:center;justify-content:center;
+    padding:24px;
+  }
+  .card{width:100%;max-width:380px}
+
+  .sigwrap{display:flex;justify-content:center;margin-bottom:44px}
+  .sig{height:44px;width:auto;opacity:.92;display:block}
+
+  h1{
+    font-family:var(--serif);font-weight:300;font-size:1.7rem;
+    text-align:center;margin:0 0 8px;color:#fff;
+  }
+  .lede{text-align:center;color:var(--dim);font-size:.87rem;margin:0 0 34px}
+
+  label{
+    display:block;font-size:.68rem;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--dimmer);margin-bottom:7px;
+  }
+  input{
+    width:100%;background:var(--panel);border:1px solid var(--hair);border-radius:3px;
+    color:var(--ink);font-family:var(--sans);font-weight:300;font-size:1rem;
+    padding:12px 13px;margin-bottom:20px;transition:border-color .2s;
+  }
+  input:focus{outline:none;border-color:var(--gold-hi)}
+  input::placeholder{color:var(--dimmer)}
+
+  button{
+    width:100%;background:transparent;border:1px solid var(--gold-line);border-radius:3px;
+    color:var(--cream);font-family:var(--sans);font-size:.72rem;letter-spacing:.2em;
+    text-transform:uppercase;padding:14px;cursor:pointer;
+    transition:border-color .2s,background .2s,color .2s;
+  }
+  button:hover:not(:disabled){border-color:var(--gold-hi);background:rgba(162,138,96,.06);color:#fff}
+  button:disabled{opacity:.45;cursor:default}
+
+  .msg{
+    margin-top:18px;font-size:.83rem;line-height:1.6;text-align:center;
+    min-height:1.2em;color:var(--ox);
+  }
+  .msg.ok{color:var(--gold-hi)}
+
+  .foot{
+    margin-top:38px;padding-top:22px;border-top:1px solid var(--hair);
+    text-align:center;color:var(--dimmer);font-size:.78rem;line-height:1.7;
+  }
+  .langtoggle{
+    display:flex;border:1px solid var(--hair);border-radius:2px;overflow:hidden;
+    position:fixed;top:20px;right:20px;
+  }
+  .langtoggle button{
+    width:auto;background:none;border:0;color:var(--dimmer);
+    font-size:.62rem;letter-spacing:.18em;padding:6px 11px;
+  }
+  .langtoggle button.on{color:var(--cream);background:rgba(255,255,255,.04)}
+  .hidden{display:none}
+</style>
+</head>
+<body>
+
+<div class="langtoggle">
+  <button data-lang="pt" class="on">PT</button>
+  <button data-lang="en">EN</button>
+</div>
+
+<div class="card">
+  <div class="sigwrap">
+    <img class="sig" src="assets/sig-white-tight.png" alt="Suellen Sartorato">
+  </div>
+
+  <!-- Sign in -->
+  <div id="screen-login">
+    <h1>Entrar</h1>
+    <p class="lede">Use os dados que a Nicole lhe enviou.</p>
+
+    <form id="login-form" autocomplete="on">
+      <label for="username">Utilizador</label>
+      <input id="username" name="username" type="text" autocomplete="username"
+             autocapitalize="none" autocorrect="off" spellcheck="false" required>
+
+      <label for="password">Senha</label>
+      <input id="password" name="password" type="password"
+             autocomplete="current-password" required>
+
+      <button type="submit" id="login-btn">Entrar</button>
+    </form>
+    <div class="msg" id="login-msg"></div>
+  </div>
+
+  <!-- First sign-in: the temporary password must be replaced. -->
+  <div id="screen-change" class="hidden">
+    <h1>Criar a sua senha</h1>
+    <p class="lede">A senha que recebeu é temporária. Escolha uma sua para continuar.</p>
+
+    <form id="change-form" autocomplete="on">
+      <label for="new-password">Nova senha</label>
+      <input id="new-password" name="new-password" type="password"
+             autocomplete="new-password" required minlength="8">
+
+      <label for="confirm-password">Repita a nova senha</label>
+      <input id="confirm-password" name="confirm-password" type="password"
+             autocomplete="new-password" required minlength="8">
+
+      <button type="submit" id="change-btn">Guardar</button>
+    </form>
+    <div class="msg" id="change-msg"></div>
+  </div>
+
+  <div class="foot">
+    Qualquer dificuldade, é só responder no WhatsApp.
+  </div>
+</div>
+
+<script>
+const API_BASE = 'https://resonate-portal-api.farfromtimnah.workers.dev';
+
+const $ = id => document.getElementById(id);
+
+function say(el, text, ok) {
+  el.textContent = (LANG === 'en' && DICT[text]) ? DICT[text] : text;
+  el.classList.toggle('ok', !!ok);
+}
+
+// ---- Sign in ----
+$('login-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const btn = $('login-btn');
+  const msg = $('login-msg');
+  const username = $('username').value.trim().toLowerCase();
+  const password = $('password').value;
+  if (!username || !password) return;
+
+  btn.disabled = true;
+  say(msg, 'A entrar…');
+
+  try {
+    const res = await fetch(API_BASE + '/api/auth/client-login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      // The server answers bilingually; show only the half that matches.
+      const raw = data.error || 'Não foi possível entrar.';
+      say(msg, raw.split(' / ')[LANG === 'en' ? 1 : 0] || raw);
+      btn.disabled = false;
+      return;
+    }
+
+    localStorage.setItem('rcpt_token', data.token);
+    localStorage.setItem('rcpt_client_id', data.client_id);
+    localStorage.setItem('rcpt_person', data.person_name || '');
+    if (data.language_preference) localStorage.setItem('rcpt_lang', data.language_preference);
+
+    // A temporary password is not a password. Force the change before the
+    // portal is reachable, rather than nagging afterwards.
+    if (data.must_change_password) {
+      $('screen-login').classList.add('hidden');
+      $('screen-change').classList.remove('hidden');
+      $('new-password').focus();
+      return;
+    }
+    window.location.href = 'materiais.html';
+  } catch {
+    say(msg, 'Sem ligação. Tente novamente.');
+    btn.disabled = false;
+  }
+});
+
+// ---- First-time password change ----
+$('change-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const btn = $('change-btn');
+  const msg = $('change-msg');
+  const a = $('new-password').value;
+  const b = $('confirm-password').value;
+
+  if (a.length < 8) { say(msg, 'A senha precisa de pelo menos 8 caracteres.'); return; }
+  if (a !== b)      { say(msg, 'As duas senhas não são iguais.'); return; }
+
+  btn.disabled = true;
+  say(msg, 'A guardar…');
+
+  try {
+    const res = await fetch(API_BASE + '/api/auth/client-password', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + localStorage.getItem('rcpt_token')
+      },
+      body: JSON.stringify({ new_password: a })
+    });
+    if (!res.ok) {
+      const d = await res.json().catch(() => ({}));
+      const raw = d.error || 'Não foi possível guardar.';
+      say(msg, raw.split(' / ')[LANG === 'en' ? 1 : 0] || raw);
+      btn.disabled = false;
+      return;
+    }
+    window.location.href = 'materiais.html';
+  } catch {
+    say(msg, 'Sem ligação. Tente novamente.');
+    btn.disabled = false;
+  }
+});
+
+// ---- Language ----
+const DICT = {
+"Entrar":"Sign in",
+"Use os dados que a Nicole lhe enviou.":"Use the details Nicole sent you.",
+"Utilizador":"Username",
+"Senha":"Password",
+"Criar a sua senha":"Create your password",
+"A senha que recebeu é temporária. Escolha uma sua para continuar.":"The password you received is temporary. Choose your own to continue.",
+"Nova senha":"New password",
+"Repita a nova senha":"Repeat the new password",
+"Guardar":"Save",
+"Qualquer dificuldade, é só responder no WhatsApp.":"Any trouble, just reply on WhatsApp.",
+"A entrar…":"Signing in…",
+"A guardar…":"Saving…",
+"Sem ligação. Tente novamente.":"No connection. Please try again.",
+"A senha precisa de pelo menos 8 caracteres.":"The password needs at least 8 characters.",
+"As duas senhas não são iguais.":"The two passwords do not match.",
+"Não foi possível entrar.":"Could not sign in.",
+"Não foi possível guardar.":"Could not save."
+};
+
+let LANG = 'pt';
+function walk(node, fn) {
+  for (const n of node.childNodes) {
+    if (n.nodeType === 3) fn(n);
+    else if (n.nodeType === 1 && !n.closest('.langtoggle')) walk(n, fn);
+  }
+}
+const originals = [];
+walk(document.body, t => { if (t.nodeValue.trim()) originals.push([t, t.nodeValue]); });
+
+function setLang(lang) {
+  LANG = lang;
+  for (const [node, pt] of originals) {
+    if (lang === 'pt') { node.nodeValue = pt; continue; }
+    const key = pt.trim();
+    const hit = DICT[key];
+    node.nodeValue = hit ? pt.replace(key, hit) : pt;
+  }
+  document.querySelectorAll('.langtoggle button')
+    .forEach(b => b.classList.toggle('on', b.dataset.lang === lang));
+  document.documentElement.lang = lang === 'pt' ? 'pt-BR' : 'en';
+}
+document.querySelector('.langtoggle').addEventListener('click', e => {
+  const b = e.target.closest('button');
+  if (b) setLang(b.dataset.lang);
+});
+</script>
+
+</body>
+</html>
