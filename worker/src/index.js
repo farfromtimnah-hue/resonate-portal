@@ -1440,6 +1440,7 @@ async function authenticate(request, env) {
     db_id:                dbUser.id,
     first_name:           dbUser.first_name  ?? null,
     last_name:            dbUser.last_name   ?? null,
+    gender:               dbUser.gender      ?? null,
   };
 }
 
@@ -1459,7 +1460,7 @@ async function authenticateClientToken(token, env) {
   const tokenHash = await sha256Hex(token);
   const row = await env.DB.prepare(
     'SELECT t.client_id, t.username, t.expires_at, ' +
-    'l.must_change_password, l.person_name, l.intake_user_id, l.intake_enabled, ' +
+    'l.must_change_password, l.person_name, l.intake_user_id, l.intake_enabled, l.gender, ' +
     'c.language_preference ' +
     'FROM client_auth_tokens t ' +
     'JOIN client_logins l ON l.username = t.username ' +
@@ -1482,6 +1483,9 @@ async function authenticateClientToken(token, env) {
     db_id:                row.intake_user_id,
     first_name:           row.person_name ?? null,
     last_name:            null,
+    // Set by Nicole, never asked of the client. Portuguese greetings are
+    // gendered and 'Bem-vinda' to a man is a small but real insult.
+    gender:               row.gender ?? null,
     username:             row.username,
     auth_method:          'password',
     token_hash:           tokenHash,

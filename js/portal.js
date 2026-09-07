@@ -393,7 +393,13 @@ function renderGreeting(client) {
   // Prefer first_name from portal profile (users table), fall back to client contact name
   const rawName   = _profile?.first_name || (client.name || '');
   const firstName = rawName.trim().split(/\s+/)[0] || '';
-  const prefix    = t('portal_greeting');
+  // Portuguese greetings agree with the person being greeted. The gender is
+  // set by Nicole on the client's record, never asked of them. With none
+  // recorded it falls back to the feminine form, which is the wording Nicole
+  // wrote and the right default for this practice.
+  const prefix    = (_profile?.gender === 'm')
+    ? t('portal_greeting_m')
+    : t('portal_greeting');
   document.getElementById('portal-greeting').textContent =
     firstName ? `${prefix}, ${firstName}` : prefix;
 }

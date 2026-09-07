@@ -307,6 +307,12 @@ async function init() {
   var profile = await requireAuth('client');
   if (!profile) return;
 
+  // The welcome heading agrees with the reader. Gender is set by Nicole on the
+  // client record, never asked here. Feminine is the fallback: it is the
+  // wording Nicole wrote.
+  var welcomeEl = document.getElementById('intake-welcome');
+  if (welcomeEl && profile.gender === 'm') welcomeEl.textContent = 'Bem-vindo';
+
   wireStaticButtons();
   carryPreviewOnPortalLinks();
   initVoice();
