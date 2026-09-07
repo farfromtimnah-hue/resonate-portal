@@ -1391,3 +1391,67 @@ html.dark .banner--info    { background: rgba(0,91,150,0.12); color: #9ccaff; bo
   border-color: #ba1a1a;
   background: rgba(186,26,26,0.08);
 }
+
+/* ============================================================
+   CLIENT PORTAL — DARK
+   ------------------------------------------------------------
+   Applied by portal.js when the client's own primary colour is dark, so a
+   brand like Suellen's (near-black + gold) gets a portal that looks like her
+   own material instead of a light page with her logo bolted on.
+
+   WHY THIS BLOCK EXISTS AT ALL: portal.html styles its surfaces with Tailwind
+   utilities — bg-white, border-black/5, text-[#001d35], text-[#717781] — which
+   hardcode light values and ignore the token layer entirely. Flipping the
+   tokens alone would leave white cards carrying near-black text on a dark
+   ground: the exact black-text-on-black failure, in reverse. Every one of
+   those four utilities is overridden here.
+
+   Scoped to .portal-dark so it can never touch an admin page.
+   ============================================================ */
+html.portal-dark,
+html.portal-dark body {
+  background: var(--portal-dark-bg, #0A0A0A) !important;
+  color: #E8E5DE !important;
+}
+
+/* Cards and panels */
+html.portal-dark .bg-white {
+  background: var(--portal-dark-surface, #131313) !important;
+}
+html.portal-dark .border-black\/5 {
+  border-color: rgba(255,255,255,0.07) !important;
+}
+
+/* Text that was pinned to the light palette */
+html.portal-dark .text-\[\#001d35\] { color: #E8E5DE !important; }
+html.portal-dark .text-\[\#717781\] { color: #8E8880 !important; }
+
+/* Portal chrome */
+html.portal-dark .portal-greeting,
+html.portal-dark .portal-wordmark { color: #fff !important; }
+html.portal-dark .portal-welcome-msg {
+  background: rgba(255,255,255,0.04) !important;
+  color: #C9C4BC !important;
+}
+
+/* The logo plate is redundant once the page itself is dark: a white mark sits
+   on the page ground directly, which is what her own material does. */
+html.portal-dark .portal-logo-plate {
+  background: transparent !important;
+  padding: 0 !important;
+}
+
+/* Header, tabs, inputs and shadows all assume a light ground */
+html.portal-dark header,
+html.portal-dark .modal__panel,
+html.portal-dark .card { background: var(--portal-dark-surface, #131313) !important; }
+html.portal-dark input,
+html.portal-dark textarea,
+html.portal-dark select {
+  background: #1A1A19 !important;
+  color: #E8E5DE !important;
+  border-color: rgba(255,255,255,0.10) !important;
+}
+html.portal-dark input::placeholder,
+html.portal-dark textarea::placeholder { color: #65605A !important; }
+html.portal-dark [class*="shadow"] { box-shadow: none !important; }

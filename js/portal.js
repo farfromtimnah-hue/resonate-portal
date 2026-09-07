@@ -877,6 +877,24 @@ function applyClientBrand(client) {
 
   const accent = (primary && !isVeryDark(primary)) ? primary : (secondary || primary);
   if (accent) document.documentElement.style.setProperty('--brand', accent);
+
+  // A client whose own primary colour is dark gets a dark portal. Suellen's
+  // whole brand is near-black and gold; a light page with her logo on it reads
+  // as our template wearing her badge. This is not a user preference — it is
+  // the client's palette applied, so there is no toggle to get wrong.
+  if (primary && isVeryDark(primary)) {
+    const root = document.documentElement;
+    root.style.setProperty('--portal-dark-bg', primary);
+    root.style.setProperty('--portal-dark-surface', lighten(primary, 9));
+    root.classList.add('portal-dark');
+  }
+}
+
+// Nudge a near-black toward a usable card surface: cards must separate from
+// the page ground without becoming grey.
+function lighten(hex, amount) {
+  const n = [1, 3, 5].map(i => Math.min(255, parseInt(hex.slice(i, i + 2), 16) + amount));
+  return '#' + n.map(v => v.toString(16).padStart(2, '0')).join('');
 }
 
 function normaliseHex(v) {
