@@ -335,12 +335,14 @@
 // the page simply carries her mark from then on. Restraint reads as premium;
 // a celebration reads as a template.
 //
-// API_BASE / CLIENT_ID are filled in at deploy. Until an upload endpoint that
-// accepts a client-scoped token exists, uploads are held locally and previewed
-// so the page can be reviewed end to end.
+// Uploads go to /api/materials with the client's session token. The server
+// reads the client id from that token row, never from anything this page
+// sends — verified live: a forged client_id in the request was ignored and
+// the row landed on the session's own client.
 // ---------------------------------------------------------------------------
-const API_BASE = '';           // e.g. https://resonate-portal-api.farfromtimnah.workers.dev
-const CLIENT_ID = 4;
+const API_BASE = 'https://resonate-portal-api.farfromtimnah.workers.dev';
+// No CLIENT_ID here on purpose: the server reads it from the session token,
+// so the page cannot address another client's records even if edited.
 
 const MAX_BYTES = 15 * 1024 * 1024;
 const OK_TYPES = /^(image\/|application\/pdf)/;
@@ -386,14 +388,18 @@ async function upload(slot, file){
 
   if (!API_BASE) { setState(slot, 'Recebido', 'ok'); return; }
 
+  const token = localStorage.getItem('rcpt_token');
+  if (!token) { setState(slot, 'Sessão expirada', 'err'); return; }
+
   drop.classList.add('busy');
   setState(slot, 'A enviar…');
   try {
     const fd = new FormData();
     fd.append('file', file);
-    fd.append('client_id', CLIENT_ID);
     fd.append('slot', name);
-    const res = await fetch(API_BASE + '/api/materials', { method:'POST', body:fd, credentials:'include' });
+    const res = await fetch(API_BASE + '/api/materials', {
+      method:'POST', body:fd, headers:{ 'Authorization': 'Bearer ' + token }
+    });
     if (!res.ok) throw new Error(String(res.status));
     setState(slot, 'Recebido', 'ok');
   } catch {
@@ -446,12 +452,14 @@ if (appIn) {
     if (!v || v === lastSaved) return;
     lastSaved = v;
     if (!API_BASE) { setState(appSlot, 'Guardado', 'ok'); return; }
+    const tk = localStorage.getItem('rcpt_token');
+    if (!tk) { setState(appSlot, 'Sessão expirada', 'err'); return; }
     setState(appSlot, 'A enviar…');
     try {
       const res = await fetch(API_BASE + '/api/materials/note', {
-        method:'POST', credentials:'include',
-        headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ client_id: CLIENT_ID, slot:'app', value: v })
+        method:'POST',
+        headers:{ 'Content-Type':'application/json', 'Authorization': 'Bearer ' + tk },
+        body: JSON.stringify({ slot:'app', value: v })
       });
       if (!res.ok) throw new Error(String(res.status));
       setState(appSlot, 'Guardado', 'ok');
@@ -506,7 +514,8 @@ const DICT = {
 "Guardado":"Saved",
 "Formato não aceite":"File type not accepted",
 "Ficheiro grande demais":"File too large",
-"Não foi enviado — tente de novo":"Not uploaded — please try again"
+"Não foi enviado — tente de novo":"Not uploaded — please try again",
+"Sessão expirada":"Session expired"
 };
 
 let LANG = 'pt';

@@ -68,6 +68,22 @@ export default {
         return handlePostClientLogin(request, env);
       }
 
+      // ---- CLIENT MATERIALS (client session, not Firebase) ----
+      // Same reason as the login route above: these are called by a signed-in
+      // CLIENT, who has a `rcpt_` token and no Firebase identity. The client_id
+      // is taken from the token row inside requireClientSession — never from
+      // the request — so one client cannot write into another's materials.
+      if (method === 'POST' && path === '/api/materials') {
+        const cs = await requireClientSession(request, env);
+        if (cs.response) return cs.response;
+        return handleClientMaterialUpload(request, env, cs.session);
+      }
+      if (method === 'POST' && path === '/api/materials/note') {
+        const cs = await requireClientSession(request, env);
+        if (cs.response) return cs.response;
+        return handleClientMaterialNote(request, env, cs.session);
+      }
+
       // All other routes require a valid Firebase token
       const user = await authenticate(request, env);
 
@@ -279,6 +295,13 @@ async function router(request, env, user, url, method, path) {
   if (method === 'POST' && path === '/api/upload-logo') {
     requireAdmin(user);
     return handleUploadLogo(request, env);
+  }
+
+  // ---- CLIENT MATERIALS (admin read) ----
+  params = match('/api/clients/:id/materials', path);
+  if (params && method === 'GET') {
+    requireAdmin(user);
+    return handleListClientMaterials(params.id, env);
   }
 
   // ---- PROJECT FEEDBACK (favorite / suggestion per project) ----
@@ -1743,6 +1766,135 @@ async function createClientLogin(env, { clientId, clientName, personName, role, 
   ).bind(username, clientId, passwordHash, createdBy || null, role || 'client', personName || null).run();
 
   return { username, temp_password: tempPassword };
+}
+
+// ---------------------------------------------------------------------------
+// CLIENT SESSION — resolve a `rcpt_` bearer token to its client.
+//
+// 🔑 The client_id comes from THE TOKEN ROW, never from the request body or a
+// form field. That is the whole security property of these routes: a signed-in
+// client cannot reach another client's records by editing an id, because the
+// id they supply is never consulted.
+//
+// Returns { client_id, username } or throws 401.
+// ---------------------------------------------------------------------------
+// Returns { session } on success or { response } to return immediately.
+//
+// ⚠️ These routes run BEFORE authenticate(), and index.js <-> interview.js are
+// a circular import, so `ApiError` can be in its temporal dead zone here and
+// `throw new ApiError(...)` becomes a TypeError -> a bare 500 with no JSON
+// body. Every failure path in the client-materials routes therefore RETURNS a
+// response rather than throwing. (Found by testing: a rejected slot returned
+// Cloudflare error 1101 instead of a 400.)
+async function requireClientSession(request, env) {
+  const authHeader = request.headers.get('Authorization') || '';
+  if (!authHeader.startsWith('Bearer ')) {
+    return { response: jsonResponse({ error: 'Missing or invalid Authorization header' }, 401, env) };
+  }
+  const token = authHeader.slice(7).trim();
+  if (!token.startsWith('rcpt_')) {
+    return { response: jsonResponse({ error: 'Not a client session token' }, 401, env) };
+  }
+
+  const tokenHash = await sha256Hex(token);
+  const row = await env.DB.prepare(
+    "SELECT client_id, username FROM client_auth_tokens " +
+    "WHERE token_hash = ? AND expires_at > datetime('now')"
+  ).bind(tokenHash).first();
+
+  // An expired or unknown token is indistinguishable to the caller on purpose.
+  if (!row) {
+    return { response: jsonResponse({ error: 'Session expired or invalid. Please sign in again.' }, 401, env) };
+  }
+  return { session: { client_id: row.client_id, username: row.username } };
+}
+
+// ---------------------------------------------------------------------------
+// MATERIALS — files and typed answers a client sends during onboarding.
+// ---------------------------------------------------------------------------
+
+const MATERIAL_MAX_BYTES = 15 * 1024 * 1024;
+const MATERIAL_OK_TYPES  = /^(image\/(png|jpeg|jpg|gif|webp|svg\+xml|heic|heif)|application\/pdf)$/i;
+// Bounded so a slot name cannot be used to smuggle path segments into an R2 key.
+const MATERIAL_SLOT_RE   = /^[a-z0-9][a-z0-9_-]{0,39}$/;
+
+// POST /api/materials  (CLIENT) — multipart: file, slot
+async function handleClientMaterialUpload(request, env, session) {
+  if (!env.BUCKET) return jsonResponse({ error: 'Storage is not configured' }, 500, env);
+
+  const formData = await request.formData();
+  const file = formData.get('file');
+  const slot = String(formData.get('slot') || '').trim().toLowerCase();
+
+  if (!file || typeof file === 'string') return jsonResponse({ error: 'file is required' }, 400, env);
+  if (!MATERIAL_SLOT_RE.test(slot)) return jsonResponse({ error: 'invalid slot' }, 400, env);
+
+  // Type and size are checked in the browser too; that check is a courtesy to
+  // the person uploading, not a control. This one is the control.
+  if (!MATERIAL_OK_TYPES.test(file.type || '')) {
+    return jsonResponse({ error: 'That file type is not accepted.' }, 415, env);
+  }
+  if (file.size > MATERIAL_MAX_BYTES) {
+    return jsonResponse({ error: 'That file is too large (15 MB maximum).' }, 413, env);
+  }
+
+  const clientId = session.client_id;
+  const extFromName = (file.name || '').split('.').pop();
+  const ext = /^[a-z0-9]{1,5}$/i.test(extFromName || '') ? extFromName.toLowerCase() : 'bin';
+  const key = `materials/client-${clientId}/${slot}-${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${ext}`;
+
+  await env.BUCKET.put(key, await file.arrayBuffer(), {
+    httpMetadata: { contentType: file.type || 'application/octet-stream' }
+  });
+
+  const url = `${env.BUCKET_PUBLIC_URL ?? ''}/${key}`;
+
+  await env.DB.prepare(
+    'INSERT INTO client_materials (client_id, slot, kind, r2_key, url, filename, content_type, size_bytes, uploaded_by) ' +
+    "VALUES (?, ?, 'file', ?, ?, ?, ?, ?, ?)"
+  ).bind(clientId, slot, key, url, file.name || null, file.type || null, file.size, session.username).run();
+
+  // The seal additionally fills the logo placeholder on the client profile —
+  // that placeholder is the reason this slot exists.
+  if (slot === 'seal') {
+    await env.DB.prepare(
+      'UPDATE clients SET logo_url = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
+    ).bind(url, clientId).run();
+  }
+
+  return jsonResponse({ ok: true, slot, url }, 201, env);
+}
+
+// POST /api/materials/note  (CLIENT) — { slot, value }
+async function handleClientMaterialNote(request, env, session) {
+  let body;
+  try { body = await request.json(); } catch { body = {}; }
+
+  const slot  = String(body.slot || '').trim().toLowerCase();
+  const value = String(body.value || '').trim();
+
+  if (!MATERIAL_SLOT_RE.test(slot)) return jsonResponse({ error: 'invalid slot' }, 400, env);
+  if (!value) return jsonResponse({ error: 'value is required' }, 400, env);
+  if (value.length > 2000) return jsonResponse({ error: 'That answer is too long.' }, 400, env);
+
+  // One note per slot: re-typing replaces rather than appends.
+  await env.DB.prepare(
+    'INSERT INTO client_materials (client_id, slot, kind, value, uploaded_by) ' +
+    "VALUES (?, ?, 'note', ?, ?) " +
+    'ON CONFLICT (client_id, slot) WHERE kind = \'note\' DO UPDATE SET ' +
+    "value = excluded.value, uploaded_by = excluded.uploaded_by, created_at = datetime('now')"
+  ).bind(session.client_id, slot, value, session.username).run();
+
+  return jsonResponse({ ok: true, slot }, 200, env);
+}
+
+// GET /api/clients/:id/materials  (ADMIN) — everything a client has sent.
+async function handleListClientMaterials(clientId, env) {
+  const { results } = await env.DB.prepare(
+    'SELECT id, slot, kind, url, filename, content_type, size_bytes, value, uploaded_by, created_at ' +
+    'FROM client_materials WHERE client_id = ? ORDER BY slot, created_at DESC'
+  ).bind(clientId).all();
+  return jsonResponse(results || [], 200, env);
 }
 
 // ---------------------------------------------------------------------------
