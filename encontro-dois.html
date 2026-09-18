@@ -178,8 +178,12 @@
     padding:clamp(38px,6vh,80px) clamp(28px,7vw,110px);
   }
   body.presenting section.on .presentbtn{display:none}
-  body.presenting section.on .en{display:none}
-  body.presenting section.on .ptx{display:revert}
+  /* Presenting always shows Portuguese, whatever the toggle says: what gets
+     shared is read by her. These must outrank body.english above. */
+  body.presenting section.on .en,
+  body.english.presenting section.on .en{display:none}
+  body.presenting section.on .ptx,
+  body.english.presenting section.on .ptx{display:revert}
   body.presenting section.on .sbody{padding:0}
   body.presenting section.on .shead{padding:0 0 6px}
   body.presenting section.on h2{font-size:clamp(2.3rem,5.2vw,3.5rem)}
@@ -191,8 +195,13 @@
   body.presenting section.on .sig{width:min(360px,60%);margin-bottom:38px}
   body.presenting section.on .src{display:none}
 
-  /* language: Portuguese is the default; English is the toggle */
+  /* Language: Portuguese is the default, English is the toggle.
+     Driven by a class on <body>, never by inline styles: `display:revert`
+     reverts to the stylesheet rule, which is what hides these in the first
+     place, so an inline revert would hide English permanently. */
   .en{display:none}
+  body.english .en{display:revert}
+  body.english .ptx{display:none}
 
   @media (max-width:880px){
     .shell{grid-template-columns:1fr}
@@ -694,8 +703,7 @@ const langBtn = document.getElementById('lang');
 let en = false;
 function setLang(toEnglish) {
   en = toEnglish;
-  document.querySelectorAll('.en').forEach(e => e.style.display = en ? 'revert' : 'none');
-  document.querySelectorAll('.ptx').forEach(e => e.style.display = en ? 'none' : 'revert');
+  document.body.classList.toggle('english', en);
   langBtn.textContent = en ? 'Português' : 'English';
   document.documentElement.lang = en ? 'en' : 'pt-BR';
 }
