@@ -11,10 +11,14 @@ import { esc, nl2br, formatDate, formatDateTime, formatDateFull,
 
 let _clientId = null;
 
+// `href` overrides the default meeting.html?m=<key> link: the second meeting
+// is its own page rather than another branch inside meeting.html, because its
+// content shares nothing with the first beyond the design system.
 const MEETINGS = {
-  // Suellen Sartorato — first conversation
+  // Suellen Sartorato
   4: [
-    { key: 'first', date: '2026-09-02', label: 'First meeting', time: '4:15 PM' },
+    { key: 'second', date: '2026-09-18', label: 'Second meeting', href: 'encontro-dois.html' },
+    { key: 'first',  date: '2026-09-02', label: 'First meeting',  time: '4:15 PM' },
   ],
 };
 
@@ -1320,7 +1324,7 @@ function renderMeetings() {
     const when = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
     const past = d < new Date(new Date().toDateString());
     return `
-      <a href="meeting.html?client=${encodeURIComponent(_clientId)}&m=${encodeURIComponent(m.key)}"
+      <a href="${m.href ? esc(m.href) : `meeting.html?client=${encodeURIComponent(_clientId)}&m=${encodeURIComponent(m.key)}`}"
          class="flex items-center gap-2 py-2 text-[13px] transition-colors ${past ? 'text-outline-variant' : 'text-primary-fixed-dim'} hover:text-white">
         <span class="material-symbols-outlined text-[16px]">co_present</span>
         <span>

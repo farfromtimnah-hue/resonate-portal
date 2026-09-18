@@ -695,7 +695,14 @@
   </main>
 </div>
 
-<script>
+<script type="module">
+// Nicole's page, not the client's. It carries her revenue figures, the
+// market comparisons and the pricing derivation, so it sits behind the same
+// admin gate as meeting.html and is never linked from the client portal.
+// She sees it only over Nicole's shoulder, one section at a time, via Mostrar.
+import { requireAuth } from './js/auth.js';
+requireAuth('admin');
+
 // ---- language ----------------------------------------------------------
 // Portuguese is the default: this document is read by its subject, in her
 // language. English exists for Nicole, and is never the state a client sees.
