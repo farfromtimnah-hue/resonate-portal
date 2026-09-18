@@ -271,6 +271,26 @@
       </div>
     </div>
 
+    <!-- The dossie is the worst pain in the whole intake: named three times
+         with escalating language, contractual, and already shipping late. We
+         cannot design what replaces it without seeing one. TWO artefacts, not
+         one: the finished dossie shows the output, the base template shows
+         which parts are standard - she said so herself ("se eu vou falar sobre
+         tecido, isso dai e padrao para todo mundo"). The standard part is what
+         a generator fills; the personalised part is what stays hers. The
+         reason is stated plainly in the copy: people hand over an artefact
+         they are behind on far more readily when they know why it is wanted. -->
+    <div class="slot" data-slot="dossier">
+      <div class="drop" tabindex="0" role="button" aria-label="Enviar um dossiê">
+        <span class="plus">+</span>
+      </div>
+      <div class="slotbody">
+        <h3>O dossiê</h3>
+        <p>Dois exemplos: um dossiê de cliente já finalizado, e o modelo base que vocês usam antes de personalizar. Precisamos dos dois para entender o que é padrão e o que muda a cada cliente — é assim que conseguimos simplificar essa etapa.</p>
+        <div class="slotstate"></div>
+      </div>
+    </div>
+
     <!-- The outfit exchanges are the SPEC for a screen we have never seen. Not
          training data: we need to know how long her replies run, whether she
          leads with the verdict or the reasoning, whether she names garments.
@@ -286,13 +306,20 @@
       </div>
     </div>
 
+    <!-- Widened after the intake. This slot used to ask for ONE page, written
+         before we knew the DISC runs before session 1 of every engagement and
+         that its output feeds straight into the dossie. For the same reason as
+         the dossie, a single page is not enough: we need the whole report to
+         see which parts get carried across and which are read once and set
+         aside. She named the supplier herself in the interview - SIS
+         Assessment - so the slot now names it back rather than asking. -->
     <div class="slot" data-slot="assessment">
       <div class="drop" tabindex="0" role="button" aria-label="Enviar um resultado de avaliação">
         <span class="plus">+</span>
       </div>
       <div class="slotbody">
-        <h3>A avaliação que você usa hoje</h3>
-        <p>O nome de quem fornece (DISC, ou outra), e uma página de resultado. É o que mostra o que você já espera ver.</p>
+        <h3>O relatório de perfil comportamental</h3>
+        <p>Um relatório completo do DISC da SIS Assessment, de um cliente já atendido. Precisamos ver o relatório inteiro para entender o que vocês aproveitam dele no dossiê e o que fica de fora — mesmo motivo do item acima.</p>
         <div class="slotstate"></div>
       </div>
     </div>
@@ -518,11 +545,14 @@ const DICT = {
 "A roda de avaliação":"The assessment wheel",
 "O círculo de dez partes que hoje é preenchido à mão. Uma foto do papel já serve — precisamos ver as divisões e o que está escrito em cada uma.":"The ten-part circle that is filled in by hand today. A photo of the paper is enough — we need to see the divisions and what is written in each one.",
 
+"O dossiê":"The dossiê",
+"Dois exemplos: um dossiê de cliente já finalizado, e o modelo base que vocês usam antes de personalizar. Precisamos dos dois para entender o que é padrão e o que muda a cada cliente — é assim que conseguimos simplificar essa etapa.":"Two examples: one finished client dossiê, and the base template you start from before personalising it. We need both to understand what is standard and what changes for each client — that is how we work out where to simplify this step.",
+
 "O check-in diário do look":"The daily outfit check-in",
 "Cinco ou dez capturas de tela do seu WhatsApp: a cliente manda a foto do look do dia e você responde. É a partir delas que desenhamos essa tela do jeito que você já trabalha.":"Five or ten screenshots from your WhatsApp: a client sends the photo of the day's look and you reply. They are what lets us design that screen around the way you already work.",
 
-"A avaliação que você usa hoje":"The assessment you use today",
-"O nome de quem fornece (DISC, ou outra), e uma página de resultado. É o que mostra o que você já espera ver.":"Who provides it (DISC, or another), and one result page. It shows what you already expect to see.",
+"O relatório de perfil comportamental":"The behavioral profile report",
+"Um relatório completo do DISC da SIS Assessment, de um cliente já atendido. Precisamos ver o relatório inteiro para entender o que vocês aproveitam dele no dossiê e o que fica de fora — mesmo motivo do item acima.":"One complete SIS Assessment DISC report from a client you have already worked with. We need to see the whole report to understand what you carry across into the dossiê and what gets left out — same reason as the item above.",
 
 "Os seus formulários de entrada":"Your intake forms",
 "O formulário do Google que você usa hoje, e também a página do GoHighLevel. Uma captura de tela ou o link de cada um.":"The Google form you use today, and the GoHighLevel page as well. A screenshot or the link for each.",
