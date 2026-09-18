@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Suellen Sartorato — Segundo encontro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ground:#0A0A0A;
+    --panel:#131313;
+    --panel-2:#191918;
+    --gold:#8A7048;
+    --gold-hi:#A28A60;
+    --gold-line:rgba(162,138,96,.22);
+    --cream:#D7D7C8;
+    --ink:#E8E5DE;
+    --dim:#8E8880;
+    --dimmer:#65605A;
+    --ox:#7B2230;
+    --ox-hi:#A8394A;
+    --hair:rgba(255,255,255,.07);
+    --serif:"Cormorant Garamond",Georgia,serif;
+    --sans:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{animation:none!important;transition:none!important}}
+  body{
+    margin:0;background:var(--ground);color:var(--ink);
+    font-family:var(--sans);font-weight:300;line-height:1.62;font-size:15.5px;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  /* ===================== top bar ===================== */
+  .bar{
+    position:sticky;top:0;z-index:60;background:rgba(10,10,10,.94);
+    backdrop-filter:saturate(140%) blur(8px);
+    border-bottom:1px solid var(--hair);
+    display:flex;align-items:center;gap:18px;padding:11px 22px;
+  }
+  .bar .who{font-family:var(--serif);font-size:1.16rem;color:var(--ink);letter-spacing:.01em}
+  .bar .who span{color:var(--gold-hi);font-style:italic}
+  .bar .when{font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--dimmer)}
+  .bar .spacer{flex:1}
+  .langbtn{
+    background:transparent;border:1px solid var(--gold-line);color:var(--dim);
+    font-family:var(--sans);font-size:.7rem;letter-spacing:.13em;text-transform:uppercase;
+    padding:6px 13px;cursor:pointer;border-radius:2px;
+  }
+  .langbtn:hover,.langbtn:focus-visible{color:var(--gold-hi);border-color:var(--gold-hi)}
+  .langbtn:focus-visible{outline:1px solid var(--gold-hi);outline-offset:2px}
+
+  /* ===================== layout ===================== */
+  .shell{display:grid;grid-template-columns:206px minmax(0,1fr);max-width:1240px;margin:0 auto}
+  nav{
+    position:sticky;top:49px;align-self:start;height:calc(100vh - 49px);overflow-y:auto;
+    padding:28px 16px 40px 22px;border-right:1px solid var(--hair);
+  }
+  nav p.grp{font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:var(--dimmer);margin:20px 0 6px}
+  nav p.grp:first-child{margin-top:0}
+  nav a{
+    display:block;padding:5px 0 5px 11px;margin-left:-11px;color:var(--dim);
+    text-decoration:none;font-size:.82rem;border-left:2px solid transparent;
+  }
+  nav a em{font-style:normal;color:var(--dimmer);font-size:.72rem;display:block;line-height:1.3}
+  nav a:hover em,nav a:focus-visible em{color:var(--gold-hi);opacity:.7}
+  nav a:hover,nav a:focus-visible{color:var(--gold-hi);border-left-color:var(--gold-hi)}
+  main{padding:34px 40px 140px;min-width:0}
+
+  /* ===================== sections ===================== */
+  section{
+    margin:0 0 30px;scroll-margin-top:62px;position:relative;
+    border:1px solid var(--hair);background:var(--panel);border-radius:2px;
+  }
+  .shead{display:flex;align-items:flex-start;gap:16px;padding:22px 24px 0}
+  .shead .txt{flex:1;min-width:0}
+  .eyebrow{font-size:.62rem;letter-spacing:.22em;text-transform:uppercase;color:var(--gold-hi);margin:0 0 7px}
+  h2{
+    font-family:var(--serif);font-weight:300;font-size:1.92rem;line-height:1.12;
+    margin:0;color:#fff;text-wrap:balance;
+  }
+  h2 em{font-style:italic;color:var(--gold-hi)}
+  .sbody{padding:18px 24px 24px}
+  p{margin:0 0 12px;color:var(--dim);max-width:70ch}
+  p:last-child{margin-bottom:0}
+  strong{color:var(--ink);font-weight:500}
+  .quote{
+    font-family:var(--serif);font-style:italic;color:var(--cream);font-size:1.12rem;
+    line-height:1.5;border-left:1px solid var(--gold-line);padding:2px 0 2px 18px;
+    margin:0 0 14px;max-width:62ch;
+  }
+  .quote cite{
+    display:block;font-family:var(--sans);font-style:normal;font-size:.68rem;
+    letter-spacing:.14em;text-transform:uppercase;color:var(--dimmer);margin-top:9px;
+  }
+  h3{font-size:.68rem;letter-spacing:.17em;text-transform:uppercase;color:var(--gold-hi);margin:22px 0 10px;font-weight:500}
+  h3:first-child{margin-top:0}
+  ul.b{margin:0;padding:0;list-style:none}
+  ul.b li{font-size:.9rem;color:var(--dim);padding:5px 0 5px 15px;position:relative;line-height:1.55}
+  ul.b li::before{content:"";position:absolute;left:0;top:14px;width:6px;height:1px;background:var(--gold-hi);opacity:.6}
+  .presentbtn{
+    background:transparent;border:1px solid var(--gold-line);color:var(--dim);
+    font-family:var(--sans);font-size:.66rem;letter-spacing:.15em;text-transform:uppercase;
+    padding:7px 13px;cursor:pointer;border-radius:2px;white-space:nowrap;
+  }
+  .presentbtn:hover,.presentbtn:focus-visible{color:var(--gold-hi);border-color:var(--gold-hi)}
+  .presentbtn:focus-visible{outline:1px solid var(--gold-hi);outline-offset:2px}
+  .sig{display:block;width:min(300px,64%);margin:0 0 22px;opacity:.94}
+
+  /* ============ the hours figure: the one loud moment ============ */
+  .hours{
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+    gap:1px;background:var(--hair);border:1px solid var(--hair);margin:0 0 20px;
+  }
+  .hours div{background:var(--panel);padding:26px 20px}
+  .hours b{
+    display:block;font-family:var(--serif);font-weight:300;
+    font-size:clamp(3.2rem,7vw,5.2rem);line-height:.92;color:var(--gold-hi);
+    font-variant-numeric:tabular-nums;letter-spacing:-.02em;
+  }
+  .hours b i{font-style:normal;font-size:.34em;color:var(--dim);margin-left:.3em;letter-spacing:.06em}
+  .hours span{display:block;font-size:.78rem;color:var(--dim);margin-top:12px;line-height:1.45;max-width:30ch}
+  .hours em{display:block;font-style:normal;font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;color:var(--dimmer);margin-top:9px}
+
+  /* ============ ledger: task -> hours ============ */
+  table.led{width:100%;border-collapse:collapse;margin:0 0 6px;font-size:.88rem}
+  table.led th{
+    text-align:left;font-weight:500;font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--dimmer);padding:0 12px 9px 0;border-bottom:1px solid var(--hair);
+  }
+  table.led th.n,table.led td.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  table.led td{padding:10px 12px 10px 0;border-bottom:1px solid var(--hair);color:var(--dim);vertical-align:top}
+  table.led td.n{color:var(--cream);font-family:var(--serif);font-size:1.12rem}
+  table.led tr:last-child td{border-bottom:none}
+  table.led tr.sum td{border-top:1px solid var(--gold-line);border-bottom:none;padding-top:13px;color:var(--ink)}
+  table.led tr.sum td.n{color:var(--gold-hi);font-size:1.4rem}
+  table.led td small{display:block;color:var(--dimmer);font-size:.76rem;margin-top:3px;line-height:1.45}
+
+  /* ============ the growth ladder ============ */
+  .ladder{display:grid;gap:1px;background:var(--hair);border:1px solid var(--hair)}
+  .rung{background:var(--panel);padding:16px 20px;display:grid;grid-template-columns:auto 1fr auto;gap:18px;align-items:baseline}
+  .rung .who{font-family:var(--serif);font-size:1.5rem;color:var(--gold-hi);font-variant-numeric:tabular-nums;min-width:2ch}
+  .rung .what{color:var(--dim);font-size:.88rem;line-height:1.5}
+  .rung .val{font-family:var(--serif);font-size:1.32rem;color:var(--cream);font-variant-numeric:tabular-nums;white-space:nowrap}
+  .rung.hi{background:var(--panel-2)}
+  .rung.hi .val{color:var(--gold-hi)}
+
+  .note{
+    border:1px solid var(--gold-line);background:rgba(162,138,96,.05);
+    padding:15px 18px;margin:18px 0 0;border-radius:2px;
+  }
+  .note p{margin:0;color:var(--cream);font-size:.87rem;max-width:64ch}
+  .note .t{display:block;font-size:.6rem;letter-spacing:.18em;text-transform:uppercase;color:var(--gold-hi);margin-bottom:7px}
+
+  .src{font-size:.72rem;color:var(--dimmer);margin-top:14px;line-height:1.55;max-width:70ch}
+  .src b{color:var(--dim);font-weight:400}
+
+  /* ===================== present mode ===================== */
+  .exit{
+    display:none;position:fixed;top:16px;right:18px;z-index:120;
+    background:rgba(10,10,10,.9);border:1px solid var(--gold-line);color:var(--dim);
+    font-family:var(--sans);font-size:.66rem;letter-spacing:.15em;text-transform:uppercase;
+    padding:8px 14px;cursor:pointer;border-radius:2px;
+  }
+  .exit:hover{color:var(--gold-hi);border-color:var(--gold-hi)}
+  body.presenting .exit{display:block}
+  body.presenting{overflow:hidden}
+  body.presenting .bar,body.presenting nav{display:none}
+  body.presenting .shell{grid-template-columns:1fr;max-width:none}
+  body.presenting main{padding:0}
+  body.presenting section{display:none}
+  body.presenting section.on{
+    display:block;position:fixed;inset:0;z-index:100;margin:0;border:none;
+    background:var(--ground);overflow-y:auto;
+    padding:clamp(38px,6vh,80px) clamp(28px,7vw,110px);
+  }
+  body.presenting section.on .presentbtn{display:none}
+  body.presenting section.on .en{display:none}
+  body.presenting section.on .ptx{display:revert}
+  body.presenting section.on .sbody{padding:0}
+  body.presenting section.on .shead{padding:0 0 6px}
+  body.presenting section.on h2{font-size:clamp(2.3rem,5.2vw,3.5rem)}
+  body.presenting section.on .eyebrow{font-size:.72rem;margin-bottom:12px}
+  body.presenting section.on p,
+  body.presenting section.on ul.b li,
+  body.presenting section.on table.led{font-size:clamp(1rem,1.5vw,1.18rem)}
+  body.presenting section.on .quote{font-size:clamp(1.3rem,2.4vw,1.8rem)}
+  body.presenting section.on .sig{width:min(360px,60%);margin-bottom:38px}
+  body.presenting section.on .src{display:none}
+
+  /* language: Portuguese is the default; English is the toggle */
+  .en{display:none}
+
+  @media (max-width:880px){
+    .shell{grid-template-columns:1fr}
+    nav{position:static;height:auto;border-right:none;border-bottom:1px solid var(--hair);padding:18px 22px}
+    main{padding:24px 20px 100px}
+    .rung{grid-template-columns:auto 1fr;gap:10px}
+    .rung .val{grid-column:2;}
+  }
+</style>
+</head>
+<body>
+
+<div class="bar">
+  <span class="who">Suellen <span>Sartorato</span></span>
+  <span class="when">Segundo encontro</span>
+  <span class="spacer"></span>
+  <button class="langbtn" id="lang">English</button>
+</div>
+
+<button class="exit" id="exit">Fechar · Esc</button>
+
+<div class="shell">
+  <nav>
+    <p class="grp"><span class="ptx">O que vimos</span><span class="en">What we saw</span></p>
+    <a href="#horas"><span class="ptx">As horas</span><span class="en">The hours</span><em>27–34 / semana</em></a>
+    <a href="#dossie"><span class="ptx">O dossiê</span><span class="en">The dossiê</span><em>2–3h · por cliente</em></a>
+    <a href="#agenda"><span class="ptx">A agenda</span><span class="en">The calendar</span><em>1h30 · por dia</em></a>
+    <a href="#metodo"><span class="ptx">O método</span><span class="en">The method</span><em>7 sessões</em></a>
+
+    <p class="grp"><span class="ptx">O que isso significa</span><span class="en">What it means</span></p>
+    <a href="#capacidade"><span class="ptx">Capacidade</span><span class="en">Capacity</span><em>+24%</em></a>
+    <a href="#mercado"><span class="ptx">O mercado</span><span class="en">The market</span><em>Brasil · Portugal · EUA</em></a>
+    <a href="#multiplicar"><span class="ptx">Multiplicar</span><span class="en">Multiplying</span><em>consultoras</em></a>
+    <a href="#numeros"><span class="ptx">Os números</span><span class="en">The numbers</span><em>ano um</em></a>
+  </nav>
+
+  <main>
+
+    <!-- ============ HOURS ============ -->
+    <section id="horas" data-sec="horas">
+      <div class="shead">
+        <div class="txt">
+          <p class="eyebrow"><span class="ptx">Das suas próprias entrevistas</span><span class="en">From your own interviews</span></p>
+          <h2><span class="ptx">As horas que <em>já existem</em></span><span class="en">The hours that <em>already exist</em></span></h2>
+        </div>
+        <button class="presentbtn" data-present="horas">Mostrar</button>
+      </div>
+      <div class="sbody">
+        <img class="sig" src="assets/sig-white-tight.png" alt="Suellen Sartorato">
+
+        <div class="hours">
+          <div>
+            <b>31<i>h</i></b>
+            <span class="ptx">por semana, em tarefas manuais que o Anderson descreveu uma a uma</span>
+            <span class="en">a week, on manual work Anderson described task by task</span>
+            <em>Anderson</em>
+          </div>
+          <div>
+            <b>6<i>–8h</i></b>
+            <span class="ptx">por cliente, fora das sessões: dossiê, referências, busca de lojas</span>
+            <span class="en">per client, outside sessions: dossiê, references, store research</span>
+            <em>Suellen</em>
+          </div>
+        </div>
+
+        <p class="ptx">
+          Os dois números acima não são estimativas nossas. Saíram das entrevistas de vocês,
+          tarefa por tarefa, com o tempo que cada um informou.
+        </p>
+        <p class="en">
+          Neither number above is our estimate. Both come from your own interviews, task by task,
+          with the time each of you gave.
+        </p>
+
+        <h3><span class="ptx">O que o Anderson contou</span><span class="en">What Anderson described</span></h3>
+        <table class="led">
+          <tr>
+            <th><span class="ptx">Tarefa</span><span class="en">Task</span></th>
+            <th class="n"><span class="ptx">Por semana</span><span class="en">Per week</span></th>
+          </tr>
+          <tr>
+            <td><span class="ptx">Conferir a agenda no Google Calendar e cruzar com o Trello</span><span class="en">Checking Google Calendar against Trello</span>
+              <small><span class="ptx">Todos os dias, de manhã. 1h30 em média.</span><span class="en">Every day, mornings. 1h30 on average.</span></small></td>
+            <td class="n">10,5</td>
+          </tr>
+          <tr>
+            <td><span class="ptx">Curadoria de conteúdo para a linha editorial</span><span class="en">Content curation for the editorial line</span>
+              <small><span class="ptx">3× por semana, 3 a 4 horas cada.</span><span class="en">3× a week, 3 to 4 hours each.</span></small></td>
+            <td class="n">9–12</td>
+          </tr>
+          <tr>
+            <td><span class="ptx">Programar os conteúdos já prontos</span><span class="en">Scheduling finished content</span>
+              <small><span class="ptx">1× por semana, meio dia.</span><span class="en">Once a week, half a day.</span></small></td>
+            <td class="n">4</td>
+          </tr>
+          <tr>
+            <td><span class="ptx">Adaptar conteúdos que performam bem</span><span class="en">Adapting content that performs well</span>
+              <small><span class="ptx">1× por semana, meio dia.</span><span class="en">Once a week, half a day.</span></small></td>
+            <td class="n">4</td>
+          </tr>
+          <tr>
+            <td><span class="ptx">Lembretes de sessão no WhatsApp</span><span class="en">Session reminders on WhatsApp</span>
+              <small><span class="ptx">Quatro envios por encontro: no agendamento, 3 dias, 1 dia e 30 min antes.</span><span class="en">Four sends per meeting: at booking, 3 days, 1 day, and 30 min before.</span></small></td>
+            <td class="n">3,5</td>
+          </tr>
+          <tr class="sum">
+            <td><span class="ptx">Só o que foi cronometrado</span><span class="en">Only what was timed</span>
+              <small><span class="ptx">Fora as 20 mensagens por dia e os contratos, que ele não cronometrou.</span><span class="en">Not counting 20 messages a day and the contracts, which he did not time.</span></small></td>
+            <td class="n">31–34</td>
+          </tr>
+        </table>
+
+        <div class="note">
+          <span class="t"><span class="ptx">Vale reparar</span><span class="en">Worth noticing</span></span>
+          <p class="ptx">
+            A conferência da agenda leva 1h30 por dia não por causa do calendário, mas porque a
+            informação está em dois lugares. O Google Calendar não sabe quem já agendou; o Trello não
+            sabe o que está no calendário. <strong>O trabalho é reconciliar os dois.</strong>
+          </p>
+          <p class="en">
+            The calendar check takes 1h30 a day not because of the calendar, but because the
+            information lives in two places. Google Calendar does not know who has booked; Trello does
+            not know what is on the calendar. <strong>The work is reconciling the two.</strong>
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ DOSSIÊ ============ -->
+    <section id="dossie" data-sec="dossie">
+      <div class="shead">
+        <div class="txt">
+          <p class="eyebrow"><span class="ptx">Citado três vezes na entrevista</span><span class="en">Named three times in the interview</span></p>
+          <h2><span class="ptx">O <em>dossiê</em></span><span class="en">The <em>dossiê</em></span></h2>
+        </div>
+        <button class="presentbtn" data-present="dossie">Mostrar</button>
+      </div>
+      <div class="sbody">
+        <blockquote class="quote">
+          <span class="ptx">“Hoje, atualmente, os nossos dossiês estão todos atrasados… é a única fase que eu não gosto.”</span>
+          <span class="en">“Today, currently, our dossiês are all late… it is the only phase I do not like.”</span>
+          <cite>Suellen · 18.09.2026</cite>
+        </blockquote>
+
+        <p class="ptx">
+          É a última entrega de cada consultoria e está em contrato. Leva de 2 a 3 horas por cliente,
+          e o tempo não está na análise — está em baixar as fotos do WhatsApp, subir no Canva e montar
+          o antes e depois.
+        </p>
+        <p class="en">
+          It is the final delivery of every engagement and it is in the contract. It takes 2 to 3 hours
+          per client, and the time is not in the analysis — it is in downloading photos from WhatsApp,
+          uploading to Canva, and assembling the before and after.
+        </p>
+
+        <h3><span class="ptx">O detalhe que muda tudo</span><span class="en">The detail that changes everything</span></h3>
+        <blockquote class="quote">
+          <span class="ptx">“Se eu vou falar sobre tecido, isso daí é padrão para todo mundo. Se eu vou falar sobre caimento da peça, é padrão para todo mundo.”</span>
+          <span class="en">“If I am going to talk about fabric, that is standard for everyone. If I am going to talk about the fit of the piece, it is standard for everyone.”</span>
+          <cite>Suellen · 18.09.2026</cite>
+        </blockquote>
+        <p class="ptx">
+          Uma parte é padrão e outra é individual. Essa separação é a coisa mais importante que
+          apareceu nas duas entrevistas: <strong>o que é padrão pode ser montado sozinho. O que é seu
+          continua sendo seu.</strong>
+        </p>
+        <p class="en">
+          One part is standard and the other is individual. That separation is the most important thing
+          in either interview: <strong>what is standard can assemble itself. What is yours stays
+          yours.</strong>
+        </p>
+      </div>
+    </section>
+
+    <!-- ============ AGENDA / PNG ============ -->
+    <section id="agenda" data-sec="agenda">
+      <div class="shead">
+        <div class="txt">
+          <p class="eyebrow"><span class="ptx">Duas coisas que já foram tentadas</span><span class="en">Two things already attempted</span></p>
+          <h2><span class="ptx">Onde o trabalho <em>trava</em></span><span class="en">Where the work <em>gets stuck</em></span></h2>
+        </div>
+        <button class="presentbtn" data-present="agenda">Mostrar</button>
+      </div>
+      <div class="sbody">
+        <h3><span class="ptx">As fotos em PNG</span><span class="en">The PNG cutouts</span></h3>
+        <blockquote class="quote">
+          <span class="ptx">“Foi a primeira vez que eu fiz isso, mas eu me arrependi.”</span>
+          <span class="en">“It was the first time I did this, but I regretted it.”</span>
+          <cite>Suellen · 18.09.2026</cite>
+        </blockquote>
+        <p class="ptx">
+          Uma cliente pediu para multiplicar os looks a partir das peças dela. O processo foi subir foto
+          por foto num aplicativo pago, esperar converter, baixar uma a uma e montar no Canva. A cota
+          gratuita acabou e a entrega não saiu.
+        </p>
+        <p class="en">
+          A client asked to multiply her looks from her own pieces. The process was uploading photo by
+          photo to a paid app, waiting for each conversion, downloading them one at a time, and
+          assembling in Canva. The free quota ran out and the delivery never happened.
+        </p>
+
+        <h3><span class="ptx">A busca de lojas</span><span class="en">Store research</span></h3>
+        <blockquote class="quote">
+          <span class="ptx">“Se eu jogo uma palavra no Google, ele vai me buscar itens aqui dos Estados Unidos e muitas vezes o meu cliente está no Brasil.”</span>
+          <span class="en">“If I type a word into Google, it searches for items here in the United States, and many times my client is in Brazil.”</span>
+          <cite>Suellen · 18.09.2026</cite>
+        </blockquote>
+        <p class="ptx">
+          São 2 horas de pesquisa antes de cada personal shopper, e a busca responde pelo lugar errado.
+          Você está nos Estados Unidos; a cliente está no Brasil.
+        </p>
+        <p class="en">
+          That is 2 hours of research before every personal shopping session, and the search answers for
+          the wrong country. You are in the United States; the client is in Brazil.
+        </p>
+      </div>
+    </section>
+
+    <!-- ============ MÉTODO ============ -->
+    <section id="metodo" data-sec="metodo">
+      <div class="shead">
+        <div class="txt">
+          <p class="eyebrow"><span class="ptx">O que as duas entrevistas disseram igual</span><span class="en">What both interviews said alike</span></p>
+          <h2><span class="ptx">O método já está <em>escrito</em></span><span class="en">The method is already <em>written</em></span></h2>
+        </div>
+        <button class="presentbtn" data-present="metodo">Mostrar</button>
+      </div>
+      <div class="sbody">
+        <p class="ptx">
+          Vocês responderam separadamente, sem combinar, e chegaram no mesmo lugar.
+        </p>
+        <p class="en">
+          You answered separately, without comparing notes, and arrived at the same place.
+        </p>
+
+        <blockquote class="quote">
+          <span class="ptx">“…com consultoras atendendo e não a Suellen como única pessoa para atender.”</span>
+          <span class="en">“…with consultants delivering and not Suellen as the only person who can deliver.”</span>
+          <cite>Anderson</cite>
+        </blockquote>
+        <blockquote class="quote">
+          <span class="ptx">“Eu quero que o nosso método seja replicável. Que tenha o passo a passo para a gente conseguir escalar.”</span>
+          <span class="en">“I want our method to be replicable. That there is a step by step so we can scale.”</span>
+          <cite>Suellen</cite>
+        </blockquote>
+
+        <p class="ptx">
+          E o método já tem forma: sete sessões, na mesma ordem, toda vez. Perfil comportamental,
+          coloração pessoal, visagismo, biotipo e guarda-roupa, linguagem corporal. Três a quatro meses.
+          <strong>Isso não é um processo a inventar — é um processo a registrar.</strong>
+        </p>
+        <p class="en">
+          And the method already has a shape: seven sessions, in the same order, every time. Behavioural
+          profile, personal colouring, visagismo, biotype and wardrobe, body language. Three to four
+          months. <strong>This is not a process to invent — it is a process to record.</strong>
+        </p>
+      </div>
+    </section>
+
+    <!-- ============ CAPACIDADE ============ -->
+    <section id="capacidade" data-sec="capacidade">
+      <div class="shead">
+        <div class="txt">
+          <p class="eyebrow"><span class="ptx">As mesmas horas, mais clientes</span><span class="en">The same hours, more clients</span></p>
+          <h2><span class="ptx">O que <em>sobra</em></span><span class="en">What <em>frees up</em></span></h2>
+        </div>
+        <button class="presentbtn" data-present="capacidade">Mostrar</button>
+      </div>
+      <div class="sbody">
+        <p class="ptx">
+          Hoje cada consultoria tem de 10 a 21 horas de sessão e mais 6 a 8 horas fora dela. As horas de
+          sessão são o trabalho. As outras são montagem.
+        </p>
+        <p class="en">
+          Today each engagement has 10 to 21 hours of sessions plus 6 to 8 hours outside them. The
+          session hours are the work. The rest is assembly.
+        </p>
+
+        <table class="led">
+          <tr>
+            <th><span class="ptx">Por consultoria</span><span class="en">Per engagement</span></th>
+            <th class="n"><span class="ptx">Hoje</span><span class="en">Today</span></th>
+            <th class="n"><span class="ptx">Depois</span><span class="en">After</span></th>
+          </tr>
+          <tr>
+            <td><span class="ptx">Sessões com a cliente</span><span class="en">Sessions with the client</span></td>
+            <td class="n">10–21</td><td class="n">10–21</td>
+          </tr>
+          <tr>
+            <td><span class="ptx">Montagem fora da sessão</span><span class="en">Assembly outside sessions</span></td>
+            <td class="n">6–8</td><td class="n">2</td>
+          </tr>
+          <tr class="sum">
+            <td><span class="ptx">Clientes simultâneas, nas mesmas horas</span><span class="en">Concurrent clients, same hours</span></td>
+            <td class="n">10</td><td class="n">13</td>
+          </tr>
+        </table>
+
+        <div class="note">
+          <span class="t"><span class="ptx">Por que 10</span><span class="en">Why 10</span></span>
+          <p class="ptx">
+            Dez é o número que você mesma deu na entrevista. Quando calculamos quantas clientes cabem
+            nas horas que você descreveu, deu dez. <strong>O cálculo bate com a sua realidade antes de
+            projetar qualquer coisa.</strong>
+          </p>
+          <p class="en">
+            Ten is the number you gave in your own interview. When we calculated how many clients fit in
+            the hours you described, it came out at ten. <strong>The model matches your reality before
+            projecting anything.</strong>
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ MERCADO ============ -->
+    <section id="mercado" data-sec="mercado">
+      <div class="shead">
+        <div class="txt">
+          <p class="eyebrow"><span class="ptx">Preços públicos, verificados em setembro</span><span class="en">Public prices, verified in September</span></p>
+          <h2><span class="ptx">Onde o seu trabalho <em>se posiciona</em></span><span class="en">Where your work <em>sits</em></span></h2>
+        </div>
+        <button class="presentbtn" data-present="mercado">Mostrar</button>
+      </div>
+      <div class="sbody">
+        <p class="ptx">
+          Fomos ver o que o mercado cobra por uma consultoria completa, em cada lugar onde você já tem
+          cliente. Só preços publicados, nenhuma estimativa.
+        </p>
+        <p class="en">
+          We looked at what the market charges for a complete engagement, in each place you already have
+          clients. Published prices only, no estimates.
+        </p>
+
+        <div class="ladder">
+          <div class="rung">
+            <span class="who">BR</span>
+            <span class="what"><span class="ptx">Consultoria premium, 5 a 7 sessões</span><span class="en">Premium engagement, 5 to 7 sessions</span></span>
+            <span class="val">R$ 2.300–2.850</span>
+          </div>
+          <div class="rung">
+            <span class="who">PT</span>
+            <span class="what"><span class="ptx">Consultoria completa — três consultoras diferentes</span><span class="en">Complete engagement — three separate consultants</span></span>
+            <span class="val">€ 600–890</span>
+          </div>
+          <div class="rung hi">
+            <span class="who">US</span>
+            <span class="what"><span class="ptx">Personal shopper em Miami, por hora</span><span class="en">Personal shopper in Miami, hourly</span></span>
+            <span class="val">$ 125 / h</span>
+          </div>
+        </div>
+
+        <h3><span class="ptx">O que isso quer dizer para você</span><span class="en">What that means for you</span></h3>
+        <p class="ptx">
+          A consultora de Miami cobra $125 por hora e entrega as horas de sessão. A sua consultoria tem
+          as sessões <strong>mais</strong> o acompanhamento diário de segunda a segunda por três meses,
+          <strong>mais</strong> o dossiê, <strong>mais</strong> a busca de lojas. São de 23 a 44 horas
+          entregues por cliente.
+        </p>
+        <p class="en">
+          The Miami consultant charges $125 an hour and delivers session hours. Yours has the sessions
+          <strong>plus</strong> daily follow-up Monday to Monday for three months, <strong>plus</strong>
+          the dossiê, <strong>plus</strong> the store research. That is 23 to 44 delivered hours per
+          client.
+        </p>
+        <div class="note">
+          <span class="t"><span class="ptx">O número</span><span class="en">The number</span></span>
+          <p class="ptx">
+            Nos seus próprios cursos, o checkout dos Estados Unidos cobra cerca de 3,6× o preço
+            brasileiro pelo mesmo produto. Aplicando a sua própria lógica à referência de mercado,
+            uma consultoria sua se posiciona entre <strong>US$ 1.750 e US$ 2.500</strong> — acima de
+            Portugal, ainda abaixo do teto americano.
+          </p>
+          <p class="en">
+            On your own courses, the US checkout charges about 3.6× the Brazilian price for the same
+            product. Applying your own logic to the market reference, one of your engagements sits
+            between <strong>US$1,750 and US$2,500</strong> — above Portugal, still below the US ceiling.
+          </p>
+        </div>
+        <p class="src">
+          <b>Fontes:</b> patriciaramos.com.br · sandrafranco.pt · dressyproject.pt ·
+          ananisa-imageconsulting.com · miamistyling.com · Hotmart (checkout BR e US). Todos consultados
+          em 18.09.2026.
+        </p>
+      </div>
+    </section>
+
+    <!-- ============ MULTIPLICAR ============ -->
+    <section id="multiplicar" data-sec="multiplicar">
+      <div class="shead">
+        <div class="txt">
+          <p class="eyebrow"><span class="ptx">A parte que você descreveu</span><span class="en">The part you described</span></p>
+          <h2><span class="ptx">Uma consultora <em>de cada vez</em></span><span class="en">One consultant <em>at a time</em></span></h2>
+        </div>
+        <button class="presentbtn" data-present="multiplicar">Mostrar</button>
+      </div>
+      <div class="sbody">
+        <p class="ptx">
+          Quando o método está registrado, uma consultora formada por você entrega do mesmo jeito. Ela
+          paga para entrar, paga para usar o sistema, e uma parte do que ela fatura volta para vocês.
+        </p>
+        <p class="en">
+          Once the method is recorded, a consultant you train delivers the same way. She pays to join,
+          pays to use the system, and a share of what she bills comes back to you.
+        </p>
+
+        <div class="ladder">
+          <div class="rung">
+            <span class="who">1</span>
+            <span class="what"><span class="ptx">consultora · formação, mensalidade e participação</span><span class="en">consultant · training, subscription and share</span></span>
+            <span class="val">US$ 10.900</span>
+          </div>
+          <div class="rung">
+            <span class="who">3</span>
+            <span class="what"><span class="ptx">consultoras</span><span class="en">consultants</span></span>
+            <span class="val">US$ 32.800</span>
+          </div>
+          <div class="rung hi">
+            <span class="who">5</span>
+            <span class="what"><span class="ptx">consultoras</span><span class="en">consultants</span></span>
+            <span class="val">US$ 54.700</span>
+          </div>
+        </div>
+
+        <p class="src">
+          <span class="ptx"><b>Como foi calculado:</b> formação de US$ 750 uma vez, mensalidade de US$ 79
+          e 12% sobre as consultorias entregues. A referência de mensalidade é o MOSTY, a plataforma
+          brasileira para consultoras de imagem, que cobra de R$ 59,90 a R$ 149,90 por mês — mas ela
+          vende ferramenta, e aqui a consultora recebe o seu método.</span>
+          <span class="en"><b>How this was calculated:</b> US$750 joining fee once, US$79 a month, and 12%
+          of engagements delivered. The subscription reference is MOSTY, the Brazilian platform for image
+          consultants, at R$59.90 to R$149.90 a month — but they sell a tool, and here the consultant
+          receives your method.</span>
+        </p>
+      </div>
+    </section>
+
+    <!-- ============ NÚMEROS ============ -->
+    <section id="numeros" data-sec="numeros">
+      <div class="shead">
+        <div class="txt">
+          <p class="eyebrow"><span class="ptx">Somando tudo, no cenário conservador</span><span class="en">Everything together, conservative case</span></p>
+          <h2><span class="ptx">O primeiro <em>ano</em></span><span class="en">The first <em>year</em></span></h2>
+        </div>
+        <button class="presentbtn" data-present="numeros">Mostrar</button>
+      </div>
+      <div class="sbody">
+        <table class="led">
+          <tr>
+            <th><span class="ptx">De onde vem</span><span class="en">Where it comes from</span></th>
+            <th class="n"><span class="ptx">Por ano</span><span class="en">Per year</span></th>
+          </tr>
+          <tr>
+            <td><span class="ptx">As clientes que cabem nas horas que sobram</span><span class="en">The clients that fit in the freed hours</span>
+              <small><span class="ptx">De 10 para 13 simultâneas, nas mesmas horas.</span><span class="en">From 10 to 13 concurrent, in the same hours.</span></small></td>
+            <td class="n">US$ 15.750</td>
+          </tr>
+          <tr>
+            <td><span class="ptx">As horas do Anderson que deixam de existir</span><span class="en">Anderson's hours that stop existing</span>
+              <small><span class="ptx">27h por semana, ao custo de quem faria esse trabalho.</span><span class="en">27h a week, at the cost of hiring for it.</span></small></td>
+            <td class="n">US$ 35.100</td>
+          </tr>
+          <tr class="sum">
+            <td><span class="ptx">Sem acrescentar nenhuma consultora</span><span class="en">Without adding a single consultant</span></td>
+            <td class="n">US$ 50.850</td>
+          </tr>
+        </table>
+
+        <p class="ptx">
+          Acima disso, cada consultora formada acrescenta cerca de <strong>US$ 10.900 no primeiro
+          ano</strong> e continua somando nos anos seguintes.
+        </p>
+        <p class="en">
+          On top of that, each consultant trained adds roughly <strong>US$10,900 in the first
+          year</strong> and keeps adding in the years after.
+        </p>
+
+        <div class="note">
+          <span class="t"><span class="ptx">Uma observação honesta</span><span class="en">One honest note</span></span>
+          <p class="ptx">
+            Os valores de consultoria vêm de preços de mercado publicados, não dos seus. Você é a única
+            pessoa que sabe o número real — <strong>se ele for maior, tudo acima sobe junto.</strong>
+          </p>
+          <p class="en">
+            The engagement values come from published market prices, not yours. You are the only person
+            who knows the real number — <strong>if it is higher, everything above rises with it.</strong>
+          </p>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+// ---- language ----------------------------------------------------------
+// Portuguese is the default: this document is read by its subject, in her
+// language. English exists for Nicole, and is never the state a client sees.
+const langBtn = document.getElementById('lang');
+let en = false;
+function setLang(toEnglish) {
+  en = toEnglish;
+  document.querySelectorAll('.en').forEach(e => e.style.display = en ? 'revert' : 'none');
+  document.querySelectorAll('.ptx').forEach(e => e.style.display = en ? 'none' : 'revert');
+  langBtn.textContent = en ? 'Português' : 'English';
+  document.documentElement.lang = en ? 'en' : 'pt-BR';
+}
+langBtn.addEventListener('click', () => setLang(!en));
+
+// ---- present mode ------------------------------------------------------
+// One section fills the screen, always in Portuguese regardless of the
+// toggle above: what gets shared is read by her, not by us.
+function present(key) {
+  document.querySelectorAll('section').forEach(s => s.classList.toggle('on', s.dataset.sec === key));
+  document.body.classList.add('presenting');
+  const el = document.querySelector('section[data-sec="' + key + '"]');
+  if (el) el.scrollTop = 0;
+}
+function exitPresent() {
+  document.body.classList.remove('presenting');
+  document.querySelectorAll('section.on').forEach(s => s.classList.remove('on'));
+}
+document.querySelectorAll('[data-present]').forEach(b =>
+  b.addEventListener('click', () => present(b.dataset.present)));
+document.getElementById('exit').addEventListener('click', exitPresent);
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') exitPresent();
+});
+
+setLang(false);
+</script>
+</body>
+</html>
