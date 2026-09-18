@@ -122,7 +122,14 @@
     font-variant-numeric:tabular-nums;letter-spacing:-.02em;
   }
   .hours b i{font-style:normal;font-size:.34em;color:var(--dim);margin-left:.3em;letter-spacing:.06em}
-  .hours span{display:block;font-size:.78rem;color:var(--dim);margin-top:12px;line-height:1.45;max-width:30ch}
+  /* :not(.en):not(.ptx) so this does not outrank the language rules below —
+     a bare `.hours span{display:block}` is more specific than `.en{display:none}`
+     and showed both languages at once. */
+  .hours span:not(.en):not(.ptx),
+  .hours span.ptx,
+  body.english .hours span.en{display:block;font-size:.78rem;color:var(--dim);margin-top:12px;line-height:1.45;max-width:30ch}
+  body.english .hours span.ptx{display:none}
+  .hours span.en{display:none}
   .hours em{display:block;font-style:normal;font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;color:var(--dimmer);margin-top:9px}
 
   /* ============ ledger: task -> hours ============ */
@@ -181,9 +188,12 @@
   /* Presenting always shows Portuguese, whatever the toggle says: what gets
      shared is read by her. These must outrank body.english above. */
   body.presenting section.on .en,
-  body.english.presenting section.on .en{display:none}
+  body.english.presenting section.on .en,
+  body.english.presenting section.on .hours span.en{display:none}
   body.presenting section.on .ptx,
   body.english.presenting section.on .ptx{display:revert}
+  body.presenting section.on .hours span.ptx,
+  body.english.presenting section.on .hours span.ptx{display:block}
   body.presenting section.on .sbody{padding:0}
   body.presenting section.on .shead{padding:0 0 6px}
   body.presenting section.on h2{font-size:clamp(2.3rem,5.2vw,3.5rem)}
