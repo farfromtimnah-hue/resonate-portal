@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Suellen Sartorato — O fluxo do trabalho</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ground:#0A0A0A; --panel:#131313; --panel-2:#191918;
+    --gold:#8A7048; --gold-hi:#A28A60; --gold-line:rgba(162,138,96,.22);
+    --cream:#D7D7C8; --ink:#E8E5DE; --dim:#8E8880; --dimmer:#65605A;
+    --ox:#7B2230; --ox-hi:#A8394A;
+    --hair:rgba(255,255,255,.07);
+    --serif:"Cormorant Garamond",Georgia,serif;
+    --sans:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  }
+  *{box-sizing:border-box}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+  body{
+    margin:0;background:var(--ground);color:var(--ink);
+    font-family:var(--sans);font-weight:300;line-height:1.62;font-size:15.5px;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  .bar{
+    position:sticky;top:0;z-index:60;background:rgba(10,10,10,.94);
+    backdrop-filter:saturate(140%) blur(8px);border-bottom:1px solid var(--hair);
+    display:flex;align-items:center;gap:18px;padding:11px 22px;
+  }
+  .bar .who{font-family:var(--serif);font-size:1.16rem;letter-spacing:.01em}
+  .bar .who span{color:var(--gold-hi);font-style:italic}
+  .bar .when{font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--dimmer)}
+  .bar .spacer{flex:1}
+  .langbtn{
+    background:transparent;border:1px solid var(--gold-line);color:var(--dim);
+    font-family:var(--sans);font-size:.7rem;letter-spacing:.13em;text-transform:uppercase;
+    padding:6px 13px;cursor:pointer;border-radius:2px;
+  }
+  .langbtn:hover,.langbtn:focus-visible{color:var(--gold-hi);border-color:var(--gold-hi)}
+
+  main{max-width:1240px;margin:0 auto;padding:30px 28px 120px}
+  .lede{max-width:66ch;margin:0 0 30px}
+  .lede h1{
+    font-family:var(--serif);font-weight:300;font-size:2.1rem;line-height:1.1;
+    margin:0 0 10px;color:#fff;
+  }
+  .lede h1 em{font-style:italic;color:var(--gold-hi)}
+  .lede p{margin:0;color:var(--dim)}
+
+  /* ============ lanes ============ */
+  .lane{margin:0 0 26px;border:1px solid var(--hair);background:var(--panel);border-radius:2px}
+  .lane.exception{border-color:rgba(168,57,74,.28)}
+  .lanehead{
+    display:flex;align-items:baseline;gap:14px;padding:16px 20px 0;
+  }
+  .lanehead h2{
+    font-family:var(--serif);font-weight:300;font-size:1.34rem;margin:0;color:#fff;
+  }
+  .lanehead .owner{
+    font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:var(--gold-hi);
+  }
+  .lane.exception .lanehead .owner{color:var(--ox-hi)}
+  .lanehead .tot{margin-left:auto;font-family:var(--serif);font-size:1.1rem;color:var(--cream);white-space:nowrap}
+
+  .track{
+    display:flex;gap:0;align-items:stretch;overflow-x:auto;
+    padding:16px 20px 20px;scrollbar-width:thin;
+  }
+  .step{
+    flex:0 0 auto;width:158px;background:var(--panel-2);border:1px solid var(--hair);
+    border-radius:2px;padding:13px 13px 12px;cursor:pointer;text-align:left;
+    color:inherit;font:inherit;position:relative;transition:border-color .15s,background .15s;
+  }
+  .step:hover,.step:focus-visible{border-color:var(--gold-hi);background:#1d1d1b;outline:none}
+  .step .n{
+    font-size:.56rem;letter-spacing:.18em;text-transform:uppercase;color:var(--dimmer);
+    display:block;margin-bottom:6px;
+  }
+  .step .t{display:block;font-size:.86rem;color:var(--ink);line-height:1.38;margin-bottom:8px}
+  .step .h{display:block;font-family:var(--serif);font-size:1.16rem;color:var(--gold-hi);font-variant-numeric:tabular-nums}
+  .step .h small{font-family:var(--sans);font-size:.6rem;color:var(--dimmer);letter-spacing:.1em;text-transform:uppercase;margin-left:3px}
+  .step.pain{border-color:rgba(168,57,74,.4)}
+  .step.pain .h{color:var(--ox-hi)}
+  .step.auto{border-style:dashed;opacity:.72}
+  .step.auto .h{color:var(--dim)}
+  .arrow{
+    flex:0 0 auto;width:26px;display:flex;align-items:center;justify-content:center;
+    color:var(--gold-line);font-size:.9rem;user-select:none;
+  }
+  .lane.exception .arrow{color:rgba(168,57,74,.3)}
+
+  .legend{display:flex;flex-wrap:wrap;gap:18px;margin:0 0 26px;padding:0;list-style:none}
+  .legend li{font-size:.72rem;color:var(--dimmer);display:flex;align-items:center;gap:7px}
+  .legend i{width:22px;height:1px;background:var(--gold-line);display:block}
+  .legend i.pain{background:var(--ox-hi)}
+  .legend i.auto{background:var(--dim);opacity:.5}
+
+  /* ============ drill-down ============ */
+  .scrim{
+    position:fixed;inset:0;z-index:100;background:rgba(6,6,6,.72);
+    backdrop-filter:blur(3px);display:none;
+  }
+  .scrim.on{display:block}
+  .sheet{
+    position:fixed;z-index:101;right:0;top:0;height:100%;width:min(540px,100%);
+    background:var(--panel);border-left:1px solid var(--gold-line);
+    overflow-y:auto;padding:26px 30px 60px;display:none;
+  }
+  .sheet.on{display:block}
+  .sheet .close{
+    position:absolute;top:18px;right:22px;background:transparent;
+    border:1px solid var(--gold-line);color:var(--dim);cursor:pointer;border-radius:2px;
+    font-family:var(--sans);font-size:.62rem;letter-spacing:.15em;text-transform:uppercase;padding:7px 12px;
+  }
+  .sheet .close:hover{color:var(--gold-hi);border-color:var(--gold-hi)}
+  .sheet .eyebrow{font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:var(--gold-hi);margin:0 0 8px}
+  .sheet h3{font-family:var(--serif);font-weight:300;font-size:1.7rem;line-height:1.16;margin:0 0 18px;color:#fff;padding-right:80px}
+  .sheet h4{font-size:.62rem;letter-spacing:.17em;text-transform:uppercase;color:var(--gold-hi);margin:22px 0 8px;font-weight:500}
+  .sheet p{margin:0 0 11px;color:var(--dim);font-size:.92rem;max-width:56ch}
+  .sheet .quote{
+    font-family:var(--serif);font-style:italic;color:var(--cream);font-size:1.04rem;line-height:1.5;
+    border-left:1px solid var(--gold-line);padding:2px 0 2px 16px;margin:0 0 12px;
+  }
+  .sheet .quote cite{
+    display:block;font-family:var(--sans);font-style:normal;font-size:.62rem;
+    letter-spacing:.14em;text-transform:uppercase;color:var(--dimmer);margin-top:8px;
+  }
+  .sheet .meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:1px;background:var(--hair);border:1px solid var(--hair);margin:0 0 6px}
+  .sheet .meta div{background:var(--panel);padding:12px 12px}
+  .sheet .meta b{display:block;font-family:var(--serif);font-size:1.2rem;color:var(--gold-hi);font-variant-numeric:tabular-nums;line-height:1}
+  .sheet .meta span{display:block;font-size:.58rem;letter-spacing:.13em;text-transform:uppercase;color:var(--dimmer);margin-top:6px}
+  .tools{display:flex;flex-wrap:wrap;gap:7px;margin:0 0 4px;padding:0;list-style:none}
+  .tools li{
+    font-size:.68rem;color:var(--dim);border:1px solid var(--hair);
+    padding:4px 9px;border-radius:2px;background:var(--panel-2);
+  }
+
+  .en{display:none}
+  body.english .en{display:revert}
+  body.english .ptx{display:none}
+
+  @media (max-width:760px){
+    main{padding:22px 16px 90px}
+    .sheet{width:100%;border-left:none}
+  }
+</style>
+</head>
+<body>
+
+<div class="bar">
+  <span class="who">Suellen <span>Sartorato</span></span>
+  <span class="when"><span class="ptx">O fluxo do trabalho</span><span class="en">The workflow</span></span>
+  <span class="spacer"></span>
+  <a href="fluxo-ghl.html" style="color:var(--dim);text-decoration:none;font-size:.7rem;letter-spacing:.13em;text-transform:uppercase;border:1px solid var(--gold-line);padding:6px 13px;border-radius:2px;margin-right:4px">GoHighLevel &rarr;</a>
+  <button class="langbtn" id="lang">English</button>
+</div>
+
+<main>
+  <div class="lede">
+    <h1><span class="ptx">Como o trabalho <em>anda hoje</em></span><span class="en">How the work <em>moves today</em></span></h1>
+    <p class="ptx">Cada quadro é uma tarefa descrita nas entrevistas de vocês. Clique em qualquer um para ver o que foi dito, o tempo informado e as ferramentas usadas.</p>
+    <p class="en">Each box is a task described in your own interviews. Click any one to see what was said, the time given, and the tools involved.</p>
+  </div>
+
+  <ul class="legend">
+    <li><i></i><span class="ptx">Trabalho manual</span><span class="en">Manual work</span></li>
+    <li><i class="pain"></i><span class="ptx">Onde trava</span><span class="en">Where it stalls</span></li>
+    <li><i class="auto"></i><span class="ptx">Já automatizado</span><span class="en">Already automated</span></li>
+  </ul>
+
+  <!-- ============ LANE 1 — ANDERSON ============ -->
+  <section class="lane">
+    <div class="lanehead">
+      <span class="owner">Anderson</span>
+      <h2><span class="ptx">Do primeiro contato até a sessão</span><span class="en">From first contact to the session</span></h2>
+      <span class="tot">31–34 <small>h/sem</small></span>
+    </div>
+    <div class="track">
+      <button class="step auto" data-step="a-funil">
+        <span class="n">1</span>
+        <span class="t"><span class="ptx">Funil nas redes</span><span class="en">Social funnel</span></span>
+        <span class="h">—</span>
+      </button>
+      <span class="arrow">→</span>
+      <button class="step" data-step="a-contato">
+        <span class="n">2</span>
+        <span class="t"><span class="ptx">Contato manual no WhatsApp</span><span class="en">Manual WhatsApp contact</span></span>
+        <span class="h">20<small>/dia</small></span>
+      </button>
+      <span class="arrow">→</span>
+      <button class="step pain" data-step="a-agenda">
+        <span class="n">3</span>
+        <span class="t"><span class="ptx">Conferir agenda e Trello</span><span class="en">Calendar against Trello</span></span>
+        <span class="h">10,5<small>h/sem</small></span>
+      </button>
+      <span class="arrow">→</span>
+      <button class="step" data-step="a-contrato">
+        <span class="n">4</span>
+        <span class="t"><span class="ptx">Contrato e assinatura</span><span class="en">Contract and signature</span></span>
+        <span class="h">20<small>min</small></span>
+      </button>
+      <span class="arrow">→</span>
+      <button class="step" data-step="a-lembretes">
+        <span class="n">5</span>
+        <span class="t"><span class="ptx">Quatro lembretes por encontro</span><span class="en">Four reminders per meeting</span></span>
+        <span class="h">3,5<small>h/sem</small></span>
+      </button>
+      <span class="arrow">→</span>
+      <button class="step" data-step="a-conteudo">
+        <span class="n">6</span>
+        <span class="t"><span class="ptx">Conteúdo e programação</span><span class="en">Content and scheduling</span></span>
+        <span class="h">17–20<small>h/sem</small></span>
+      </button>
+    </div>
+  </section>
+
+  <!-- ============ LANE 2 — SUELLEN ============ -->
+  <section class="lane">
+    <div class="lanehead">
+      <span class="owner">Suellen</span>
+      <h2><span class="ptx">As sete sessões, de três a quatro meses</span><span class="en">The seven sessions, three to four months</span></h2>
+      <span class="tot">10–21 <small>h + extras</small></span>
+    </div>
+    <div class="track">
+      <button class="step" data-step="s-disc">
+        <span class="n">1</span>
+        <span class="t"><span class="ptx">DISC antes da 1ª sessão</span><span class="en">DISC before session 1</span></span>
+        <span class="h">SIS</span>
+      </button>
+      <span class="arrow">→</span>
+      <button class="step" data-step="s-cores">
+        <span class="n">2</span>
+        <span class="t"><span class="ptx">Coloração pessoal</span><span class="en">Personal colouring</span></span>
+        <span class="h">2–2,5<small>h</small></span>
+      </button>
+      <span class="arrow">→</span>
+      <button class="step pain" data-step="s-visagismo">
+        <span class="n">3</span>
+        <span class="t"><span class="ptx">Visagismo e referências</span><span class="en">Visagismo and references</span></span>
+        <span class="h">?</span>
+      </button>
+      <span class="arrow">→</span>
+      <button class="step pain" data-step="s-closet">
+        <span class="n">4</span>
+        <span class="t"><span class="ptx">Closet e Pinterest</span><span class="en">Closet and Pinterest</span></span>
+        <span class="h">2–3<small>h</small></span>
+      </button>
+      <span class="arrow">→</span>
+      <button class="step pain" data-step="s-compras">
+        <span class="n">5</span>
+        <span class="t"><span class="ptx">Lojas e personal shopper</span><span class="en">Stores and personal shopping</span></span>
+        <span class="h">5–7<small>h</small></span>
+      </button>
+      <span class="arrow">→</span>
+      <button class="step" data-step="s-corpo">
+        <span class="n">6</span>
+        <span class="t"><span class="ptx">Linguagem corporal</span><span class="en">Body language</span></span>
+        <span class="h">1,5–3<small>h</small></span>
+      </button>
+    </div>
+  </section>
+
+  <!-- ============ LANE 3 — DAILY, RUNS UNDERNEATH ============ -->
+  <section class="lane">
+    <div class="lanehead">
+      <span class="owner"><span class="ptx">Todo dia, por baixo de tudo</span><span class="en">Every day, underneath it all</span></span>
+      <h2><span class="ptx">O feedback diário</span><span class="en">The daily feedback</span></h2>
+      <span class="tot">6–12 <small>h/sem</small></span>
+    </div>
+    <div class="track">
+      <button class="step" data-step="d-foto">
+        <span class="n">1</span>
+        <span class="t"><span class="ptx">A cliente manda a foto do look</span><span class="en">The client sends the day's look</span></span>
+        <span class="h">10<small>clientes</small></span>
+      </button>
+      <span class="arrow">→</span>
+      <button class="step" data-step="d-analise">
+        <span class="n">2</span>
+        <span class="t"><span class="ptx">Você analisa e corrige com IA</span><span class="en">You review and correct with AI</span></span>
+        <span class="h">5–10<small>min</small></span>
+      </button>
+      <span class="arrow">→</span>
+      <button class="step" data-step="d-devolve">
+        <span class="n">3</span>
+        <span class="t"><span class="ptx">Devolve a imagem ajustada</span><span class="en">You send the adjusted image back</span></span>
+        <span class="h">7<small>dias/sem</small></span>
+      </button>
+    </div>
+  </section>
+
+  <!-- ============ LANE 4 — EXCEPTION ============ -->
+  <section class="lane exception">
+    <div class="lanehead">
+      <span class="owner"><span class="ptx">Onde o trabalho para</span><span class="en">Where the work stops</span></span>
+      <h2><span class="ptx">O dossiê</span><span class="en">The dossiê</span></h2>
+      <span class="tot">2–3 <small>h/cliente</small></span>
+    </div>
+    <div class="track">
+      <button class="step pain" data-step="x-baixar">
+        <span class="n">1</span>
+        <span class="t"><span class="ptx">Baixar todas as fotos do WhatsApp</span><span class="en">Download every photo from WhatsApp</span></span>
+        <span class="h">—</span>
+      </button>
+      <span class="arrow">→</span>
+      <button class="step pain" data-step="x-png">
+        <span class="n">2</span>
+        <span class="t"><span class="ptx">Converter peças em PNG</span><span class="en">Convert garments to PNG</span></span>
+        <span class="h">1<small>por vez</small></span>
+      </button>
+      <span class="arrow">→</span>
+      <button class="step pain" data-step="x-canva">
+        <span class="n">3</span>
+        <span class="t"><span class="ptx">Montar tudo no Canva</span><span class="en">Assemble it all in Canva</span></span>
+        <span class="h">2–3<small>h</small></span>
+      </button>
+      <span class="arrow">→</span>
+      <button class="step pain" data-step="x-entrega">
+        <span class="n">4</span>
+        <span class="t"><span class="ptx">Entrega — hoje atrasada</span><span class="en">Delivery — currently late</span></span>
+        <span class="h">⚠</span>
+      </button>
+    </div>
+  </section>
+</main>
+
+<div class="scrim" id="scrim"></div>
+<aside class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title">
+  <button class="close" id="close"><span class="ptx">Fechar</span><span class="en">Close</span></button>
+  <div id="sheet-body"></div>
+</aside>
+
+<script>
+// Every panel below is sourced from the 2026-09-18 intake sessions (11 and 12).
+// Quotes are verbatim Portuguese as the client spoke them; nothing is paraphrased
+// into her mouth. Where a figure was never given, the panel says so rather than
+// inventing one - the taxonomy's epistemic rule: drop to coarser detail instead
+// of fabricating resolution.
+const STEPS = {
+  'a-funil': {
+    owner:'Anderson', ownerEn:'Anderson',
+    title:'O funil automatizado', titleEn:'The automated funnel',
+    tools:['Instagram','WhatsApp'],
+    meta:[],
+    body:`<p class="ptx">O conteúdo nas redes gera automação de mensagens que leva o lead para um funil. Essa parte já funciona sozinha.</p>
+          <p class="en">Content on social media triggers message automation that pulls the lead into a funnel. This part already runs on its own.</p>
+          <blockquote class="quote"><span class="ptx">"Hoje maioria dos conteúdos possuem automação de mensagens que leva para um funil."</span><span class="en">"Today most of the content has message automation that leads to a funnel."</span><cite>Anderson · 18.09.2026</cite></blockquote>`
+  },
+  'a-contato': {
+    owner:'Anderson', ownerEn:'Anderson',
+    title:'O contato manual', titleEn:'The manual contact',
+    tools:['WhatsApp','Instagram Direct'],
+    meta:[['20','<span class="ptx">mensagens por dia</span><span class="en">messages a day</span>']],
+    body:`<p class="ptx">Dentro do funil existe uma etapa que exige contato humano, para o lead não ficar esperando. São cerca de 20 mensagens por dia, escritas uma a uma.</p>
+          <p class="en">Inside the funnel there is a stage that needs human contact, so the lead is not left waiting. Around 20 messages a day, written one at a time.</p>
+          <h4><span class="ptx">Por que é manual de propósito</span><span class="en">Why it is manual on purpose</span></h4>
+          <blockquote class="quote"><span class="ptx">"essa mensagem de boas vindas, mando de forma manual pois escrevo nome é uma condição de tempo (bom dia ou boa tarde) para parecer bem natural"</span><span class="en">"this welcome message, I send manually because I write the name and the time of day (good morning or good afternoon) so it seems very natural"</span><cite>Anderson · 18.09.2026</cite></blockquote>
+          <p class="ptx">O tempo gasto não foi cronometrado.</p>
+          <p class="en">The time spent was not measured.</p>`
+  },
+  'a-agenda': {
+    owner:'Anderson', ownerEn:'Anderson',
+    title:'Conferir a agenda contra o Trello', titleEn:'Checking the calendar against Trello',
+    tools:['Google Calendar','Trello'],
+    meta:[['1h30','<span class="ptx">por dia</span><span class="en">per day</span>'],['10,5','<span class="ptx">horas por semana</span><span class="en">hours a week</span>']],
+    body:`<p class="ptx">Todos os dias, geralmente de manhã: abre o Google Calendar compartilhado, vê as sessões do dia, consulta o Trello para saber quem já agendou e quem não, e manda o link de agendamento para quem falta.</p>
+          <p class="en">Every day, usually in the morning: open the shared Google Calendar, check the day's sessions, consult Trello to see who has booked and who has not, and send the booking link to whoever is missing.</p>
+          <blockquote class="quote"><span class="ptx">"Esse trabalho leva em média 1h30min. Mas, as vezes leva mais tempo pois alguns clientes retornam pedindo horários ou dias que não estão no link."</span><span class="en">"This work takes 1h30 on average. But sometimes it takes longer because some clients come back asking for times or days that are not in the link."</span><cite>Anderson · 18.09.2026</cite></blockquote>
+          <h4><span class="ptx">O que custa o tempo</span><span class="en">What the time actually costs</span></h4>
+          <p class="ptx">Não é o calendário. É que a informação está em dois lugares: o Google Calendar não sabe quem agendou, o Trello não sabe o que está no calendário. <strong>O trabalho é reconciliar os dois.</strong></p>
+          <p class="en">It is not the calendar. The information lives in two places: Google Calendar does not know who has booked, Trello does not know what is on the calendar. <strong>The work is reconciling the two.</strong></p>`
+  },
+  'a-contrato': {
+    owner:'Anderson', ownerEn:'Anderson',
+    title:'O contrato', titleEn:'The contract',
+    tools:['<span class="ptx">Modelo pronto</span><span class="en">Template</span>','<span class="ptx">Assinatura eletrônica</span><span class="en">E-signature</span>'],
+    meta:[['20','<span class="ptx">minutos cada</span><span class="en">minutes each</span>'],['3','<span class="ptx">dias até enviar</span><span class="en">days to send</span>']],
+    body:`<p class="ptx">Toda compra exige contrato. O modelo está pronto, mas os dados de cada cliente são preenchidos à mão, revisados e enviados para assinatura eletrônica.</p>
+          <p class="en">Every purchase requires a contract. The template is ready, but each client's data is filled in by hand, reviewed, and sent for e-signature.</p>
+          <blockquote class="quote"><span class="ptx">"Os contratos estão prontos, mas precisa atualizar com dados de cada cliente, ainda é feito de forma manual o preenchimento dos dados e o envio para assinatura eletrônica."</span><span class="en">"The contracts are ready, but they need updating with each client's data; filling in the data and sending for e-signature is still done manually."</span><cite>Anderson · 18.09.2026</cite></blockquote>
+          <p class="ptx">⚠️ Acontece em até 3 dias depois da venda — quem acabou de comprar espera até três dias pelo contrato.</p>
+          <p class="en">⚠️ It happens within 3 days of the sale — someone who has just paid waits up to three days for their contract.</p>`
+  },
+  'a-lembretes': {
+    owner:'Anderson', ownerEn:'Anderson',
+    title:'Os quatro lembretes', titleEn:'The four reminders',
+    tools:['WhatsApp'],
+    meta:[['4','<span class="ptx">envios por encontro</span><span class="en">sends per meeting</span>'],['30','<span class="ptx">minutos por dia</span><span class="en">minutes a day</span>']],
+    body:`<p class="ptx">Mensagem padrão, alterada à mão: nome, dia, horário e link.</p>
+          <p class="en">Standard message, changed by hand: name, day, time and link.</p>
+          <h4><span class="ptx">A cadência</span><span class="en">The cadence</span></h4>
+          <blockquote class="quote"><span class="ptx">"enviando na hora do agendamento como confirmação, 3 dias antes, 1 dia antes e no dia 30 min antes"</span><span class="en">"sending at the time of booking as confirmation, 3 days before, 1 day before, and 30 min before on the day"</span><cite>Anderson · 18.09.2026</cite></blockquote>
+          <p class="ptx">Diferente das mensagens de boas-vindas, aqui não existe o motivo de "parecer natural" — são quatro campos num modelo.</p>
+          <p class="en">Unlike the welcome messages, there is no "seem natural" reason here — it is four fields in a template.</p>`
+  },
+  'a-conteudo': {
+    owner:'Anderson', ownerEn:'Anderson',
+    title:'Conteúdo, adaptação e programação', titleEn:'Content, adaptation and scheduling',
+    tools:['Instagram','TikTok','<span class="ptx">Chat de IA</span><span class="en">AI chat</span>','Instagram Edits'],
+    meta:[['9–12','<span class="ptx">h/sem curadoria</span><span class="en">h/wk curation</span>'],['4','<span class="ptx">h/sem adaptar</span><span class="en">h/wk adapting</span>'],['4','<span class="ptx">h/sem programar</span><span class="en">h/wk scheduling</span>']],
+    body:`<p class="ptx">Busca os conteúdos com mais engajamento, usa um chat de IA para moldar em roteiro, adapta o que performa bem para o nicho, e depois programa tudo no Edits do Instagram.</p>
+          <p class="en">Finds the highest-engagement content, uses an AI chat to shape it into a script, adapts what performs well to the niche, then schedules it all in Instagram Edits.</p>
+          <h4><span class="ptx">A meta por trás</span><span class="en">The goal behind it</span></h4>
+          <blockquote class="quote"><span class="ptx">"a meta de crescimento é ter 1 milhão de seguidores no Instagram hoje temos 155 mil"</span><span class="en">"the growth goal is to have 1 million followers on Instagram; today we have 155 thousand"</span><cite>Anderson · 18.09.2026</cite></blockquote>
+          <p class="ptx">⚠️ Esta é a parte que ele <strong>gosta</strong> de fazer. O problema é que financeiro, contratação e contratos competem pelo mesmo tempo.</p>
+          <p class="en">⚠️ This is the part he <strong>enjoys</strong>. The problem is that finance, hiring and contracts compete for the same hours.</p>`
+  },
+
+  's-disc': {
+    owner:'Suellen', ownerEn:'Suellen',
+    title:'O perfil comportamental', titleEn:'The behavioural profile',
+    tools:['SIS Assessment','DISC'],
+    meta:[['1ª','<span class="ptx">antes da sessão</span><span class="en">before session 1</span>']],
+    body:`<p class="ptx">Liberado antes do primeiro encontro. O cliente faz o teste DISC do SIS Assessment, e a partir dele você conecta o perfil comportamental ao estilo pessoal.</p>
+          <p class="en">Released before the first meeting. The client takes the SIS Assessment DISC test, and from it you connect the behavioural profile to their personal style.</p>
+          <blockquote class="quote"><span class="ptx">"a gente libera para ele antes da primeira sessão a análise de perfil e ele faz o test disk do SIS Assessment"</span><span class="en">"we release the profile analysis to them before the first session and they take the SIS Assessment DISC test"</span><cite>Suellen · 18.09.2026</cite></blockquote>
+          <p class="ptx">O resultado alimenta o dossiê no fim do processo.</p>
+          <p class="en">The result feeds into the dossiê at the end of the process.</p>`
+  },
+  's-cores': {
+    owner:'Suellen', ownerEn:'Suellen',
+    title:'A coloração pessoal', titleEn:'Personal colouring',
+    tools:['<span class="ptx">Presencial</span><span class="en">In person</span>','Canva'],
+    meta:[['2–2,5','<span class="ptx">horas</span><span class="en">hours</span>'],['2ª','<span class="ptx">sessão</span><span class="en">session</span>']],
+    body:`<p class="ptx">Presencial. Cores de cabelo, maquiagem, acessórios e roupas — e o cliente aprende a usar todas as cores a seu favor, com base em psicologia das cores.</p>
+          <p class="en">In person. Hair, makeup, accessory and clothing colours — and the client learns to use every colour in their favour, based on colour psychology.</p>
+          <h4><span class="ptx">Quem atende onde</span><span class="en">Who serves where</span></h4>
+          <blockquote class="quote"><span class="ptx">"Hoje, aqui nos Estados Unidos, eu realizo, e no Brasil eu tenho uma consultora que trabalha comigo e que faz as análises dos clientes do Brasil, principalmente na região de São Paulo."</span><span class="en">"Today, here in the United States, I do it, and in Brazil I have a consultant who works with me and does the analyses for clients in Brazil, mainly in the São Paulo region."</span><cite>Suellen · 18.09.2026</cite></blockquote>
+          <p class="ptx">🔑 Já existe uma segunda consultora entregando o método.</p>
+          <p class="en">🔑 A second consultant is already delivering the method.</p>`
+  },
+  's-visagismo': {
+    owner:'Suellen', ownerEn:'Suellen',
+    title:'Visagismo e a busca de referências', titleEn:'Visagismo and hunting references',
+    tools:['Canva','<span class="ptx">Busca na internet</span><span class="en">Web search</span>'],
+    meta:[['3ª','<span class="ptx">sessão</span><span class="en">session</span>']],
+    body:`<p class="ptx">Medições do rosto feitas no Canva, e depois a busca por cortes de cabelo, tipos e cores de maquiagem que combinem — além de costureiras, cabeleireiros e lojas perto do cliente.</p>
+          <p class="en">Face measurements done in Canva, then the hunt for haircuts, makeup types and colours that suit — plus seamstresses, hairdressers and stores near the client.</p>
+          <blockquote class="quote"><span class="ptx">"eu tenho que ficar buscando se tem costureira perto da pessoa, se tem algum tipo de cabeleireiro, se tem tipos de loja também, isso me cansa demais"</span><span class="en">"I have to keep looking for whether there is a seamstress near the person, some kind of hairdresser, types of store too — this exhausts me"</span><cite>Suellen · 18.09.2026</cite></blockquote>
+          <p class="ptx">⚠️ O tempo desta etapa nunca foi medido. Ela disse que acontece <em>"todo tempo"</em>.</p>
+          <p class="en">⚠️ The time for this step was never measured. She said it happens <em>"all the time"</em>.</p>`
+  },
+  's-closet': {
+    owner:'Suellen', ownerEn:'Suellen',
+    title:'O closet e o Pinterest', titleEn:'The closet and Pinterest',
+    tools:['Pinterest'],
+    meta:[['2–3','<span class="ptx">horas por sessão</span><span class="en">hours per session</span>'],['1–3','<span class="ptx">sessões</span><span class="en">sessions</span>']],
+    body:`<p class="ptx">Durante a sessão a cliente mostra as peças, e você busca referências no Pinterest em tempo real, montando uma pasta de inspirações com cada peça combinada de formas diferentes.</p>
+          <p class="en">During the session the client shows her pieces, and you search Pinterest in real time, building an inspiration folder with each piece combined in different ways.</p>
+          <h4><span class="ptx">O que você mesma propôs</span><span class="en">What you proposed yourself</span></h4>
+          <blockquote class="quote"><span class="ptx">"eu gostaria que realmente tivesse ali uma maneira que… o próprio cliente tirasse as fotos, colocasse num sistema e esse sistema já reprogramasse várias maneiras desse cliente versatilizar as suas peças"</span><span class="en">"I would really like there to be a way where… the client themselves took the photos, put them into a system, and the system reprogrammed various ways for them to make their pieces versatile"</span><cite>Suellen · 18.09.2026</cite></blockquote>
+          <p class="ptx">Não trava nem irrita — cansa. <em>"fica cansativo"</em>, buscando referência por referência.</p>
+          <p class="en">It does not block or irritate — it tires. <em>"it gets tiring"</em>, hunting reference after reference.</p>`
+  },
+  's-compras': {
+    owner:'Suellen', ownerEn:'Suellen',
+    title:'Lojas e personal shopper', titleEn:'Stores and personal shopping',
+    tools:['Google','<span class="ptx">Sites de shopping</span><span class="en">Mall websites</span>'],
+    meta:[['2','<span class="ptx">h de pesquisa</span><span class="en">h research</span>'],['3–5','<span class="ptx">h presencial</span><span class="en">h in person</span>']],
+    body:`<p class="ptx">Antes de sair às compras, você pesquisa loja por loja quais têm as peças da lista de prioridade e fazem sentido para aquela pessoa.</p>
+          <p class="en">Before going shopping, you research store by store which ones carry the priority-list pieces and make sense for that person.</p>
+          <h4><span class="ptx">O problema concreto</span><span class="en">The concrete problem</span></h4>
+          <blockquote class="quote"><span class="ptx">"se eu jogo uma palavra no Google, ele vai me buscar itens aqui dos Estados Unidos e muitas vezes o meu cliente está no Brasil… ele faz uma busca da minha localização atual e não de onde o cliente está"</span><span class="en">"if I type a word into Google, it searches for items here in the United States and many times my client is in Brazil… it searches my current location and not where the client is"</span><cite>Suellen · 18.09.2026</cite></blockquote>
+          <p class="ptx">⚠️ Ela descreve como <em>angústia</em> — não cansaço.</p>
+          <p class="en">⚠️ She describes this as <em>anguish</em> — not tiredness.</p>`
+  },
+  's-corpo': {
+    owner:'Suellen', ownerEn:'Suellen',
+    title:'A linguagem corporal', titleEn:'Body language',
+    tools:['<span class="ptx">Presencial ou online</span><span class="en">In person or online</span>'],
+    meta:[['1,5–3','<span class="ptx">horas</span><span class="en">hours</span>'],['<span class="ptx">última</span><span class="en">last</span>','<span class="ptx">sessão</span><span class="en">session</span>']],
+    body:`<p class="ptx">Fecha o processo: como gesticular, andar, sentar, etiqueta à mesa.</p>
+          <p class="en">Closes the process: how to gesture, walk, sit, table etiquette.</p>
+          <blockquote class="quote"><span class="ptx">"Finalizamos com análise do corpo orientando sobre linguagem corporal. Como gesticular, andar, sentar, etiqueta a mesa"</span><span class="en">"We finish with a body analysis giving guidance on body language. How to gesture, walk, sit, table etiquette"</span><cite>Suellen · 18.09.2026</cite></blockquote>
+          <p class="ptx">Depois desta sessão começa o dossiê — a etapa que hoje está atrasada.</p>
+          <p class="en">After this session the dossiê begins — the step that is currently late.</p>`
+  },
+
+  'd-foto': {
+    owner:'<span class="ptx">Todo dia</span><span class="en">Every day</span>', ownerEn:'Every day',
+    title:'A foto do dia', titleEn:'The day\'s photo',
+    tools:['WhatsApp'],
+    meta:[['10','<span class="ptx">clientes premium</span><span class="en">premium clients</span>'],['7','<span class="ptx">dias por semana</span><span class="en">days a week</span>']],
+    body:`<p class="ptx">A cliente manda a foto do look — do dia a dia, de um evento, ou de uma mala de viagem que precisa montar.</p>
+          <p class="en">The client sends a photo of her look — everyday, an event, or a travel suitcase she needs to pack.</p>
+          <blockquote class="quote"><span class="ptx">"na consultoria Premium, eu dou um feedback para ela de segunda a segunda. Então, todos os dias ela tem um feedback."</span><span class="en">"in the Premium consultancy, I give her feedback from Monday to Monday. So every day she has feedback."</span><cite>Suellen · 18.09.2026</cite></blockquote>
+          <p class="ptx">Nos grupos de mentoria o feedback é de segunda a sexta. No Premium é todo dia.</p>
+          <p class="en">In the mentorship groups feedback runs Monday to Friday. In Premium it is every day.</p>`
+  },
+  'd-analise': {
+    owner:'<span class="ptx">Todo dia</span><span class="en">Every day</span>', ownerEn:'Every day',
+    title:'A análise, já com IA', titleEn:'The review, already using AI',
+    tools:['<span class="ptx">IA (ferramenta não identificada)</span><span class="en">AI (tool not identified)</span>'],
+    meta:[['5–10','<span class="ptx">minutos por cliente</span><span class="en">minutes per client</span>']],
+    body:`<p class="ptx">Cabelo, coerência das peças, modelagem, acessórios — e a correção visual gerada por IA, devolvida como imagem.</p>
+          <p class="en">Hair, coherence of the pieces, fit, accessories — plus a visual correction generated by AI and returned as an image.</p>
+          <blockquote class="quote"><span class="ptx">"eu também uso muito a IA pra conseguir dar sugestões visuais, então eu pego a foto do jeito que tá agora, mando pra IA, faço a correção da IA e devolvo pra cliente"</span><span class="en">"I also use AI a lot to give visual suggestions, so I take the photo as it is now, send it to the AI, make the correction and return it to the client"</span><cite>Suellen · 18.09.2026</cite></blockquote>
+          <h4><span class="ptx">O que ela pediu</span><span class="en">What she asked for</span></h4>
+          <blockquote class="quote"><span class="ptx">"hoje eu gostaria de uma IA que conseguisse fazer essa leitura visual e já orientar o cliente sobre os seus possíveis erros"</span><span class="en">"today I would like an AI that could do this visual reading and already guide the client on their possible mistakes"</span><cite>Suellen · 18.09.2026</cite></blockquote>
+          <p class="ptx">⚠️ Qual ferramenta de IA ela usa hoje não foi perguntado.</p>
+          <p class="en">⚠️ Which AI tool she uses today was never asked.</p>`
+  },
+  'd-devolve': {
+    owner:'<span class="ptx">Todo dia</span><span class="en">Every day</span>', ownerEn:'Every day',
+    title:'A devolução', titleEn:'The reply',
+    tools:['WhatsApp'],
+    meta:[['6–12','<span class="ptx">h/semana no total</span><span class="en">h/week in total</span>']],
+    body:`<p class="ptx">As respostas se concentram de manhã ou no fim do dia, em horários que você reserva.</p>
+          <p class="en">Replies are concentrated in the morning or at the end of the day, in slots you set aside.</p>
+          <blockquote class="quote"><span class="ptx">"não é um trabalho que eu acho ruim, muito pelo contrário, eu gosto de trazer esse feedback… é algo que de fato toma um tempo"</span><span class="en">"it is not work I find bad, quite the opposite, I like giving this feedback… it is something that does in fact take time"</span><cite>Suellen · 18.09.2026</cite></blockquote>
+          <p class="ptx">O que pesa não é a tarefa, é o volume de pessoas: premium, mentoria e curso ao mesmo tempo.</p>
+          <p class="en">What weighs is not the task but the number of people: premium, mentorship and course at once.</p>`
+  },
+
+  'x-baixar': {
+    owner:'<span class="ptx">Exceção</span><span class="en">Exception</span>', ownerEn:'Exception',
+    title:'Baixar as fotos', titleEn:'Downloading the photos',
+    tools:['WhatsApp','<span class="ptx">Computador</span><span class="en">Computer</span>'],
+    meta:[],
+    body:`<p class="ptx">Todas as fotos que a cliente mandou ao longo de meses, baixadas do WhatsApp uma a uma e salvas no computador.</p>
+          <p class="en">Every photo the client sent over months, downloaded from WhatsApp one by one and saved to the computer.</p>
+          <blockquote class="quote"><span class="ptx">"eu tenho que baixar todas as fotos, colocar no computador, do computador subir para o Canva"</span><span class="en">"I have to download all the photos, put them on the computer, and from the computer upload them to Canva"</span><cite>Suellen · 18.09.2026</cite></blockquote>`
+  },
+  'x-png': {
+    owner:'<span class="ptx">Exceção</span><span class="en">Exception</span>', ownerEn:'Exception',
+    title:'Converter em PNG', titleEn:'Converting to PNG',
+    tools:['<span class="ptx">Aplicativo pago (não identificado)</span><span class="en">Paid app (not identified)</span>','Canva'],
+    meta:[],
+    body:`<p class="ptx">Foto por foto num aplicativo pago, esperando cada conversão, baixando cada resultado, para depois montar as combinações no Canva.</p>
+          <p class="en">Photo by photo in a paid app, waiting for each conversion, downloading each result, then assembling combinations in Canva.</p>
+          <blockquote class="quote"><span class="ptx">"foi a primeira vez que eu fiz isso, mas eu me arrependi"</span><span class="en">"it was the first time I did this, but I regretted it"</span><cite>Suellen · 18.09.2026</cite></blockquote>
+          <h4><span class="ptx">O que aconteceu</span><span class="en">What happened</span></h4>
+          <p class="ptx">A cota gratuita do aplicativo acabou e a entrega nunca saiu. Uma cliente pediu, e até hoje não recebeu.</p>
+          <p class="en">The app's free quota ran out and the delivery never happened. A client asked for it and still has not received it.</p>
+          <p class="ptx">⚠️ Qual aplicativo era não foi perguntado.</p>
+          <p class="en">⚠️ Which app it was was never asked.</p>`
+  },
+  'x-canva': {
+    owner:'<span class="ptx">Exceção</span><span class="en">Exception</span>', ownerEn:'Exception',
+    title:'Montar no Canva', titleEn:'Assembling in Canva',
+    tools:['Canva'],
+    meta:[['2–3','<span class="ptx">horas por cliente</span><span class="en">hours per client</span>']],
+    body:`<p class="ptx">Perfil comportamental, coloração, maquiagem, cabelo, acessórios, modelagem, tecidos, caimentos, lingerie, leitura corporal, e o antes e depois em fotos.</p>
+          <p class="en">Behavioural profile, colouring, makeup, hair, accessories, cuts, fabrics, fits, lingerie, body reading, and the before-and-after in photos.</p>
+          <h4><span class="ptx">O detalhe que muda tudo</span><span class="en">The detail that changes everything</span></h4>
+          <blockquote class="quote"><span class="ptx">"Se eu vou falar sobre tecido, isso daí é padrão para todo mundo. Se eu vou falar sobre caimento da peça, é padrão para todo mundo."</span><span class="en">"If I am going to talk about fabric, that is standard for everyone. If I am going to talk about the fit of the piece, it is standard for everyone."</span><cite>Suellen · 18.09.2026</cite></blockquote>
+          <p class="ptx">Uma parte é padrão, outra é individual. <strong>O que é padrão pode ser montado sozinho.</strong></p>
+          <p class="en">One part is standard, the other individual. <strong>What is standard can assemble itself.</strong></p>`
+  },
+  'x-entrega': {
+    owner:'<span class="ptx">Exceção</span><span class="en">Exception</span>', ownerEn:'Exception',
+    title:'A entrega — hoje atrasada', titleEn:'Delivery — currently late',
+    tools:[],
+    meta:[],
+    body:`<p class="ptx">É a última etapa de entrega de cada consultoria premium, e está em contrato.</p>
+          <p class="en">It is the final delivery step of every premium engagement, and it is in the contract.</p>
+          <blockquote class="quote"><span class="ptx">"Hoje, atualmente, os nossos dossiês estão todos atrasados… é a única fase que eu não gosto."</span><span class="en">"Today, currently, our dossiês are all late… it is the only phase I do not like."</span><cite>Suellen · 18.09.2026</cite></blockquote>
+          <blockquote class="quote"><span class="ptx">"teve uma época que a gente nem entregava, hoje está no contrato, mas está atrasado porque eu não estou dando conta"</span><span class="en">"there was a time when we did not even deliver it; today it is in the contract, but it is late because I am not managing"</span><cite>Suellen · 18.09.2026</cite></blockquote>
+          <p class="ptx">🔑 Citado três vezes em uma entrevista — nada mais se repete assim.</p>
+          <p class="en">🔑 Named three times in one interview — nothing else repeats like this.</p>`
+  }
+};
+
+const scrim = document.getElementById('scrim');
+const sheet = document.getElementById('sheet');
+const body  = document.getElementById('sheet-body');
+let lastFocus = null;
+
+function openStep(key){
+  const s = STEPS[key];
+  if(!s) return;
+  lastFocus = document.activeElement;
+  const meta = s.meta.length
+    ? '<div class="meta">' + s.meta.map(m => `<div><b>${m[0]}</b><span>${m[1]}</span></div>`).join('') + '</div>'
+    : '';
+  const tools = s.tools.length
+    ? '<h4><span class="ptx">Ferramentas hoje</span><span class="en">Tools today</span></h4><ul class="tools">' +
+      s.tools.map(t => `<li>${t}</li>`).join('') + '</ul>'
+    : '';
+  body.innerHTML =
+    `<p class="eyebrow">${s.owner}</p>` +
+    `<h3 id="sheet-title"><span class="ptx">${s.title}</span><span class="en">${s.titleEn}</span></h3>` +
+    meta + s.body + tools;
+  scrim.classList.add('on');
+  sheet.classList.add('on');
+  document.getElementById('close').focus();
+}
+function closeSheet(){
+  scrim.classList.remove('on');
+  sheet.classList.remove('on');
+  if(lastFocus) lastFocus.focus();
+}
+document.querySelectorAll('[data-step]').forEach(b =>
+  b.addEventListener('click', () => openStep(b.dataset.step)));
+document.getElementById('close').addEventListener('click', closeSheet);
+scrim.addEventListener('click', closeSheet);
+document.addEventListener('keydown', e => { if(e.key === 'Escape') closeSheet(); });
+
+// Language. Class-driven, never inline display, because `display:revert`
+// reverts to the .en{display:none} rule that hides these in the first place.
+const langBtn = document.getElementById('lang');
+let en = false;
+langBtn.addEventListener('click', () => {
+  en = !en;
+  document.body.classList.toggle('english', en);
+  langBtn.textContent = en ? 'Português' : 'English';
+  document.documentElement.lang = en ? 'en' : 'pt-BR';
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>GoHighLevel — What it actually does</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ground:#0A0A0A; --panel:#131313; --panel-2:#191918;
+    --gold:#8A7048; --gold-hi:#A28A60; --gold-line:rgba(162,138,96,.22);
+    --cream:#D7D7C8; --ink:#E8E5DE; --dim:#8E8880; --dimmer:#65605A;
+    --ox:#7B2230; --ox-hi:#A8394A;
+    --teal:#4A7C74; --teal-hi:#6FA89E;
+    --hair:rgba(255,255,255,.07);
+    --serif:"Cormorant Garamond",Georgia,serif;
+    --sans:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  }
+  *{box-sizing:border-box}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+  body{
+    margin:0;background:var(--ground);color:var(--ink);
+    font-family:var(--sans);font-weight:300;line-height:1.62;font-size:15.5px;
+    -webkit-font-smoothing:antialiased;
+  }
+  .bar{
+    position:sticky;top:0;z-index:60;background:rgba(10,10,10,.94);
+    backdrop-filter:saturate(140%) blur(8px);border-bottom:1px solid var(--hair);
+    display:flex;align-items:center;gap:18px;padding:11px 22px;
+  }
+  .bar .who{font-family:var(--serif);font-size:1.16rem}
+  .bar .who span{color:var(--gold-hi);font-style:italic}
+  .bar .when{font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--dimmer)}
+  .bar .spacer{flex:1}
+  .bar a{
+    color:var(--dim);text-decoration:none;font-size:.7rem;letter-spacing:.13em;
+    text-transform:uppercase;border:1px solid var(--gold-line);padding:6px 13px;border-radius:2px;
+  }
+  .bar a:hover{color:var(--gold-hi);border-color:var(--gold-hi)}
+
+  main{max-width:1240px;margin:0 auto;padding:30px 28px 120px}
+  .lede{max-width:70ch;margin:0 0 26px}
+  .lede h1{font-family:var(--serif);font-weight:300;font-size:2.1rem;line-height:1.1;margin:0 0 10px;color:#fff}
+  .lede h1 em{font-style:italic;color:var(--gold-hi)}
+  .lede p{margin:0 0 10px;color:var(--dim)}
+
+  .plans{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1px;background:var(--hair);border:1px solid var(--hair);margin:0 0 26px}
+  .plans div{background:var(--panel);padding:16px 18px}
+  .plans b{display:block;font-family:var(--serif);font-size:1.5rem;color:var(--gold-hi);line-height:1}
+  .plans .nm{display:block;font-size:.6rem;letter-spacing:.18em;text-transform:uppercase;color:var(--dimmer);margin:8px 0 6px}
+  .plans p{margin:0;font-size:.78rem;color:var(--dim);line-height:1.5}
+  .plans div.here{background:var(--panel-2);box-shadow:inset 2px 0 0 var(--gold-hi)}
+
+  .legend{display:flex;flex-wrap:wrap;gap:16px;margin:0 0 24px;padding:0;list-style:none}
+  .legend li{font-size:.72rem;color:var(--dimmer);display:flex;align-items:center;gap:7px}
+  .legend i{width:20px;height:1px;background:var(--gold-line);display:block}
+  .legend i.addon{background:var(--ox-hi)}
+  .legend i.meter{background:var(--teal-hi)}
+  .legend i.pro{background:var(--cream);opacity:.5}
+
+  .zone{margin:0 0 24px;border:1px solid var(--hair);background:var(--panel);border-radius:2px}
+  .zonehead{display:flex;align-items:baseline;gap:14px;padding:15px 20px 0}
+  .zonehead h2{font-family:var(--serif);font-weight:300;font-size:1.3rem;margin:0;color:#fff}
+  .zonehead .tag{font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:var(--gold-hi)}
+  .zonehead .note{margin-left:auto;font-size:.7rem;color:var(--dimmer)}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(178px,1fr));gap:10px;padding:14px 20px 20px}
+  .mod{
+    background:var(--panel-2);border:1px solid var(--hair);border-radius:2px;
+    padding:12px 13px;cursor:pointer;text-align:left;color:inherit;font:inherit;
+    transition:border-color .15s,background .15s;position:relative;
+  }
+  .mod:hover,.mod:focus-visible{border-color:var(--gold-hi);background:#1d1d1b;outline:none}
+  .mod .t{display:block;font-size:.85rem;color:var(--ink);line-height:1.34;margin-bottom:7px}
+  .mod .c{display:block;font-size:.66rem;color:var(--dimmer);letter-spacing:.04em}
+  .mod .c b{font-weight:400;color:var(--cream)}
+  .mod.addon{border-color:rgba(168,57,74,.38)}
+  .mod.addon .c b{color:var(--ox-hi)}
+  .mod.meter{border-color:rgba(111,168,158,.32)}
+  .mod.meter .c b{color:var(--teal-hi)}
+  .mod.pro .c b{color:var(--cream)}
+
+  .scrim{position:fixed;inset:0;z-index:100;background:rgba(6,6,6,.72);backdrop-filter:blur(3px);display:none}
+  .scrim.on{display:block}
+  .sheet{
+    position:fixed;z-index:101;right:0;top:0;height:100%;width:min(560px,100%);
+    background:var(--panel);border-left:1px solid var(--gold-line);
+    overflow-y:auto;padding:26px 30px 60px;display:none;
+  }
+  .sheet.on{display:block}
+  .sheet .close{
+    position:absolute;top:18px;right:22px;background:transparent;border:1px solid var(--gold-line);
+    color:var(--dim);cursor:pointer;border-radius:2px;font-family:var(--sans);font-size:.62rem;
+    letter-spacing:.15em;text-transform:uppercase;padding:7px 12px;
+  }
+  .sheet .close:hover{color:var(--gold-hi);border-color:var(--gold-hi)}
+  .sheet .eyebrow{font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:var(--gold-hi);margin:0 0 8px}
+  .sheet h3{font-family:var(--serif);font-weight:300;font-size:1.7rem;line-height:1.16;margin:0 0 16px;color:#fff;padding-right:80px}
+  .sheet h4{font-size:.62rem;letter-spacing:.17em;text-transform:uppercase;color:var(--gold-hi);margin:20px 0 8px;font-weight:500}
+  .sheet p{margin:0 0 11px;color:var(--dim);font-size:.92rem;max-width:58ch}
+  .sheet strong{color:var(--ink);font-weight:500}
+  .cost{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:1px;background:var(--hair);border:1px solid var(--hair);margin:0 0 14px}
+  .cost div{background:var(--panel);padding:12px}
+  .cost b{display:block;font-family:var(--serif);font-size:1.18rem;color:var(--gold-hi);line-height:1;font-variant-numeric:tabular-nums}
+  .cost b.warn{color:var(--ox-hi)}
+  .cost span{display:block;font-size:.57rem;letter-spacing:.13em;text-transform:uppercase;color:var(--dimmer);margin-top:6px}
+  .flag{border:1px solid rgba(168,57,74,.3);background:rgba(123,34,48,.07);padding:13px 16px;margin:14px 0 0;border-radius:2px}
+  .flag p{margin:0;color:var(--cream);font-size:.86rem;max-width:56ch}
+  .flag .t{display:block;font-size:.58rem;letter-spacing:.18em;text-transform:uppercase;color:var(--ox-hi);margin-bottom:6px}
+  .use{border:1px solid var(--gold-line);background:rgba(162,138,96,.05);padding:13px 16px;margin:14px 0 0;border-radius:2px}
+  .use p{margin:0;color:var(--cream);font-size:.86rem;max-width:56ch}
+  .use .t{display:block;font-size:.58rem;letter-spacing:.18em;text-transform:uppercase;color:var(--gold-hi);margin-bottom:6px}
+  .src{font-size:.68rem;color:var(--dimmer);margin-top:16px;line-height:1.5}
+
+  @media (max-width:760px){main{padding:22px 16px 90px}.sheet{width:100%;border-left:none}}
+</style>
+</head>
+<body>
+
+<div class="bar">
+  <span class="who">GoHighLevel <span>— what it does</span></span>
+  <span class="when">20.09.2026</span>
+  <span class="spacer"></span>
+  <a href="fluxo-suellen.html">Suellen →</a>
+</div>
+
+<main>
+  <div class="lede">
+    <h1>Everything it can do, and <em>what each costs</em></h1>
+    <p>Click any module for what it actually does, which plan includes it, what it costs on top, and where it breaks. Anderson is the one inside this system — he has it on his phone.</p>
+    <p><strong>The core product is broadly included in all three plans.</strong> The real cost structure is sub-account limits, per-location add-ons, and metered usage billed to the agency wallet.</p>
+  </div>
+
+  <div class="plans">
+    <div><span class="nm">Starter</span><b>$97</b><p>3 sub-accounts. No API. No rebilling.</p></div>
+    <div class="here"><span class="nm">Unlimited</span><b>$297</b><p>Unlimited sub-accounts. Rebill at cost, no markup. Basic API.</p></div>
+    <div><span class="nm">Agency Pro</span><b>$497</b><p>SaaS mode, markup rebilling, advanced API, AI rebilling.</p></div>
+  </div>
+
+  <ul class="legend">
+    <li><i></i>Included in the plan</li>
+    <li><i class="addon"></i>Paid add-on, usually per sub-account</li>
+    <li><i class="meter"></i>Metered — billed by usage</li>
+    <li><i class="pro"></i>Agency Pro only</li>
+  </ul>
+
+  <!-- ===== ZONE 1 — THE RECORD ===== -->
+  <section class="zone">
+    <div class="zonehead">
+      <span class="tag">Core</span>
+      <h2>The system of record</h2>
+      <span class="note">included on every plan</span>
+    </div>
+    <div class="grid">
+      <button class="mod" data-mod="crm"><span class="t">CRM &amp; contacts</span><span class="c"><b>Included</b> · unlimited</span></button>
+      <button class="mod" data-mod="pipelines"><span class="t">Pipelines &amp; opportunities</span><span class="c"><b>Included</b></span></button>
+      <button class="mod" data-mod="calendars"><span class="t">Calendars &amp; scheduling</span><span class="c"><b>Included</b> · 5 types</span></button>
+      <button class="mod" data-mod="forms"><span class="t">Forms &amp; surveys</span><span class="c"><b>Included</b></span></button>
+      <button class="mod" data-mod="reporting"><span class="t">Reporting &amp; dashboards</span><span class="c"><b>Included</b> · shallow</span></button>
+    </div>
+  </section>
+
+  <!-- ===== ZONE 2 — COMMUNICATION ===== -->
+  <section class="zone">
+    <div class="zonehead">
+      <span class="tag">Channels</span>
+      <h2>Talking to people</h2>
+      <span class="note">software included, delivery metered</span>
+    </div>
+    <div class="grid">
+      <button class="mod" data-mod="inbox"><span class="t">Conversations inbox</span><span class="c"><b>Included</b> · unified</span></button>
+      <button class="mod meter" data-mod="sms"><span class="t">SMS &amp; calling</span><span class="c"><b>~$0.0075</b> /segment</span></button>
+      <button class="mod meter" data-mod="email"><span class="t">Email</span><span class="c"><b>$0.675</b> /1,000</span></button>
+      <button class="mod addon" data-mod="whatsapp"><span class="t">WhatsApp</span><span class="c"><b>$10/mo</b> + Meta rates</span></button>
+      <button class="mod" data-mod="social"><span class="t">Social Planner</span><span class="c"><b>Included</b> · 10 networks</span></button>
+      <button class="mod" data-mod="reputation"><span class="t">Reputation &amp; reviews</span><span class="c"><b>Included</b></span></button>
+    </div>
+  </section>
+
+  <!-- ===== ZONE 3 — THE WORK ===== -->
+  <section class="zone">
+    <div class="zonehead">
+      <span class="tag">Automation</span>
+      <h2>Making it run by itself</h2>
+      <span class="note">the 80% works; the 20% is where people leave</span>
+    </div>
+    <div class="grid">
+      <button class="mod meter" data-mod="workflows"><span class="t">Workflows &amp; automation</span><span class="c"><b>$0.01</b> /premium action</span></button>
+      <button class="mod" data-mod="funnels"><span class="t">Funnels &amp; websites</span><span class="c"><b>Included</b> · slow pages</span></button>
+      <button class="mod" data-mod="memberships"><span class="t">Memberships &amp; courses</span><span class="c"><b>Included</b> · no offline</span></button>
+      <button class="mod" data-mod="communities"><span class="t">Communities</span><span class="c"><b>Included</b></span></button>
+      <button class="mod" data-mod="affiliate"><span class="t">Affiliate manager</span><span class="c"><b>Included</b></span></button>
+    </div>
+  </section>
+
+  <!-- ===== ZONE 4 — MONEY ===== -->
+  <section class="zone">
+    <div class="zonehead">
+      <span class="tag">Money</span>
+      <h2>Getting paid</h2>
+      <span class="note">processor fees always external</span>
+    </div>
+    <div class="grid">
+      <button class="mod" data-mod="payments"><span class="t">Payments &amp; checkout</span><span class="c"><b>Included</b> · 6 processors</span></button>
+      <button class="mod" data-mod="invoicing"><span class="t">Invoicing</span><span class="c"><b>Included</b></span></button>
+      <button class="mod" data-mod="documents"><span class="t">Documents &amp; contracts</span><span class="c"><b>Included</b> · e-sign</span></button>
+    </div>
+  </section>
+
+  <!-- ===== ZONE 5 — AI ===== -->
+  <section class="zone">
+    <div class="zonehead">
+      <span class="tag">AI</span>
+      <h2>The AI layer</h2>
+      <span class="note">per location, not per agency</span>
+    </div>
+    <div class="grid">
+      <button class="mod addon" data-mod="aiemployee"><span class="t">AI Employee</span><span class="c"><b>$50–97/mo</b> per location</span></button>
+      <button class="mod meter" data-mod="convai"><span class="t">Conversation AI</span><span class="c"><b>Token</b> priced</span></button>
+      <button class="mod meter" data-mod="voiceai"><span class="t">Voice AI</span><span class="c"><b>$0.045</b> /min + more</span></button>
+      <button class="mod meter" data-mod="contentai"><span class="t">Content AI</span><span class="c"><b>$0.063</b> /image</span></button>
+      <button class="mod" data-mod="funnelai"><span class="t">Funnel &amp; Workflow AI</span><span class="c"><b>Free</b> · capped</span></button>
+    </div>
+  </section>
+
+  <!-- ===== ZONE 6 — AGENCY ===== -->
+  <section class="zone">
+    <div class="zonehead">
+      <span class="tag">Agency</span>
+      <h2>Controls that are not in a sub-account</h2>
+      <span class="note">this is where the tier matters</span>
+    </div>
+    <div class="grid">
+      <button class="mod pro" data-mod="saas"><span class="t">SaaS mode &amp; rebilling</span><span class="c"><b>Pro only</b> · $497</span></button>
+      <button class="mod" data-mod="api"><span class="t">API &amp; marketplace</span><span class="c"><b>Not on Starter</b></span></button>
+      <button class="mod addon" data-mod="whitelabel"><span class="t">White-label mobile app</span><span class="c"><b>$497/mo</b></span></button>
+      <button class="mod addon" data-mod="portal"><span class="t">Branded client portal</span><span class="c"><b>$49/mo</b> per sub</span></button>
+      <button class="mod" data-mod="mobile"><span class="t">Standard mobile app</span><span class="c"><b>Included</b> · read/reply</span></button>
+      <button class="mod addon" data-mod="others"><span class="t">Other add-ons</span><span class="c"><b>$10–500/mo</b></span></button>
+    </div>
+  </section>
+</main>
+
+<div class="scrim" id="scrim"></div>
+<aside class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title">
+  <button class="close" id="close">Close</button>
+  <div id="sheet-body"></div>
+</aside>
+
+<script>
+// Every panel below is sourced from the three research returns of 2026-09-20.
+// Where the returns DISAGREED, the panel says so rather than picking a side.
+// Where nothing could be verified, the panel says that instead of guessing -
+// the taxonomy's epistemic rule: drop to coarser detail, never invent it.
+const MODS = {
+crm:{z:'Core',t:'CRM &amp; contacts',cost:[['Included','on every plan'],['0','per-contact fee']],
+body:`<p>People, businesses, tags, custom fields, smart lists, tasks, notes, attribution, full communication history, appointments, membership and payment history. Import/export, dedupe, bulk operations, assignment, workflow-driven updates.</p>
+<p>All three plans state <strong>unlimited contacts and unlimited users</strong>.</p>`,
+use:`This is the piece Anderson already lives in. Nothing needs to migrate off it — the app becomes the client-facing surface and pushes data here.`},
+
+pipelines:{z:'Core',t:'Pipelines &amp; opportunities',cost:[['Included','all plans']],
+body:`<p>Kanban pipelines with stages, monetary value, owner, status, source attribution, forecasts and lost reasons. An opportunity can be created or updated by a workflow, a form, a calendar booking, or the API.</p>`,
+use:`Their lead funnel already ends in a manual WhatsApp step. That step is a pipeline stage — which means it is addressable by webhook.`},
+
+calendars:{z:'Core',t:'Calendars &amp; scheduling',cost:[['Included','all plans'],['2-way','Google / Outlook sync']],
+body:`<p>Five booking types: <strong>simple</strong> one-to-one, <strong>round robin</strong> team rotation, <strong>collective</strong> where several people must attend, <strong>class booking</strong> with capacity, and service calendars.</p>
+<p>Per-day working hours, minimum notice, advance-booking limits, and mandatory buffers between slots. Two-way Google/Outlook sync is required to block external conflicts.</p>
+<h4>The branding limit</h4>
+<p>Booking pages sit inside funnels or embed as widgets. You can inject brand colours, logos and custom CSS — but <strong>the calendar grid layout itself is fixed</strong> to GHL's template.</p>`,
+flag:`This is exactly what Suellen reacted to in the first meeting: the scheduler is a Calendly clone in Calendly's blue-and-white with none of her brand. The colours are changeable. The structure is not.`},
+
+forms:{z:'Core',t:'Forms &amp; surveys',cost:[['Included','all plans']],
+body:`<p>Embeddable or hosted forms and multi-question surveys. Answers map into contact and custom fields, and can create contacts, create opportunities, book appointments, start workflows, apply tags and route leads.</p>`,
+use:`Her Google Form is the higher-value one to replace — it is where an unqualified prospect arrives, and it feeds the prequalification judgement.`},
+
+reporting:{z:'Core',t:'Reporting &amp; dashboards',cost:[['Included','operational only'],['Pro','user/agent reporting']],
+body:`<p>Pipeline and opportunity reporting, attribution and conversion, social statistics, call and conversation analytics, payments and orders. User/agent reporting requires Agency Pro.</p>`,
+flag:`All three returns agree this is the weak spot. Wide, not deep: no expenses, no bank-versus-invoice reconciliation, no rollup across sub-accounts, and multi-touch attribution usually means exporting to a warehouse. Treat it as operational reporting, never as business intelligence.`},
+
+inbox:{z:'Channels',t:'Conversations inbox',cost:[['Included','software only']],
+body:`<p>One timeline per contact carrying SMS/MMS, email, calls, web chat, Facebook and Instagram messaging, Google Business messages and WhatsApp — with assignment, internal notes, templates, status and automation handoff.</p>`,
+use:`This is genuinely good, and practitioners say missed-call text-back plus unified inbox plus calendar is often all a client uses. But Anderson does not want clients inside it — which is the whole reason they called.`},
+
+sms:{z:'Channels',t:'SMS &amp; calling',cost:[['$0.0075','per segment'],['+carrier','fees on top']],
+body:`<p>Buy or port numbers, send and receive, log and route calls, record where configured. US/Canada SMS is priced <strong>per segment, not per message</strong> — long messages and emoji split into multiple segments.</p>
+<h4>The compliance tax</h4>
+<p>Opt-in, sender identification, opt-out handling and 10DLC/toll-free registration are all exposed as your configuration. A2P registration delays are a known first-month cost.</p>`,
+flag:`Per-segment billing is the single most common "why is this bill three times what I expected" story. And mid-September 2026 practitioners reported SMS error 30003 on live numbers — at volume that reads as carrier filtering, not a dead handset.`},
+
+email:{z:'Channels',t:'Email',cost:[['$0.675','per 1,000 sends'],['$59/mo','dedicated IP']],
+body:`<p>Campaigns, one-to-one, workflow email, templates and tracking through configured mail services.</p>
+<h4>Deliverability is yours to carry</h4>
+<p>SPF, DKIM, DMARC and warmup are user configuration. Shared-pool sending gets blocked, and HighLevel now suspends sending on sub-accounts that trip provider blocks.</p>`},
+
+whatsapp:{z:'Channels',t:'WhatsApp',cost:[['$10/mo','per sub-account'],['+Meta','per-message rates']],
+body:`<p>Native through Meta's Cloud API via LeadConnector. <strong>Coexistence mode</strong> lets one number live on the WhatsApp Business app and inside GHL at the same time.</p>
+<h4>The 24-hour rule</h4>
+<p>An inbound message opens a 24-hour free-form window. Outside it, outbound must use a pre-approved Meta template — <strong>or it silently fails</strong>.</p>`,
+flag:`Rates change 1 October 2026. And the silent-failure behaviour matters enormously here: WhatsApp is where their entire client relationship lives. A reminder that does not arrive, with no error, is worse than no automation.`},
+
+social:{z:'Channels',t:'Social Planner',cost:[['Included','no module fee']],
+body:`<p>Connect, draft, schedule, approve, repeat and report. Supported: Facebook, Instagram, Threads, Google Business Profile, LinkedIn, TikTok, YouTube, Pinterest, Bluesky and the HighLevel community.</p>`,
+use:`Anderson spends about 4 hours a week scheduling finished content in Instagram Edits, plus 4 more adapting content. This module covers the scheduling half.`,
+flag:`Community reports say a June 2026 Meta policy change flagged native comment-to-DM as automation, with account bans claimed. That is one loud thread with screenshots, not independently verified — but it is the kind of event that ends a relationship if it hits a master account.`},
+
+reputation:{z:'Channels',t:'Reputation &amp; reviews',cost:[['Included','core flows'],['$30/mo','listings add-on'],['$0.01','per Reviews AI reply']],
+body:`<p>Request reviews, manage and reply, automate the flow. Reviews AI drafts responses. Online listings management is a separate $30/month per sub-account product.</p>`},
+
+workflows:{z:'Automation',t:'Workflows &amp; automation',cost:[['$0.01','per premium action'],['Included','builder + standard actions']],
+body:`<p>Node-based visual builder. Triggers from forms, tags, pipeline changes, appointments, inbound messages, payments and membership activity. Actions include branching, waits, conditions, webhooks, CRM updates, messages, tasks, appointments, documents, affiliates and community access.</p>
+<h4>Where operators hit walls</h4>
+<p><strong>The "Allow Multiple" toggle</strong> — by default a contact enters a workflow only once; miss this and re-engagement silently never fires.</p>
+<p><strong>State leakage</strong> — without explicit kill-switch tags, loops misfire.</p>
+<p><strong>Debugging</strong> — deep conditional paths become hard to read on one screen. For heavy orchestration, practitioners route out to middleware like n8n.</p>`,
+flag:`Reported across all three returns: workflows that ran for months stop after a platform release. Triggers miss form submits, emails fire twice, sequences stop mid-way with no log. Not constant, but common enough that dedicated "workflow not triggering" guides exist.`},
+
+funnels:{z:'Automation',t:'Funnels &amp; websites',cost:[['Included','builder'],['External','domains, hosting']],
+body:`<p>Drag-and-drop builder for pages, forms, surveys, calendars, checkout, products, memberships and domains, with AI-assisted generation.</p>`,
+flag:`Native GHL sites commonly score 20–45 on mobile PageSpeed, with LCP of 4–8 seconds. This is why "headless GHL" exists — teams keep the CRM and put the front end somewhere they control. That is a compliment to the backend and an indictment of the site builder.`,
+use:`Relevant to the decision already made: the app is the client-facing surface. This module is what it replaces, and the performance numbers are the argument for replacing it.`},
+
+memberships:{z:'Automation',t:'Memberships &amp; courses',cost:[['Included','core']],
+body:`<p>Products contain categories, which contain posts — video, audio, PDF, text and quizzes. Students get a mobile-responsive portal with progress bars, unlocked content and community spaces. Drip scheduling via workflow or date trigger.</p>`,
+flag:`<strong>No native offline access and no downloadable player.</strong> Learning requires a live connection. Power creators also note it lacks the community and quiz depth of Kajabi or Circle.`,
+use:`This settles the course question independently. Her students are professionals who fly constantly, and offline viewing is a live requirement. GHL cannot do it, which is consistent with the decision already taken to build the course inside the app.`},
+
+communities:{z:'Automation',t:'Communities',cost:[['Included','positioned as core']],
+body:`<p>Branded groups with membership, access control, discussions, invitations and automation. Workflows can grant or revoke group access.</p>
+<p>No standalone usage price was verified in official documentation.</p>`},
+
+affiliate:{z:'Automation',t:'Affiliate manager',cost:[['Included','appears core']],
+body:`<p>Create and run affiliate programmes: affiliates, referral links and attribution, commissions, and affiliate automation. Workflow actions can add or update an affiliate.</p>
+<p>Not to be confused with HighLevel's own affiliate portal for promoting HighLevel.</p>`,
+use:`Her future vision names affiliate revenue on what clients buy. This module handles programme mechanics, but not product discovery — finding the garment is a separate problem.`},
+
+payments:{z:'Money',t:'Payments &amp; checkout',cost:[['Included','tools'],['External','processor fees']],
+body:`<p>Products and catalogue, one-time and recurring payments, checkouts, orders, subscriptions, payment links and payment-triggered workflows. Native processors: <strong>Stripe, PayPal, Square, NMI, Authorize.Net and Razorpay</strong>, connected per sub-account.</p>
+<p>Non-US transactions work wherever the underlying gateway operates in that country.</p>`,
+flag:`No Asaas and no native PIX. Her Brazilian payment rail is not in this list, which means PIX reconciliation stays outside GHL regardless of what else moves in.`},
+
+invoicing:{z:'Money',t:'Invoicing',cost:[['Included','no platform fee verified']],
+body:`<p>Create and send invoices, track payment state, connect to contacts, products, subscriptions and workflows. Recent documentation adds recurring invoices generated when a document is signed.</p>`},
+
+documents:{z:'Money',t:'Documents &amp; contracts',cost:[['Included','no envelope fee verified']],
+body:`<p>Blank or PDF-based documents with templates, dynamic contact values, product and pricing sections, e-signature fields, payment collection, audit trails, statuses and workflow notifications. It lives under Payments, not as a separate proposals product.</p>`,
+use:`Anderson fills contracts by hand and sends for signature, 20 minutes each, up to 3 days after the sale. This module already does that — template plus merge fields plus e-sign. Worth knowing before building anything new.`},
+
+aiemployee:{z:'AI',t:'AI Employee',cost:[['$50/mo','Growth, per location'],['$97/mo','Unlimited, per location'],['Pro','required to rebill']],
+body:`<p>A coverage bundle, not a feature. Growth includes 1,000 Conversation AI responses and 100 Voice AI minutes a month; Unlimited removes those caps subject to fair use.</p>
+<p>Purchased <strong>per enabled location</strong> — not once for the agency.</p>`,
+flag:`"Unlimited" means fair use, and it does not cover everything: Agent Studio stays token-priced at every tier. It also does not remove telephony, number, carrier or processor charges.`},
+
+convai:{z:'AI',t:'Conversation AI',cost:[['Token','priced'],['1,000','responses on Growth']],
+body:`<p>An AI agent answering customer conversations using configured knowledge, prompts, escalation and routing across connected channels.</p>`,
+flag:`Her hard constraint applies here: no bot may ever join a client meeting, and her clients are high-profile. An AI answering as her, in her voice, to her clients, is a positioning decision before it is a technical one.`},
+
+voiceai:{z:'AI',t:'Voice AI',cost:[['$0.045','per minute, from May 2026'],['+more','voice engine, TTS, tokens']],
+body:`<p>AI voice agent for inbound and outbound calls and website widgets.</p>`,
+flag:`The $0.045/minute figure is not the delivered cost of a call. Voice engine, text-to-speech and LLM tokens are separate components, and LC Phone charges still apply on top. Voice AI was unbundled on 20 May 2026, which made older blended per-minute figures stale.`},
+
+contentai:{z:'AI',t:'Content AI',cost:[['$0.063','per image'],['$0.0945','per 1,000 words']],
+body:`<p>Generates written content and images. Unlimited under both AI Employee tiers.</p>`,
+use:`Anderson already uses an AI chat to shape content into scripts, 9–12 hours a week. This is the same job inside the tool he is already paying for.`},
+
+funnelai:{z:'AI',t:'Funnel &amp; Workflow AI',cost:[['Free','1,000 prompts/day/location']],
+body:`<p>AI assistance for building funnels, sites and workflows. Free at every tier, with daily caps. Email AI and knowledge-base AI are also free subject to fair use.</p>`,
+flag:`Ask AI and AI Studio were free during the "Summer of AI" promo until 1 September 2026, then became token-billed. Anyone who prototyped on the promo started paying this month.`},
+
+saas:{z:'Agency',t:'SaaS mode &amp; rebilling',cost:[['$497','Agency Pro required'],['$297','rebill at cost only']],
+body:`<p>Agency Pro unlocks SaaS mode, automated sub-account provisioning, markup rebilling on phone and email, user/agent reporting, advanced API and AI Employee rebilling.</p>
+<p>Unlimited at $297 can pass costs through at cost, but cannot apply markup.</p>`,
+flag:`HighLevel bills the agency wallet first, even when a sub-account generated the usage. Rebilling is optional configuration, not automatic insulation from a client's overspend. The wallet auto-refills from a card.`},
+
+api:{z:'Agency',t:'API &amp; marketplace',cost:[['None','on Starter'],['100','requests / 10s'],['200k','per day']],
+body:`<p>REST v2: contacts, calendars, opportunities, conversations, payments, custom objects, webhooks (~50 events) and an MCP server. Private Integration Tokens for a single location; OAuth marketplace apps for multi-location.</p>
+<p>Access tokens last one day; refresh tokens a year if rotated. V1 reached end of support 31 December 2025.</p>
+<h4>What it does not expose</h4>
+<p><strong>Workflows: list and enroll a contact only.</strong> No create or update of a workflow definition — POST returns 404. No courses, no communities, no snapshot operations, and no bulk export.</p>`,
+flag:`Integrators rate the docs poorly and name OAuth token expiry as the top "it worked for a week then died" failure, with unhelpful generic 400 errors. Private apps are capped at five agency installs. Design around it as a CRM with webhook egress — never as a programmable automation compiler.`,
+use:`The access question is already settled for this engagement: a Private Integration Token, scoped to exactly the permissions Anderson ticks, server-to-server, no login and no UI access.`},
+
+whitelabel:{z:'Agency',t:'White-label mobile app',cost:[['$497/mo','agency level']],
+body:`<p>A branded mobile app under the agency's own name, separate from granting clients access to the standard LeadConnector app.</p>`,
+flag:`This is not the app being built. It is GHL's shell with a logo on it, priced at $497/month, and it still behaves like GHL underneath.`},
+
+portal:{z:'Agency',t:'Branded client portal',cost:[['$49/mo','per sub-account']],
+body:`<p>A branded portal surface for clients, billed per sub-account.</p>`,
+flag:`Client-facing surfaces can sit on custom domains with custom colours and logos, but a trained eye still recognises the underlying GHL form and checkout structure. It looks professional. It does not look like her own product.`},
+
+mobile:{z:'Agency',t:'Standard mobile app',cost:[['Included','platform access']],
+body:`<p>LeadConnector on iOS and Android: unified inbox, pipeline opportunities, tasks, contacts and push notifications for new leads or missed calls. The v4.0 refresh (1 September 2026) added universal search, an app drawer and Ask AI.</p>
+<h4>What it cannot do</h4>
+<p>No workflow building, no funnel editing, no complex configuration, no email sequence design. It is an operational companion — administration stays on desktop.</p>`,
+use:`Anderson has this on his phone. It is how he already works, which is the pattern any operational screens should respect.`},
+
+others:{z:'Agency',t:'Other add-ons',cost:[['$10–500','per month each']],
+body:`<p>Listings $30 · prospecting $29 · SEO via Search Atlas $79 · dedicated email IP $59 · WhatsApp $10 — all per sub-account. Agency level: HIPAA $297, premium support $500, certification $97. WordPress hosting is listed but no current public price was found.</p>`,
+flag:`This is where the sticker price stops being the price. Ten clients with four toggles each adds roughly $1,800–2,000 a month on top of a $297 plan. The arithmetic behind the "$297 becomes $2,267" posts is correct, even though those posts are usually affiliate content.`}
+};
+
+const scrim=document.getElementById('scrim'), sheet=document.getElementById('sheet'), body=document.getElementById('sheet-body');
+let lastFocus=null;
+function open(k){
+  const m=MODS[k]; if(!m) return;
+  lastFocus=document.activeElement;
+  const cost=m.cost&&m.cost.length?'<div class="cost">'+m.cost.map(c=>`<div><b${String(c[0]).indexOf('$')===0?' class="warn"':''}>${c[0]}</b><span>${c[1]}</span></div>`).join('')+'</div>':'';
+  const flag=m.flag?`<div class="flag"><span class="t">Watch this</span><p>${m.flag}</p></div>`:'';
+  const use=m.use?`<div class="use"><span class="t">For this build</span><p>${m.use}</p></div>`:'';
+  body.innerHTML=`<p class="eyebrow">${m.z}</p><h3 id="sheet-title">${m.t}</h3>${cost}${m.body}${flag}${use}
+    <p class="src">Sources: HighLevel official pricing and help documentation, practitioner walkthroughs, and community signal (Reddit, status page, integrator write-ups), all read 20 September 2026.</p>`;
+  scrim.classList.add('on'); sheet.classList.add('on');
+  document.getElementById('close').focus();
+}
+function close(){scrim.classList.remove('on');sheet.classList.remove('on');if(lastFocus)lastFocus.focus();}
+document.querySelectorAll('[data-mod]').forEach(b=>b.addEventListener('click',()=>open(b.dataset.mod)));
+document.getElementById('close').addEventListener('click',close);
+scrim.addEventListener('click',close);
+document.addEventListener('keydown',e=>{if(e.key==='Escape')close();});
+</script>
+</body>
+</html>
