@@ -54,11 +54,13 @@
   .plans div.here{background:var(--panel-2);box-shadow:inset 2px 0 0 var(--gold-hi)}
 
   .legend{display:flex;flex-wrap:wrap;gap:16px;margin:0 0 24px;padding:0;list-style:none}
-  .legend li{font-size:.72rem;color:var(--dimmer);display:flex;align-items:center;gap:7px}
-  .legend i{width:20px;height:1px;background:var(--gold-line);display:block}
-  .legend i.addon{background:var(--ox-hi)}
-  .legend i.meter{background:var(--teal-hi)}
-  .legend i.pro{background:var(--cream);opacity:.5}
+  .legend li{font-size:.72rem;color:var(--dim);display:flex;align-items:center;gap:8px}
+  .legend i{width:11px;height:11px;border-radius:2px;display:block;flex:0 0 auto}
+  .legend i.t-have{background:var(--teal-hi)}
+  .legend i.t-addon{background:var(--ox-hi)}
+  .legend i.t-pro{background:var(--gold-hi)}
+  .legend i.t-meter{background:var(--cream);opacity:.55}
+  .legend i.t-split{background:linear-gradient(var(--teal-hi) 50%,var(--gold-hi) 50%)}
 
   .zone{margin:0 0 24px;border:1px solid var(--hair);background:var(--panel);border-radius:2px}
   .zonehead{display:flex;align-items:baseline;gap:14px;padding:15px 20px 0}
@@ -76,11 +78,20 @@
   .mod .t{display:block;font-size:.85rem;color:var(--ink);line-height:1.34;margin-bottom:7px}
   .mod .c{display:block;font-size:.66rem;color:var(--dimmer);letter-spacing:.04em}
   .mod .c b{font-weight:400;color:var(--cream)}
-  .mod.addon{border-color:rgba(168,57,74,.38)}
-  .mod.addon .c b{color:var(--ox-hi)}
-  .mod.meter{border-color:rgba(111,168,158,.32)}
-  .mod.meter .c b{color:var(--teal-hi)}
-  .mod.pro .c b{color:var(--cream)}
+  /* Tier is the colour axis: the question is "does this need a higher plan?" */
+  .mod{border-left-width:3px;border-left-style:solid;border-left-color:var(--teal-hi)}
+  .mod.t-addon{border-left-color:var(--ox-hi)}
+  .mod.t-addon .c b{color:var(--ox-hi)}
+  .mod.t-pro{border-left-color:var(--gold-hi)}
+  .mod.t-pro .c b{color:var(--gold-hi)}
+  .mod.t-meter{border-left-color:rgba(215,215,200,.55)}
+  .mod.t-meter .c b{color:var(--cream)}
+  .mod .c b{color:var(--teal-hi)}
+  /* Included at their tier, but with a slice that needs Pro. Half the bar each. */
+  .mod.t-split{border-left-color:transparent;
+    background-image:linear-gradient(var(--teal-hi) 50%,var(--gold-hi) 50%);
+    background-size:3px 100%;background-repeat:no-repeat;background-position:left top}
+  .mod.t-split .c b{color:var(--teal-hi)}
 
   .scrim{position:fixed;inset:0;z-index:100;background:rgba(6,6,6,.72);backdrop-filter:blur(3px);display:none}
   .scrim.on{display:block}
@@ -114,6 +125,33 @@
   .use .t{display:block;font-size:.58rem;letter-spacing:.18em;text-transform:uppercase;color:var(--gold-hi);margin-bottom:6px}
   .src{font-size:.68rem;color:var(--dimmer);margin-top:16px;line-height:1.5}
 
+  /* ===== price breakdown ===== */
+  .money{margin:34px 0 0;border:1px solid var(--hair);background:var(--panel);border-radius:2px}
+  .money .zonehead{padding:15px 20px 0}
+  .money .inner{padding:14px 20px 22px}
+  table.tiers{width:100%;border-collapse:collapse;font-size:.86rem;margin:0 0 4px}
+  table.tiers th{
+    text-align:left;font-weight:500;font-size:.58rem;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--dimmer);padding:0 12px 9px 0;border-bottom:1px solid var(--hair);
+  }
+  table.tiers th.n,table.tiers td.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  table.tiers td{padding:11px 12px 11px 0;border-bottom:1px solid var(--hair);color:var(--dim);vertical-align:top}
+  table.tiers td.n{font-family:var(--serif);font-size:1.12rem;color:var(--cream)}
+  table.tiers tr.now td{background:rgba(111,168,158,.05)}
+  table.tiers tr.now td:first-child{box-shadow:inset 3px 0 0 var(--teal-hi)}
+  table.tiers tr.now td.n{color:var(--teal-hi)}
+  table.tiers td small{display:block;color:var(--dimmer);font-size:.74rem;margin-top:3px;line-height:1.45}
+  table.tiers tr:last-child td{border-bottom:none}
+  .delta{
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1px;
+    background:var(--hair);border:1px solid var(--hair);margin:18px 0 0;
+  }
+  .delta div{background:var(--panel);padding:15px 16px}
+  .delta b{display:block;font-family:var(--serif);font-size:1.5rem;color:var(--gold-hi);line-height:1;font-variant-numeric:tabular-nums}
+  .delta b.ok{color:var(--teal-hi)}
+  .delta span{display:block;font-size:.58rem;letter-spacing:.13em;text-transform:uppercase;color:var(--dimmer);margin-top:7px}
+  .delta p{margin:9px 0 0;font-size:.76rem;color:var(--dim);line-height:1.5}
+
   @media (max-width:760px){main{padding:22px 16px 90px}.sheet{width:100%;border-left:none}}
 </style>
 </head>
@@ -140,10 +178,11 @@
   </div>
 
   <ul class="legend">
-    <li><i></i>Included in the plan</li>
-    <li><i class="addon"></i>Paid add-on, usually per sub-account</li>
-    <li><i class="meter"></i>Metered — billed by usage</li>
-    <li><i class="pro"></i>Agency Pro only</li>
+    <li><i class="t-have"></i><strong>No upgrade needed</strong> — included at their current plan</li>
+    <li><i class="t-meter"></i>Included, but billed by usage on top</li>
+    <li><i class="t-addon"></i>Paid add-on — a fixed monthly charge, usually per sub-account</li>
+    <li><i class="t-pro"></i>Needs Agency Pro at $497</li>
+    <li><i class="t-split"></i>Included, but part of it needs Pro</li>
   </ul>
 
   <!-- ===== ZONE 1 — THE RECORD ===== -->
@@ -158,7 +197,7 @@
       <button class="mod" data-mod="pipelines"><span class="t">Pipelines &amp; opportunities</span><span class="c"><b>Included</b></span></button>
       <button class="mod" data-mod="calendars"><span class="t">Calendars &amp; scheduling</span><span class="c"><b>Included</b> · 5 types</span></button>
       <button class="mod" data-mod="forms"><span class="t">Forms &amp; surveys</span><span class="c"><b>Included</b></span></button>
-      <button class="mod" data-mod="reporting"><span class="t">Reporting &amp; dashboards</span><span class="c"><b>Included</b> · shallow</span></button>
+      <button class="mod t-split" data-mod="reporting"><span class="t">Reporting &amp; dashboards</span><span class="c"><b>Included</b> · agent reports Pro</span></button>
     </div>
   </section>
 
@@ -171,9 +210,9 @@
     </div>
     <div class="grid">
       <button class="mod" data-mod="inbox"><span class="t">Conversations inbox</span><span class="c"><b>Included</b> · unified</span></button>
-      <button class="mod meter" data-mod="sms"><span class="t">SMS &amp; calling</span><span class="c"><b>~$0.0075</b> /segment</span></button>
-      <button class="mod meter" data-mod="email"><span class="t">Email</span><span class="c"><b>$0.675</b> /1,000</span></button>
-      <button class="mod addon" data-mod="whatsapp"><span class="t">WhatsApp</span><span class="c"><b>$10/mo</b> + Meta rates</span></button>
+      <button class="mod t-meter" data-mod="sms"><span class="t">SMS &amp; calling</span><span class="c"><b>~$0.0075</b> /segment</span></button>
+      <button class="mod t-meter" data-mod="email"><span class="t">Email</span><span class="c"><b>$0.675</b> /1,000</span></button>
+      <button class="mod t-addon" data-mod="whatsapp"><span class="t">WhatsApp</span><span class="c"><b>$10/mo</b> + Meta rates</span></button>
       <button class="mod" data-mod="social"><span class="t">Social Planner</span><span class="c"><b>Included</b> · 10 networks</span></button>
       <button class="mod" data-mod="reputation"><span class="t">Reputation &amp; reviews</span><span class="c"><b>Included</b></span></button>
     </div>
@@ -187,7 +226,7 @@
       <span class="note">the 80% works; the 20% is where people leave</span>
     </div>
     <div class="grid">
-      <button class="mod meter" data-mod="workflows"><span class="t">Workflows &amp; automation</span><span class="c"><b>$0.01</b> /premium action</span></button>
+      <button class="mod t-meter" data-mod="workflows"><span class="t">Workflows &amp; automation</span><span class="c"><b>$0.01</b> /premium action</span></button>
       <button class="mod" data-mod="funnels"><span class="t">Funnels &amp; websites</span><span class="c"><b>Included</b> · slow pages</span></button>
       <button class="mod" data-mod="memberships"><span class="t">Memberships &amp; courses</span><span class="c"><b>Included</b> · no offline</span></button>
       <button class="mod" data-mod="communities"><span class="t">Communities</span><span class="c"><b>Included</b></span></button>
@@ -217,10 +256,10 @@
       <span class="note">per location, not per agency</span>
     </div>
     <div class="grid">
-      <button class="mod addon" data-mod="aiemployee"><span class="t">AI Employee</span><span class="c"><b>$50–97/mo</b> per location</span></button>
-      <button class="mod meter" data-mod="convai"><span class="t">Conversation AI</span><span class="c"><b>Token</b> priced</span></button>
-      <button class="mod meter" data-mod="voiceai"><span class="t">Voice AI</span><span class="c"><b>$0.045</b> /min + more</span></button>
-      <button class="mod meter" data-mod="contentai"><span class="t">Content AI</span><span class="c"><b>$0.063</b> /image</span></button>
+      <button class="mod t-addon" data-mod="aiemployee"><span class="t">AI Employee</span><span class="c"><b>$50–97/mo</b> per location</span></button>
+      <button class="mod t-meter" data-mod="convai"><span class="t">Conversation AI</span><span class="c"><b>Token</b> priced</span></button>
+      <button class="mod t-meter" data-mod="voiceai"><span class="t">Voice AI</span><span class="c"><b>$0.045</b> /min + more</span></button>
+      <button class="mod t-meter" data-mod="contentai"><span class="t">Content AI</span><span class="c"><b>$0.063</b> /image</span></button>
       <button class="mod" data-mod="funnelai"><span class="t">Funnel &amp; Workflow AI</span><span class="c"><b>Free</b> · capped</span></button>
     </div>
   </section>
@@ -233,12 +272,75 @@
       <span class="note">this is where the tier matters</span>
     </div>
     <div class="grid">
-      <button class="mod pro" data-mod="saas"><span class="t">SaaS mode &amp; rebilling</span><span class="c"><b>Pro only</b> · $497</span></button>
-      <button class="mod" data-mod="api"><span class="t">API &amp; marketplace</span><span class="c"><b>Not on Starter</b></span></button>
-      <button class="mod addon" data-mod="whitelabel"><span class="t">White-label mobile app</span><span class="c"><b>$497/mo</b></span></button>
-      <button class="mod addon" data-mod="portal"><span class="t">Branded client portal</span><span class="c"><b>$49/mo</b> per sub</span></button>
+      <button class="mod t-pro" data-mod="saas"><span class="t">SaaS mode &amp; rebilling</span><span class="c"><b>Pro only</b> · $497</span></button>
+      <button class="mod t-split" data-mod="api"><span class="t">API &amp; marketplace</span><span class="c"><b>Included</b> · advanced is Pro</span></button>
+      <button class="mod t-addon" data-mod="whitelabel"><span class="t">White-label mobile app</span><span class="c"><b>$497/mo</b></span></button>
+      <button class="mod t-addon" data-mod="portal"><span class="t">Branded client portal</span><span class="c"><b>$49/mo</b> per sub</span></button>
       <button class="mod" data-mod="mobile"><span class="t">Standard mobile app</span><span class="c"><b>Included</b> · read/reply</span></button>
-      <button class="mod addon" data-mod="others"><span class="t">Other add-ons</span><span class="c"><b>$10–500/mo</b></span></button>
+      <button class="mod t-addon" data-mod="others"><span class="t">Other add-ons</span><span class="c"><b>$10–500/mo</b></span></button>
+    </div>
+  </section>
+
+  <!-- ===== PRICE BREAKDOWN ===== -->
+  <section class="money">
+    <div class="zonehead">
+      <span class="tag">Cost</span>
+      <h2>What a higher plan would actually buy</h2>
+      <span class="note">official pricing, read 20.09.2026</span>
+    </div>
+    <div class="inner">
+      <table class="tiers">
+        <tr>
+          <th>Plan</th>
+          <th class="n">Monthly</th>
+          <th class="n">Yearly</th>
+          <th>What the step up adds</th>
+        </tr>
+        <tr>
+          <td>Starter</td>
+          <td class="n">$97</td>
+          <td class="n">$970</td>
+          <td>3 sub-accounts. Unlimited contacts and users.
+            <small>Basic API access is included here — HighLevel's own documentation says Starter and Unlimited both have it.</small></td>
+        </tr>
+        <tr class="now">
+          <td>Unlimited</td>
+          <td class="n">$297</td>
+          <td class="n">$2,970</td>
+          <td>Unlimited sub-accounts. Rebill phone and email at cost, with no markup.
+            <small>Everything this build needs sits at or below this line.</small></td>
+        </tr>
+        <tr>
+          <td>Agency Pro</td>
+          <td class="n">$497</td>
+          <td class="n">$4,970</td>
+          <td>SaaS mode, automated sub-account provisioning, rebilling with markup, user and agent reporting, advanced API, AI Employee rebilling.
+            <small>All of it is agency-level resale machinery.</small></td>
+        </tr>
+      </table>
+
+      <div class="delta">
+        <div>
+          <b class="ok">$0</b>
+          <span>to build against their plan</span>
+          <p>A Private Integration Token is scoped to one sub-account and carries no plan requirement in HighLevel's documentation. Contacts, calendars, opportunities and conversations are all reachable.</p>
+        </div>
+        <div>
+          <b>$200</b>
+          <span>per month, Unlimited to Pro</span>
+          <p>$2,400 a year. It buys the ability to resell GoHighLevel to other businesses under your own brand — which is not what this business does.</p>
+        </div>
+        <div>
+          <b>$497</b>
+          <span>per month, white-label app</span>
+          <p>A separate add-on on top of Pro. It puts a logo on GoHighLevel's own app; it does not produce her product.</p>
+        </div>
+      </div>
+
+      <div class="use" style="margin-top:18px">
+        <span class="t">The short version</span>
+        <p>Nothing here needs a higher plan. The $497 tier exists for agencies reselling the platform to their own clients, and every gold marker on this page is that same resale machinery. The one open item is a ten-minute check once access exists: confirm the Private Integrations menu appears in their sub-account.</p>
+      </div>
     </div>
   </section>
 </main>
@@ -321,10 +423,12 @@ body:`<p>Drag-and-drop builder for pages, forms, surveys, calendars, checkout, p
 flag:`Native GHL sites commonly score 20–45 on mobile PageSpeed, with LCP of 4–8 seconds. This is why "headless GHL" exists — teams keep the CRM and put the front end somewhere they control. That is a compliment to the backend and an indictment of the site builder.`,
 use:`Relevant to the decision already made: the app is the client-facing surface. This module is what it replaces, and the performance numbers are the argument for replacing it.`},
 
-memberships:{z:'Automation',t:'Memberships &amp; courses',cost:[['Included','core']],
-body:`<p>Products contain categories, which contain posts — video, audio, PDF, text and quizzes. Students get a mobile-responsive portal with progress bars, unlocked content and community spaces. Drip scheduling via workflow or date trigger.</p>`,
-flag:`<strong>No native offline access and no downloadable player.</strong> Learning requires a live connection. Power creators also note it lacks the community and quiz depth of Kajabi or Circle.`,
-use:`This settles the course question independently. Her students are professionals who fly constantly, and offline viewing is a live requirement. GHL cannot do it, which is consistent with the decision already taken to build the course inside the app.`},
+memberships:{z:'Automation',t:'Memberships &amp; courses',cost:[['Included','no upgrade needed'],['Tried','and rejected']],
+body:`<p>Products contain categories, which contain posts — video, audio, PDF, text and quizzes. Students get a mobile-responsive portal with progress bars, unlocked content and community spaces. Drip scheduling via workflow or date trigger.</p>
+<h4>They already tried this</h4>
+<p>They hosted the online course here and <strong>did not like how it looked</strong>. They did not leave because it lacked a feature — they left on appearance.</p>`,
+flag:`That is the most useful fact on this page. The capability was never the problem, so adding capability would not have won them back. What failed was the client-facing surface: it looked like GoHighLevel rather than like her. And the structure is the part you cannot restyle — colours and logos are changeable, the layout is not.`,
+use:`It also removes an argument I would otherwise have made. The missing offline download matters for clients who fly constantly, but it is not why they left, and leading with it would be answering a question they never asked. The reason to own the course surface is that it carries her brand — the same reason the calendar landed in the first meeting.`},
 
 communities:{z:'Automation',t:'Communities',cost:[['Included','positioned as core']],
 body:`<p>Branded groups with membership, access control, discussions, invitations and automation. Workflows can grant or revoke group access.</p>

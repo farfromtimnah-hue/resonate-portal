@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -126,10 +126,10 @@
      a bare `.hours span{display:block}` is more specific than `.en{display:none}`
      and showed both languages at once. */
   .hours span:not(.en):not(.ptx),
-  .hours span.ptx,
-  body.english .hours span.en{display:block;font-size:.78rem;color:var(--dim);margin-top:12px;line-height:1.45;max-width:30ch}
-  body.english .hours span.ptx{display:none}
-  .hours span.en{display:none}
+  .hours span.en,
+  body.ptmode .hours span.ptx{display:block;font-size:.78rem;color:var(--dim);margin-top:12px;line-height:1.45;max-width:30ch}
+  body.ptmode .hours span.en{display:none}
+  .hours span.ptx{display:none}
   .hours em{display:block;font-style:normal;font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;color:var(--dimmer);margin-top:9px}
 
   /* ============ ledger: task -> hours ============ */
@@ -165,6 +165,18 @@
   .src{font-size:.72rem;color:var(--dimmer);margin-top:14px;line-height:1.55;max-width:70ch}
   .src b{color:var(--dim);font-weight:400}
 
+  /* ============ attached research ============ */
+  .refs{display:grid;grid-template-columns:repeat(auto-fit,minmax(248px,1fr));gap:12px;margin:0}
+  .ref{
+    display:block;text-decoration:none;color:inherit;background:var(--panel-2);
+    border:1px solid var(--hair);border-left:3px solid var(--gold-hi);border-radius:2px;
+    padding:15px 17px;transition:border-color .15s,background .15s;
+  }
+  .ref:hover,.ref:focus-visible{background:#1d1d1b;border-color:var(--gold-hi);outline:none}
+  .ref b{display:block;font-family:var(--serif);font-weight:300;font-size:1.22rem;color:#fff;margin-bottom:5px}
+  .ref span{display:block;font-size:.8rem;color:var(--dim);line-height:1.5}
+  .ref em{display:block;font-style:normal;font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;color:var(--gold-hi);margin-top:9px}
+
   /* ===================== present mode ===================== */
   .exit{
     display:none;position:fixed;top:16px;right:18px;z-index:120;
@@ -188,12 +200,12 @@
   /* Presenting always shows Portuguese, whatever the toggle says: what gets
      shared is read by her. These must outrank body.english above. */
   body.presenting section.on .en,
-  body.english.presenting section.on .en,
-  body.english.presenting section.on .hours span.en{display:none}
+  body.ptmode.presenting section.on .en,
+  body.presenting section.on .hours span.en{display:none}
   body.presenting section.on .ptx,
-  body.english.presenting section.on .ptx{display:revert}
+  body.ptmode.presenting section.on .ptx{display:revert}
   body.presenting section.on .hours span.ptx,
-  body.english.presenting section.on .hours span.ptx{display:block}
+  body.ptmode.presenting section.on .hours span.ptx{display:block}
   body.presenting section.on .sbody{padding:0}
   body.presenting section.on .shead{padding:0 0 6px}
   body.presenting section.on h2{font-size:clamp(2.3rem,5.2vw,3.5rem)}
@@ -205,13 +217,15 @@
   body.presenting section.on .sig{width:min(360px,60%);margin-bottom:38px}
   body.presenting section.on .src{display:none}
 
-  /* Language: Portuguese is the default, English is the toggle.
-     Driven by a class on <body>, never by inline styles: `display:revert`
-     reverts to the stylesheet rule, which is what hides these in the first
-     place, so an inline revert would hide English permanently. */
-  .en{display:none}
-  body.english .en{display:revert}
-  body.english .ptx{display:none}
+  /* Language: this is NICOLE'S page, so English is the default and Portuguese
+     is the toggle - matching meeting.html. Presenting flips a section to
+     Portuguese for showing the client; the toggle stays available so she can
+     read an asset mid-conversation.
+     Driven by a class on <body>, never inline styles: `display:revert` reverts
+     to the stylesheet rule, which is what hides these in the first place. */
+  .ptx{display:none}
+  body.ptmode .ptx{display:revert}
+  body.ptmode .en{display:none}
 
   @media (max-width:880px){
     .shell{grid-template-columns:1fr}
@@ -228,7 +242,7 @@
   <span class="who">Suellen <span>Sartorato</span></span>
   <span class="when">Segundo encontro</span>
   <span class="spacer"></span>
-  <button class="langbtn" id="lang">English</button>
+  <button class="langbtn" id="lang">Português</button>
 </div>
 
 <button class="exit" id="exit">Fechar · Esc</button>
@@ -245,6 +259,7 @@
     <a href="#capacidade"><span class="ptx">Capacidade</span><span class="en">Capacity</span><em>+24%</em></a>
     <a href="#mercado"><span class="ptx">O mercado</span><span class="en">The market</span><em><span class="ptx">Brasil · Portugal · EUA</span><span class="en">Brazil · Portugal · US</span></em></a>
     <a href="#multiplicar"><span class="ptx">Multiplicar</span><span class="en">Multiplying</span><em><span class="ptx">consultoras</span><span class="en">consultants</span></em></a>
+    <a href="#pesquisa"><span class="en">The charts</span><span class="ptx">Os mapas</span><em><span class="en">GHL · her workflow</span><span class="ptx">GHL · o fluxo dela</span></em></a>
     <a href="#numeros"><span class="ptx">Os números</span><span class="en">The numbers</span><em><span class="ptx">ano um</span><span class="en">year one</span></em></a>
   </nav>
 
@@ -254,7 +269,7 @@
     <section id="horas" data-sec="horas">
       <div class="shead">
         <div class="txt">
-          <p class="eyebrow"><span class="ptx">Das suas próprias entrevistas</span><span class="en">From your own interviews</span></p>
+          <p class="eyebrow"><span class="ptx">Das suas próprias entrevistas</span><span class="en">From their own interviews</span></p>
           <h2><span class="ptx">As horas que <em>já existem</em></span><span class="en">The hours that <em>already exist</em></span></h2>
         </div>
         <button class="presentbtn" data-present="horas">Mostrar</button>
@@ -282,8 +297,8 @@
           tarefa por tarefa, com o tempo que cada um informou.
         </p>
         <p class="en">
-          Neither number above is our estimate. Both come from your own interviews, task by task,
-          with the time each of you gave.
+          Neither number is an estimate. Both come from their own interviews, task by task, with the
+          time each of them gave.
         </p>
 
         <h3><span class="ptx">O que o Anderson contou</span><span class="en">What Anderson described</span></h3>
@@ -531,7 +546,7 @@
       <div class="shead">
         <div class="txt">
           <p class="eyebrow"><span class="ptx">Preços públicos, verificados em setembro</span><span class="en">Public prices, verified in September</span></p>
-          <h2><span class="ptx">Onde o seu trabalho <em>se posiciona</em></span><span class="en">Where your work <em>sits</em></span></h2>
+          <h2><span class="ptx">Onde o seu trabalho <em>se posiciona</em></span><span class="en">Where her work <em>sits</em></span></h2>
         </div>
         <button class="presentbtn" data-present="mercado">Mostrar</button>
       </div>
@@ -563,7 +578,7 @@
           </div>
         </div>
 
-        <h3><span class="ptx">O que isso quer dizer para você</span><span class="en">What that means for you</span></h3>
+        <h3><span class="ptx">O que isso quer dizer para você</span><span class="en">What that means for her</span></h3>
         <p class="ptx">
           A consultora de Miami cobra $125 por hora e entrega as horas de sessão. A sua consultoria tem
           as sessões <strong>mais</strong> o acompanhamento diário de segunda a segunda por três meses,
@@ -571,7 +586,7 @@
           entregues por cliente.
         </p>
         <p class="en">
-          The Miami consultant charges $125 an hour and delivers session hours. Yours has the sessions
+          The Miami consultant charges $125 an hour and delivers session hours. Hers has the sessions
           <strong>plus</strong> daily follow-up Monday to Monday for three months, <strong>plus</strong>
           the dossiê, <strong>plus</strong> the store research. That is 23 to 44 delivered hours per
           client.
@@ -585,9 +600,9 @@
             Portugal, ainda abaixo do teto americano.
           </p>
           <p class="en">
-            On your own courses, the US checkout charges about 3.6× the Brazilian price for the same
-            product. Applying your own logic to the market reference, one of your engagements sits
-            between <strong>US$1,750 and US$2,500</strong> — above Portugal, still below the US ceiling.
+            On her own courses, the US checkout charges about 3.6× the Brazilian price for the same
+            product. Applying her own logic to the market reference, one engagement sits between
+            <strong>US$1,750 and US$2,500</strong> — above Portugal, still below the US ceiling.
           </p>
         </div>
         <p class="src">
@@ -602,7 +617,7 @@
     <section id="multiplicar" data-sec="multiplicar">
       <div class="shead">
         <div class="txt">
-          <p class="eyebrow"><span class="ptx">A parte que você descreveu</span><span class="en">The part you described</span></p>
+          <p class="eyebrow"><span class="ptx">A parte que você descreveu</span><span class="en">The part she described</span></p>
           <h2><span class="ptx">Uma consultora <em>de cada vez</em></span><span class="en">One consultant <em>at a time</em></span></h2>
         </div>
         <button class="presentbtn" data-present="multiplicar">Mostrar</button>
@@ -613,8 +628,8 @@
           paga para entrar, paga para usar o sistema, e uma parte do que ela fatura volta para vocês.
         </p>
         <p class="en">
-          Once the method is recorded, a consultant you train delivers the same way. She pays to join,
-          pays to use the system, and a share of what she bills comes back to you.
+          Once the method is recorded, a consultant she trains delivers the same way: pays to join, pays
+          to use the system, and a share of what she bills comes back.
         </p>
 
         <div class="ladder">
@@ -664,7 +679,7 @@
             <th class="n"><span class="ptx">Por ano</span><span class="en">Per year</span></th>
           </tr>
           <tr>
-            <td><span class="ptx">As clientes que cabem nas horas que sobram</span><span class="en">The clients that fit in the freed hours</span>
+            <td><span class="ptx">As clientes que cabem nas horas que sobram</span><span class="en">The clients that fit in her freed hours</span>
               <small><span class="ptx">De 10 para 13 simultâneas, nas mesmas horas.</span><span class="en">From 10 to 13 concurrent, in the same hours.</span></small></td>
             <td class="n">US$ 15.750</td>
           </tr>
@@ -695,13 +710,46 @@
             pessoa que sabe o número real — <strong>se ele for maior, tudo acima sobe junto.</strong>
           </p>
           <p class="en">
-            The engagement values come from published market prices, not yours. You are the only person
-            who knows the real number — <strong>if it is higher, everything above rises with it.</strong>
+            The engagement values come from published market prices, not hers. She is the only person who
+            knows the real number — <strong>if it is higher, everything above rises with it.</strong>
           </p>
         </div>
       </div>
     </section>
 
+
+    <!-- ============ ATTACHED RESEARCH — Nicole's, never presented ============ -->
+    <section id="pesquisa" data-sec="pesquisa">
+      <div class="shead">
+        <div class="txt">
+          <p class="eyebrow"><span class="en">Reference — not for showing</span><span class="ptx">Referência</span></p>
+          <h2><span class="en">The two <em>maps</em></span><span class="ptx">Os dois <em>mapas</em></span></h2>
+        </div>
+      </div>
+      <div class="sbody">
+        <p class="en">
+          Both open in a new tab and are admin-only. Click any box in either one to drill into the
+          detail behind it.
+        </p>
+        <p class="ptx">
+          Os dois abrem em uma nova aba. Clique em qualquer quadro para ver o detalhe por trás dele.
+        </p>
+        <div class="refs">
+          <a class="ref" href="fluxo-suellen.html" target="_blank" rel="noopener">
+            <b><span class="en">Her workflow</span><span class="ptx">O fluxo dela</span></b>
+            <span class="en">Every task from the two intakes, in lanes by owner. The dossiê sits in its own exception lane.</span>
+            <span class="ptx">Cada tarefa das duas entrevistas, em faixas por responsável.</span>
+            <em><span class="en">Their words · 18.09.2026</span><span class="ptx">18.09.2026</span></em>
+          </a>
+          <a class="ref" href="fluxo-ghl.html" target="_blank" rel="noopener">
+            <b><span class="en">What GoHighLevel does</span><span class="ptx">O que o GoHighLevel faz</span></b>
+            <span class="en">Every module, colour-coded by whether it needs a higher plan, with the cost difference at the bottom.</span>
+            <span class="ptx">Cada módulo, por plano necessário.</span>
+            <em><span class="en">Three research passes · 20.09.2026</span><span class="ptx">20.09.2026</span></em>
+          </a>
+        </div>
+      </div>
+    </section>
   </main>
 </div>
 
@@ -717,14 +765,14 @@ requireAuth('admin');
 // Portuguese is the default: this document is read by its subject, in her
 // language. English exists for Nicole, and is never the state a client sees.
 const langBtn = document.getElementById('lang');
-let en = false;
-function setLang(toEnglish) {
-  en = toEnglish;
-  document.body.classList.toggle('english', en);
-  langBtn.textContent = en ? 'Português' : 'English';
-  document.documentElement.lang = en ? 'en' : 'pt-BR';
+let pt = false;
+function setLang(toPortuguese) {
+  pt = toPortuguese;
+  document.body.classList.toggle('ptmode', pt);
+  langBtn.textContent = pt ? 'English' : 'Português';
+  document.documentElement.lang = pt ? 'pt-BR' : 'en';
 }
-langBtn.addEventListener('click', () => setLang(!en));
+langBtn.addEventListener('click', () => setLang(!pt));
 
 // ---- present mode ------------------------------------------------------
 // One section fills the screen, always in Portuguese regardless of the
