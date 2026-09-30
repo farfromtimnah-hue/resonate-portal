@@ -3,14 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Entrar — Suellen Sartorato</title>
+<title>Entrar — Área do Cliente</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
   :root{
-    --ground:#0A0A0A; --panel:#131313; --panel-2:#1A1A19;
-    --gold:#8A7048; --gold-hi:#A28A60; --gold-line:rgba(162,138,96,.22);
+    --ground:#0f1115; --panel:#171a20; --panel-2:#1c2027;
+    --gold:#3d7fb0; --gold-hi:#6aa6d4; --gold-line:rgba(106,166,212,.25);
     --cream:#D7D7C8; --ink:#E8E5DE; --dim:#8E8880; --dimmer:#65605A;
     --ox:#7B2230; --hair:rgba(255,255,255,.07);
     --serif:"Cormorant Garamond",Georgia,serif;
@@ -29,6 +29,7 @@
 
   .sigwrap{display:flex;justify-content:center;margin-bottom:44px}
   .sig{height:44px;width:auto;opacity:.92;display:block}
+  .wordmark{font-family:var(--serif);font-size:1.15rem;letter-spacing:.22em;text-transform:uppercase;color:var(--cream);opacity:.9}
 
   h1{
     font-family:var(--serif);font-weight:300;font-size:1.7rem;
@@ -54,7 +55,7 @@
     text-transform:uppercase;padding:14px;cursor:pointer;
     transition:border-color .2s,background .2s,color .2s;
   }
-  button:hover:not(:disabled){border-color:var(--gold-hi);background:rgba(162,138,96,.06);color:#fff}
+  button:hover:not(:disabled){border-color:var(--gold-hi);background:rgba(106,166,212,.06);color:#fff}
   button:disabled{opacity:.45;cursor:default}
 
   .msg{
@@ -88,7 +89,7 @@
 
 <div class="card">
   <div class="sigwrap">
-    <img class="sig" src="assets/sig-white-tight.png" alt="Suellen Sartorato">
+    <div class="wordmark">Área do Cliente</div>
   </div>
 
   <!-- Sign in -->

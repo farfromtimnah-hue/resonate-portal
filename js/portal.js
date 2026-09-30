@@ -309,9 +309,10 @@ function renderContent() {
   // Carry preview context across the navigation to intake.html. A plain href
   // would drop it, and intake would then run against the admin's own session
   // instead of the client being previewed.
-  // The materials page is offered to every client: unlike the interview it has
-  // no per-person gate, and both people at a business share one page.
+  // The materials page has no per-person gate (both people at a business share
+  // one page), but it IS gated per client: it was written for one engagement.
   const materialsCard = document.getElementById('portal-materials-card');
+  materialsCard?.classList.toggle('hidden', !client.materials_enabled);
 
   if (_profile?.preview?.active) {
     const page = new URLSearchParams(window.location.search);

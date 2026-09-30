@@ -728,6 +728,9 @@ async function buildClientPortalResponse(client, env, viewer) {
     // The business-level switch on its own, so the portal can tell
     // "not enabled here at all" from "enabled, but not for you".
     client_intake_enabled: !!client.intake_enabled,
+    // materiais.html is written for one engagement; offer it only where
+    // it has been turned on for this client.
+    materials_enabled: !!client.materials_enabled,
     updated_at: client.updated_at
   };
 

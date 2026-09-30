@@ -1,0 +1,14 @@
+-- ============================================================
+-- Materials flag — additive migration (2026-09-30)
+-- materiais.html is a request list written for one engagement
+-- (Suellen's brand marks and method). It was offered to every
+-- client, so a new client would have opened another client's
+-- requests. The card now shows only where materials_enabled = 1.
+--
+-- Default 0 is the safety property: a new client never sees a
+-- page written for someone else unless somebody turns it on.
+--
+-- NOTE: run once (tolerates duplicate-column error):
+--   ALTER TABLE clients ADD COLUMN materials_enabled INTEGER NOT NULL DEFAULT 0;
+--   UPDATE clients SET materials_enabled = 1 WHERE id = 4;  -- Suellen
+-- ============================================================
